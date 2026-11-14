@@ -4577,8 +4577,22 @@ function render(s) {
       }
     }
   }
-  const model = experience.model || {}, memory = experience.memory || {}, planner = experience.planner || {};
+  const model = experience.model || {}, taskModel = experience.task_aware_model || {}, memory = experience.memory || {}, planner = experience.planner || {};
   $('experience-summary').textContent = `${model.samples || 0} observed transitions · ${memory.size || 0}/${memory.capacity || 128} memory slots · reward prediction RMSE ${Number(model.prequential_reward_rmse || 0).toFixed(5)} · ${planner.reason || 'collect support to begin'}`;
+  const selectedTaskPlanner = s.config?.planner_algorithm === 'task_value_mpc';
+  const taskMemoryNote = planner.memory_disabled_reason ? ` · ${planner.memory_disabled_reason}` : '';
+  const taskRoute = selectedTaskPlanner && experience.mode === 'off'
+    ? 'Policy selected · experience planning is off'
+    : (planner.fallback_reason
+    ? `Legacy 16D fallback · ${planner.fallback_reason}`
+    : (planner.model_family === 'task_aware_40d'
+      ? `${planner.active_algorithm || 'task_value_mpc'} · ${planner.used ? 'used' : 'abstained'}${taskMemoryNote}`
+      : (selectedTaskPlanner ? 'Selected · waiting for a supported task step' : 'Not selected')));
+  $('task-aware-status').textContent = selectedTaskPlanner
+    ? (experience.mode === 'off' ? 'Configured · policy disabled' : (planner.model_family === 'task_aware_40d' ? 'Selected task-aware 40D model' : 'Selected · fallback may apply'))
+    : 'Opt-in · off';
+  $('task-aware-support').textContent = `${Number(taskModel.samples || 0)} observed native-task transitions · ${taskModel.prediction_gate_passed ? 'support gate passed' : 'support gate not passed'}`;
+  $('task-aware-route').textContent = taskRoute;
   show('experience-details', experience);
   const gates = [
     ['Reward model', model.prediction_gate_passed ? 'support gate passed' : 'collect more support', !!model.prediction_gate_passed],
@@ -5543,12 +5557,92 @@ $('experience-apply').onclick = () => action(async () => {
   }));
 });
 
+function renderPlanningReceipt(result) {
+  const target = $('planning-receipt-result');
+  target.replaceChildren();
+  const receipt = result?.receipt || {};
+  const verification = result?.verification || {};
+  const summary = receipt.summary || {};
+  const status = document.createElement('p');
+  status.className = `evidence-status ${verification.ok ? 'good' : 'bad'}`;
+  status.textContent = verification.ok ? 'Receipt integrity and recorded arithmetic verified' : 'Receipt verification failed';
+  target.append(status);
+  if (!verification.ok) {
+    const errors = document.createElement('pre');
+    errors.textContent = (verification.errors || ['No verification details returned']).join('\n');
+    target.append(errors);
+    return;
+  }
+  const warnings = verification.warnings || [];
+  if (warnings.length) {
+    const warning = document.createElement('p');
+    warning.className = 'muted';
+    warning.textContent = `Current source differs from the recorded study snapshot: ${warnings.join('; ')}`;
+    target.append(warning);
+  }
+  const config = receipt.config || {};
+  const promo = summary.promotion || {};
+  const protocol = document.createElement('p');
+  protocol.className = 'muted';
+  protocol.textContent = `Protocol ${result.name} · ${receipt.schema || 'unknown schema'} · seeds ${(config.seeds || []).join(', ')} · tasks ${(config.tasks || []).join(', ')} · ${summary.paired_units || 0} paired seed/task units · ${receipt.source_fingerprint_count || 0} source fingerprints · integrity ${String(receipt.integrity || '').slice(0, 12)} · ${receipt.scope || ''}`;
+  target.append(protocol);
+  const decision = document.createElement('p');
+  decision.className = 'evidence-decision';
+  const returnDelta = summary.comparisons?.task_value_h3_minus_actor?.return || {};
+  decision.textContent = `${promo.eligible ? 'PROMOTION RULE PASSED' : 'KEEP OPT-IN'} · pooled completion difference ${Number(promo.pooled_completion_improvement || 0).toFixed(3)} (descriptive 95% interval ${(promo.pooled_completion_interval || []).map(x => Number(x).toFixed(3)).join(' to ')}) · return difference ${Number(returnDelta.mean_difference || 0).toFixed(3)} (interval ${(returnDelta.descriptive_bootstrap_95 || []).map(x => Number(x).toFixed(3)).join(' to ')}) · forage difference ${Number(promo.forage_completion_difference || 0).toFixed(3)} · transition cap ${promo.transition_budget_respected ? 'respected' : 'exceeded'}`;
+  target.append(decision);
+
+  const tasks = document.createElement('div');
+  tasks.className = 'table-scroll';
+  const table = document.createElement('table');
+  const header = document.createElement('tr');
+  for (const label of ['Task', 'Arm', 'Outcome S/F/T/I', 'Success', 'Mean return', 'Steps', 'Planner use', 'Abstain', 'Model eval / step']) {
+    const th = document.createElement('th'); th.textContent = label; header.append(th);
+  }
+  table.append(header);
+  for (const [task, arms] of Object.entries(summary.task_summaries || {})) {
+    for (const [arm, row] of Object.entries(arms || {})) {
+      const tr = document.createElement('tr');
+      const counts = row.outcome_counts || {};
+      const values = [task, arm, `${counts.success || 0}/${counts.fail || 0}/${counts.timeout || 0}/${counts.incomplete || 0}`, `${(100 * Number(row.success_rate || 0)).toFixed(1)}%`, Number(row.mean_return || 0).toFixed(3), Number(row.mean_steps || 0).toFixed(1), `${(100 * Number(row.planner_use_fraction || 0)).toFixed(1)}%`, `${(100 * Number(row.planner_abstention_fraction || 0)).toFixed(1)}%`, Number(row.mean_model_evaluations_per_step || 0).toFixed(2)];
+      for (const value of values) { const td = document.createElement('td'); td.textContent = String(value); tr.append(td); }
+      table.append(tr);
+    }
+  }
+  tasks.append(table); target.append(tasks);
+
+  const costs = document.createElement('p');
+  costs.className = 'muted';
+  const cost = receipt.costs || {};
+  costs.textContent = `Realized study cost · ${cost.executed_transitions || 0}/${cost.transition_limit || 0} transitions · ${cost.model_evaluations || 0} model evaluations · ${cost.member_evaluations || 0} ensemble-member evaluations · ${cost.query_update_calls || 0} query updates`;
+  target.append(costs);
+  const scope = document.createElement('p');
+  scope.className = 'muted';
+  scope.textContent = summary.interpretation || 'Finite local synthetic-world result; no real-world reliability or general capability claim.';
+  target.append(scope);
+}
+
+$('planning-receipt-load').onclick = () => action(async () => {
+  const name = $('planning-receipt-name').value.trim();
+  $('planning-receipt-status').textContent = 'Loading and verifying receipt…';
+  $('planning-receipt-result').replaceChildren();
+  try {
+    const result = await api(`planning-study/receipt/${encodeURIComponent(name)}`);
+    renderPlanningReceipt(result);
+    $('planning-receipt-status').textContent = `Loaded ${result.name}`;
+  } catch (err) {
+    $('planning-receipt-status').textContent = `Could not load study: ${err.message || String(err)}`;
+  }
+});
+
 function renderPlanPreview(preview) {
   if (!preview) return;
   $('plan-preview').hidden = false;
   $('plan-step').dataset.step = String(preview.source_step);
-  $('plan-step').textContent = `Step ${preview.source_step} · horizon ${preview.horizon} · ${preview.planner_algorithm || 'experience_mpc'}`;
-  $('plan-reason').textContent = `${preview.used ? 'Proposed local change' : 'Baseline retained'}: ${preview.reason}. ${preview.evaluations || 0} model evaluations.`;
+  const modelFamily = preview.model_family === 'task_aware_40d' ? 'task-aware 40D' : 'legacy 16D';
+  $('plan-step').textContent = `Step ${preview.source_step} · horizon ${preview.horizon} · ${preview.planner_algorithm || 'experience_mpc'} · ${modelFamily}`;
+  const fallback = preview.fallback_reason ? ` Legacy fallback: ${preview.fallback_reason}.` : '';
+  $('plan-reason').textContent = `${preview.used ? 'Proposed local change' : 'Baseline retained'}: ${preview.reason}.${fallback} ${preview.evaluations || 0} model evaluations.`;
   $('plan-actions').replaceChildren(...(preview.action_order || ['drive', 'turn', 'reach', 'height', 'grip']).map((name, index) => {
     const row = document.createElement('div'); row.className = 'plan-action';
     const label = document.createElement('span'), values = document.createElement('b');

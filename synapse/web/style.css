@@ -35,6 +35,20 @@
 .plan-candidates table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .plan-candidates th, .plan-candidates td { text-align: right; border-bottom: 1px solid var(--line); padding: 7px 12px; white-space: nowrap; }
 .plan-candidates th:first-child, .plan-candidates td:first-child { text-align: left; }
+.planning-evidence { border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; margin: 16px 0; background: rgba(16, 29, 43, .72); }
+.planning-evidence summary { cursor: pointer; color: var(--blue); font-weight: 600; }
+.planning-evidence .toolbar { align-items: end; }
+.planning-evidence .toolbar label { flex: 0 1 420px; max-width: 420px; }
+#planning-receipt-name { display: block; width: min(420px, 70vw); min-width: min(220px, 70vw); }
+.table-scroll { overflow-x: auto; margin: 12px 0; }
+.table-scroll table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.table-scroll th, .table-scroll td { border-bottom: 1px solid var(--line); padding: 6px 9px; text-align: right; white-space: nowrap; }
+.table-scroll th:first-child, .table-scroll td:first-child { text-align: left; }
+.evidence-decision { border-left: 3px solid var(--amber); padding: 8px 12px; background: rgba(237, 188, 117, .08); font-weight: 600; }
+.evidence-status { border-left: 3px solid var(--line); padding: 7px 11px; font-weight: 600; }
+.evidence-status.good { border-color: var(--teal); color: var(--teal); }
+.evidence-status.bad { border-color: var(--rose); color: var(--rose); }
+.forecast-boundary { border-left: 3px solid var(--purple); padding: 6px 12px; }
 * {
   box-sizing: border-box;
 }

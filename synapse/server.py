@@ -358,6 +358,35 @@ class Workbench:
         return deepcopy(job)
 
     def get(self,path):
+        receipt_prefix='/api/planning-study/receipt/'
+        if path.startswith(receipt_prefix):
+            name=safe_name(path[len(receipt_prefix):])
+            studies_root=(self.root/'planning-studies').resolve()
+            if studies_root.parent!=self.root:
+                raise KeyError('planning study not found')
+            study_dir=(studies_root/name).resolve()
+            if study_dir.parent!=studies_root:
+                raise KeyError('planning study not found')
+            receipt_path=study_dir/'receipt.json'
+            try:
+                receipt_path=receipt_path.resolve(strict=True)
+            except (OSError, RuntimeError):
+                raise KeyError('planning study not found') from None
+            if receipt_path.parent!=study_dir or not receipt_path.is_file():
+                raise KeyError('planning study not found')
+            if receipt_path.stat().st_size>64*1024*1024:
+                raise ValueError('planning receipt exceeds the 64 MiB read limit')
+            receipt=json.loads(receipt_path.read_text(encoding='utf-8'),
+                               parse_constant=lambda value: (_ for _ in ()).throw(ValueError('nonfinite JSON')))
+            from .planning_study import verify_planning_study
+            verification=verify_planning_study(receipt_path)
+            summary={'schema':receipt.get('schema'),'status':receipt.get('status'),
+                     'config':receipt.get('config',{}),'scope':receipt.get('scope',''),
+                     'summary':receipt.get('summary',{}),'costs':receipt.get('costs',{}),
+                     'integrity':receipt.get('integrity'),
+                     'source_fingerprint_count':len(receipt.get('source_fingerprints',{}))
+                         if isinstance(receipt.get('source_fingerprints'),dict) else 0}
+            return {'name':name,'receipt':summary,'verification':verification}
         if path.startswith('/api/export/status/'):
             ident=path.rsplit('/',1)[-1]
             if not re.fullmatch(r'[0-9a-f]{32}',ident): raise KeyError('portable export not found')

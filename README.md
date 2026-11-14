@@ -25,6 +25,12 @@ experimental and off by default. Read the [design recovery audit](docs/design-au
 [compute, training & connectome pilot report](docs/results/2026-11-07-compute-training-connectome.md)
 for restored contracts, verified datasets, and measured pilot outcomes.
 
+The task-aware value-guided MPC path is experimental, opt-in, and limited to
+validated native task identities. Its 14 November 2026 held-out study found no
+completion gain and lower paired return than the actor; it remains off by
+default. See the [full report and receipt](docs/results/2026-11-14-task-aware-planning.md)
+and the [frozen protocol](docs/results/2026-11-14-task-aware-planning-protocol.json).
+
 A unified, CPU-first embodied cognitive research platform combining signed recurrent neural graphs, a frozen Poseidon Tidal MoE DAgger controller, continuous online connectome neurogenesis, interoceptive homeostatic drive regulation, MiMoMix dual-process cognitive deliberation, experience-grounded prediction, and direct weight-space programming with inherited recursive self-improvement (RSI).
 
 Now featuring the **Sonapse Adaptive Intelligence Laboratory (SAIL)** research track: utility-driven continual backpropagation, trainable student-teacher sleep consolidation, universal fast-weight memory (uTTT & Titans associative learning), recurrent multi-step world models with MPC planning ($H \in \{1, 3, 5, 10\}$), verifiable ReLIFT curriculum challenges, and causal connectome structural evolution.
@@ -233,7 +239,7 @@ python -m synapse.cli --nodes 16 homeostasis
 python -m synapse.cli --nodes 16 mimomix --ponder 4
 python -m synapse.cli --nodes 16 ecology --task ecosystem
 
-# Audited Upstream Capabilities (142 audited capabilities across 47 families)
+# Audited Upstream Capabilities (143 audited capabilities across 47 families)
 python -m synapse.cli capabilities --id structural.neurogenesis
 python -m synapse.cli capabilities --id motivation.homeostasis
 python -m synapse.cli capabilities --id reasoning.mimomix
@@ -282,10 +288,13 @@ python -m synapse.cli --output outputs evidence --name my-pilot --seeds 7 11 19 
 python -m synapse.cli adaptation-verify outputs/adaptation-studies/my-pilot
 python -m synapse.cli evidence --receipt outputs/adaptation-studies/my-pilot
 
-# Paired actual-world planning comparison (actor, horizon 1, horizon 3)
-python -m synapse.cli --nodes 16 --output outputs planning-study --name planning-pilot --seeds 23 29 31 --tasks forage push ecosystem --support-steps 96 --query-steps 48 --horizons 1 3
-python -m synapse.cli planning-verify outputs/planning-studies/planning-pilot
+# Bounded paired planning development run (use a fresh name and fresh seeds)
+python -m synapse.cli --nodes 16 --output outputs planning-study --name task-aware-development --seeds 71 73 --tasks forage delayed_match button_sequence --support-steps 64 --query-steps 256 --task-horizon 3 --study-nodes 16 --horizons 1 3
+python -m synapse.cli --output outputs planning-verify outputs/planning-studies/task-aware-development/receipt.json
 ```
+
+The held-out 14 November result is frozen in the linked report and raw receipt;
+re-running it against newer source does not recreate that provenance.
 
 ## Measured Experiments & Verification
 

@@ -913,6 +913,7 @@
             <option value="experience_mpc">experience_mpc</option>
             <option value="recurrent_latent">recurrent_latent</option>
             <option value="hybrid">hybrid</option>
+            <option value="task_value_mpc">task_value_mpc (experimental, native tasks)</option>
           </select>
         </label>
         <label><input name="continual_backprop" type="checkbox"> Continual Backprop</label>
@@ -1000,6 +1001,7 @@
             <option value="experience_mpc">Experience MPC</option>
             <option value="recurrent_latent">Recurrent Latent World Model v2</option>
             <option value="hybrid">Hybrid (MPC + Latent + Diffusion)</option>
+            <option value="task_value_mpc">Task-aware value MPC · native tasks · experimental</option>
           </select>
         </label>
         <label><input id="experience-value-guided" type="checkbox"> Value-guided critic</label>
@@ -1007,13 +1009,31 @@
         <button id="experience-preview">Inspect forecast</button>
       </div>
       <p id="experience-summary" class="muted">Waiting for experience data.</p>
+      <div class="contract-strip" aria-live="polite">
+        <div class="contract-item"><small>Task-aware model</small><span id="task-aware-status">Not active</span></div>
+        <div class="contract-item"><small>Observed support</small><span id="task-aware-support">0 transitions</span></div>
+        <div class="contract-item"><small>Current route</small><span id="task-aware-route">Actor or legacy planner</span></div>
+      </div>
+      <details class="planning-evidence" open>
+        <summary>Measured planning study · local receipt</summary>
+        <p class="muted">Loads a named receipt from this workbench's configured output folder. Realized episode outcomes and model forecasts are shown separately.</p>
+        <div class="toolbar">
+          <label>Study name
+            <input id="planning-receipt-name" type="text" value="task-aware-confirmation-20261114" maxlength="64" autocomplete="off">
+          </label>
+          <button id="planning-receipt-load" type="button">Load and verify</button>
+        </div>
+        <p id="planning-receipt-status" class="muted" aria-live="polite">No study receipt loaded.</p>
+        <div id="planning-receipt-result"></div>
+      </details>
+      <p class="muted forecast-boundary">Forecasts below are model predictions for candidate actions. Study tables contain realized transitions from frozen query episodes; episodes without an environment terminal event remain incomplete.</p>
       <div id="learning-contract" class="contract-strip" aria-live="polite"></div>
       <div id="plan-preview" hidden>
         <div class="panel-head"><h3>Counterfactual plan inspector</h3><span id="plan-step" class="tag"></span></div>
         <p id="plan-reason" aria-live="polite"></p>
         <div id="plan-actions" class="plan-actions"></div>
         <div id="plan-candidates" class="plan-candidates"></div>
-        <p class="muted">Preview repeats the previous executed action as its baseline. It reads the model without advancing the actor or world. Forecasts omit terminal events and future neural context changes.</p>
+        <p class="muted">Model forecast only. Preview repeats the previous executed action as its baseline. It reads the model without advancing the actor or world. Forecasts omit terminal events and future neural context changes.</p>
         <details><summary>Candidate sequences and model trajectory</summary><pre id="plan-details"></pre></details>
       </div>
       <details>

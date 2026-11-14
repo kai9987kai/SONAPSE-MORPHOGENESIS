@@ -269,3 +269,7 @@ The receipt contains the full per-file fingerprint map. This report includes eve
 
 finite local synthetic-world development study; no real-world reliability or general capability claim.
 The unit is one paired seed/task episode. Bootstrap intervals are descriptive with a small local sample. Support is shared and fitted; each query begins from the same saved support state and query fitting is disabled. Task-aware planning is valid only for exact native task identities, uses value-guided short MPC with fixed task/graph/donor context, and may abstain. Receipts verify recorded hashes and arithmetic but do not re-execute worlds, authenticate source history, or support real-world reliability claims.
+
+The confirmation had no separate task-context ablation; it estimates the
+integrated task-aware route against the actor and does not isolate the
+contribution of task identity, graph context, or donor state.

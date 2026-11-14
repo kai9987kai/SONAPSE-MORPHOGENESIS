@@ -61,6 +61,7 @@
   - **Expanse-inspired Grafts**: 2 untrained expert slots recruited via novelty thresholding, and a zero-initialized native consolidation block.
   - **Motor Decoder**: Linear projection from 64-d fused feature representation to 5 continuous motor actuators (`drive`, `turn`, `reach`, `height`, `grip`), modulated by homeostatic fatigue constraints and deliberated actions.
   - **Experience Model**: Three bootstrap RLS members predict 14 sensor-summary deltas and actual reward, conditioned on current graph/donor summaries.
+  - **Task-Aware Value MPC (experimental, off by default)**: A separate three-member model receives a bounded 40-value state: 14 predicted sensor/motion/cue/time summaries, one graph summary, a one-hot identity for one of the nine native tasks, and 16 donor-state values. Value-guided short-horizon MPC is available only when the configured native task exactly matches the observed task code. It does not read surprise memory; unsupported or ambiguous task identity falls back to the legacy 16-value experience model.
   - **Outcome Memory**: At most 128 actual state/action/reward records with surprise/coverage admission and pure distance/recency reads.
   - **Vision**: Small seeded visual encoder and projection affecting live actions; receives optional supervised preparation gradients and is checkpointed.
 
@@ -98,5 +99,17 @@
 ## Evaluation and Intended Usage
 - **Primary Use**: Embodied reinforcement learning, cue-delay navigation, multi-agent predator evasion, terrain-aware locomotion, homeostatic survival, and recursive self-improvement research in synthetic continuous environments.
 - **Out-of-Scope**: High-stakes physical robotics without hardware safety bounds, medical diagnosis, or claims of biological consciousness.
+
+## Task-Aware Planning Evidence
+
+The 14 November 2026 frozen local study compared actor, horizon 1, horizon 3,
+and task-aware horizon 3 across 18 paired seed/task units in `forage`,
+`delayed_match`, and `button_sequence`. No arm completed an episode; 17 of 18
+episodes per arm were incomplete at the 256-step query cap. Task-aware minus
+actor completion was 0.000 (descriptive paired 95% interval `[0.000, 0.000]`),
+and return was −0.2283 (interval `[−0.4863, −0.0274]`). The task-aware path
+therefore remains opt-in. These are small local synthetic-world results, and the
+query cap leaves terminal performance mostly unresolved. See the [study report](results/2026-11-14-task-aware-planning.md)
+and [raw receipt](results/2026-11-14-task-aware-planning-receipt.json).
 
 The recurrent graph uses synthetic proxy topologies. Checkpoints preserve all learned models, covariance arrays, RNG states, homeostatic vitals, neurogenesis history, and pending transitions. Exact mid-episode replay is verified and tested bit-for-bit across all world backends.

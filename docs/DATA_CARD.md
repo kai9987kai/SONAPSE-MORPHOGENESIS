@@ -72,6 +72,34 @@ SYNAPSE supports both the 9 native GraftBrain simulation tasks and 4 advanced fr
   3. `continual_sleep`: Trainable student-teacher sleep consolidation.
   4. `full_developmental_sail`: Full integration (Continual Backprop + Fast Memory + Sleep + MPC Planning).
 
+#### Task-Aware Planning Study Data (14 November 2026)
+
+This is locally generated synthetic-world evaluation data, not an external
+dataset. Six fresh seeds were paired across `forage`, `delayed_match`, and
+`button_sequence`; each seed/task unit shared 64 exploratory support transitions
+before four frozen query arms (actor, horizon 1, horizon 3, task-aware horizon
+3). Each query episode stopped at an environment terminal event or 256 steps.
+Only environment-reported terminal events count as success, failure, or timeout;
+episodes without one are recorded as incomplete.
+
+| Task | Episodes per arm | Task-aware outcomes | Task-aware minus actor mean return |
+|---|---:|---|---:|
+| `forage` | 6 | 0 success, 0 fail, 0 timeout, 6 incomplete | −0.6848 |
+| `delayed_match` | 6 | 0 success, 1 fail, 0 timeout, 5 incomplete | 0.0000 |
+| `button_sequence` | 6 | 0 success, 0 fail, 0 timeout, 6 incomplete | 0.0000 |
+
+Across 18 paired seed/task units, no arm completed an episode. The task-aware
+completion difference was 0.000 with descriptive paired 95% interval
+`[0.000, 0.000]`; mean return difference was −0.2283 (`[−0.4863, −0.0274]`).
+The run used 18,832 transitions against a 32,768 limit. Most episodes were
+right-censored by the query cap, so this study does not resolve terminal task
+performance. The [full report](results/2026-11-14-task-aware-planning.md),
+[frozen protocol](results/2026-11-14-task-aware-planning-protocol.json), and
+[receipt](results/2026-11-14-task-aware-planning-receipt.json) preserve the
+complete outcomes and provenance.
+The confirmation did not include a separate task-context ablation, so it does
+not identify the contribution of individual context inputs.
+
 ### 2. Dynamic Physics & Ecological Mechanics
 
 - **Autonomous Predator Drones**: Drones execute continuous pursuit vectors toward the agent at speed $v_{\text{predator}} = 0.04$, generating a continuous distance-dependent threat field:
