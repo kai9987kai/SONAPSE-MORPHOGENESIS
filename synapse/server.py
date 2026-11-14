@@ -777,7 +777,8 @@ class Workbench:
                     steps=integer(data.get('steps',24),'steps',8,64),seeds=data.get('seeds',[19,23]),
                     min_gain=float(data.get('min_gain',0.)))
             if path=='/api/experience/preview':
-                from .experience import encode_experience_state
+                from .experience import (encode_experience_state,
+                    encode_task_aware_experience_state, task_aware_fallback_reason)
                 from .experience_planner import ExperienceMPC
                 horizon=integer(data.get('horizon',self.runtime.config.experience_horizon),'horizon',1,5)
                 use_memory=data.get('memory',self.runtime.config.surprise_memory)
@@ -785,13 +786,30 @@ class Workbench:
                 value_guided=data.get('value_guided',getattr(self.runtime.config,'value_guided_planning',False))
                 if type(value_guided) is not bool: raise ValueError('value_guided must be boolean')
                 algo=str(data.get('planner_algorithm',getattr(self.runtime.config,'planner_algorithm','experience_mpc')))
-                if algo not in ('experience_mpc','recurrent_latent','hybrid'):
-                    raise ValueError('planner_algorithm must be experience_mpc, recurrent_latent, or hybrid')
+                if algo not in ('experience_mpc','recurrent_latent','hybrid','task_value_mpc'):
+                    raise ValueError('planner_algorithm must be experience_mpc, recurrent_latent, hybrid, or task_value_mpc')
                 agent=self.runtime.agent
                 state=encode_experience_state(self.runtime.obs,agent.last_features)
+                model=agent.experience_model
+                planner_state=state
+                planner_memory=agent.surprise_memory if use_memory else None
+                planner_value_guided=value_guided
+                fallback_reason=None
+                active_algorithm=algo
+                if algo=='task_value_mpc':
+                    task_id=getattr(self.runtime.config,'task','auto')
+                    fallback_reason=task_aware_fallback_reason(self.runtime.obs,task_id)
+                    if fallback_reason is None:
+                        planner_state=encode_task_aware_experience_state(
+                            self.runtime.obs,agent.last_features,task_id)
+                        model=agent.task_aware_model
+                        planner_memory=None
+                        planner_value_guided=True
+                    else:
+                        active_algorithm='experience_mpc'
                 baseline=self.runtime.last_action.copy()
-                proposed,diagnostics=ExperienceMPC(agent.experience_model,horizon=horizon,value_guided=value_guided).plan(
-                    state,baseline,memory=agent.surprise_memory if use_memory else None)
+                proposed,diagnostics=ExperienceMPC(model,horizon=horizon,value_guided=planner_value_guided).plan(
+                    planner_state,baseline,memory=planner_memory)
                 extra_diag={}
                 if algo in ('recurrent_latent','hybrid') and getattr(agent,'recurrent_planner',None) is not None:
                     import numpy as _np
@@ -802,7 +820,11 @@ class Workbench:
                         proposed=rec_act
                     elif algo=='hybrid':
                         proposed=_np.clip(0.55*proposed+0.45*rec_act,-1.0,1.0).astype(_np.float32)
-                return {**diagnostics,**extra_diag,'planner_algorithm':algo,'horizon':horizon,'source_step':self.runtime.total_steps,
+                return {**diagnostics,**extra_diag,'planner_algorithm':algo,
+                        'active_algorithm':active_algorithm,
+                        'model_family':'task_aware_40d' if model is agent.task_aware_model else 'legacy_16d',
+                        'fallback_reason':fallback_reason,
+                        'horizon':horizon,'source_step':self.runtime.total_steps,
                         'baseline':baseline.tolist(),'proposed_action':proposed.tolist(),
                         'action_order':['drive','turn','reach','height','grip'],
                         'baseline_source':'repeat previous executed action; current observation with last neural context',
@@ -815,8 +837,8 @@ class Workbench:
                 value_guided=data.get('value_guided',getattr(self.runtime.config,'value_guided_planning',False))
                 if type(value_guided) is not bool: raise ValueError('value_guided must be boolean')
                 algo=str(data.get('planner_algorithm',getattr(self.runtime.config,'planner_algorithm','experience_mpc')))
-                if algo not in ('experience_mpc','recurrent_latent','hybrid'):
-                    raise ValueError('planner_algorithm must be experience_mpc, recurrent_latent, or hybrid')
+                if algo not in ('experience_mpc','recurrent_latent','hybrid','task_value_mpc'):
+                    raise ValueError('planner_algorithm must be experience_mpc, recurrent_latent, hybrid, or task_value_mpc')
                 config=dataclasses.replace(self.runtime.config,experience_planning=mode!='off',surprise_memory=mode!='model',experience_horizon=horizon,value_guided_planning=value_guided,planner_algorithm=algo)
                 self.runtime.config=config; self.runtime.agent.config=config
                 if hasattr(self.runtime.agent,'_setup_frontier_extensions'):

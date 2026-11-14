@@ -9,6 +9,11 @@ from __future__ import annotations
 from copy import deepcopy
 import numpy as np
 
+from . import sources as _sources
+
+_sources.activate()
+from graftbrain.world import TASKS as NATIVE_TASKS
+
 
 def _vector(value, size, name):
     array = np.asarray(value, dtype=np.float64)
@@ -40,6 +45,47 @@ def encode_experience_state(obs, features=None):
                     obs[151] - obs[152], obs[154],
                     features[:32].mean(), features[32:48].mean()])
     return np.clip(np.asarray(summary, dtype=np.float64), -2, 2)
+
+
+def task_aware_fallback_reason(obs, task_id):
+    """Explain why task-conditioned state encoding is unavailable.
+
+    Complex-world task names can share the base environment's nine-value task
+    code, so the configured identity must name a native task and exactly match
+    the observed code before that identity is used by the learner.
+    """
+    if type(task_id) is not str or task_id == 'auto':
+        return 'automatic or missing task identity has no fixed native task context'
+    if task_id not in NATIVE_TASKS:
+        return 'configured task is not a validated native task identity'
+    observation = _vector(obs, 155, 'observation')
+    expected = np.zeros(len(NATIVE_TASKS), dtype=np.float64)
+    expected[NATIVE_TASKS.index(task_id)] = 1.0
+    if not np.array_equal(observation[140:149], expected):
+        return 'observed task code does not match the configured native task'
+    return None
+
+
+def encode_task_aware_experience_state(obs, features, task_id):
+    """Encode 14 predicted signals with fixed graph, task, and donor context.
+
+    The task code is admitted only for a named native task whose visible
+    observation one-hot matches exactly. No complex-task alias is distinguishable
+    from the observation and such tasks must stay on the legacy representation.
+    """
+    reason = task_aware_fallback_reason(obs, task_id)
+    if reason is not None:
+        raise ValueError(reason)
+    features = _vector(features, 64, 'features')
+    predicted = encode_experience_state(obs, features)[:14]
+    graph_summary = np.clip(features[:32].mean(), -2.0, 2.0)
+    task_code = np.zeros(len(NATIVE_TASKS), dtype=np.float64)
+    task_code[NATIVE_TASKS.index(task_id)] = 1.0
+    donor_state = np.clip(features[32:48], -2.0, 2.0)
+    state = np.concatenate((predicted, [graph_summary], task_code, donor_state))
+    if state.shape != (40,) or not np.isfinite(state).all():
+        raise ValueError('task-aware state must contain 40 finite values')
+    return state.astype(np.float64, copy=False)
 
 
 class AdaptiveResidualCalibrator:

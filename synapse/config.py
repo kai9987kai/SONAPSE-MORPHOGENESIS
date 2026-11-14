@@ -182,7 +182,7 @@ class SynapseConfig:
 
         if self.readout not in {'absolute', 'evoked', 'persistent_evoked'}:
             raise ValueError('unsupported graph readout')
-        if self.planner_algorithm not in {'experience_mpc', 'recurrent_latent', 'hybrid'}:
+        if self.planner_algorithm not in {'experience_mpc', 'recurrent_latent', 'hybrid', 'task_value_mpc'}:
             raise ValueError('unsupported planner algorithm')
         if self.connectome_mode not in {'proxy', 'prefer_authentic', 'strict_authentic'}:
             raise ValueError('unsupported connectome mode')

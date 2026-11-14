@@ -19,7 +19,8 @@ from .neuromodulation import NeuromodulatoryEngine, NeuromodulatorState
 from .astrocyte import AstrocyteNetwork
 from .predictive_coding import PredictiveCodingEngine
 from .vision_encoder import TrainableVisualEncoder
-from .experience import ExperienceWorldModel, encode_experience_state
+from .experience import (ExperienceWorldModel, encode_experience_state,
+                         encode_task_aware_experience_state, task_aware_fallback_reason)
 from .surprise_memory import SurpriseEpisodicMemory
 from .reconsolidation import MemoryReconsolidationEngine
 from .homeostasis import HomeostaticEngine
@@ -91,6 +92,9 @@ class IntegratedAgent:
         self.opt=torch.optim.Adam(self._optimization_parameters(),lr=3e-4)
         self.rng=np.random.default_rng(config.seed)
         self.experience_model=ExperienceWorldModel(state_dim=16,action_dim=5,ensemble_size=3,seed=config.seed,context_dim=2)
+        task_model_seed=(config.seed+104729)%(2**31)
+        self.task_aware_model=ExperienceWorldModel(state_dim=40,action_dim=5,ensemble_size=3,
+                                                   seed=task_model_seed,context_dim=26)
         self.surprise_memory=SurpriseEpisodicMemory()
         self.memory_reconsolidation=MemoryReconsolidationEngine(seed=config.seed)
         self.last_memory_recall=None
@@ -771,6 +775,10 @@ class IntegratedAgent:
         bonus=self.curiosity.compute_bonus(o,train=learn)
         self.ticks+=1; self.last_obs=obs.copy(); self.last_features=features.numpy().copy()
         experience_state=encode_experience_state(obs,self.last_features)
+        configured_task=getattr(self.config,'task','auto')
+        task_aware_reason=task_aware_fallback_reason(obs,configured_task)
+        task_aware_state=(encode_task_aware_experience_state(obs,self.last_features,configured_task)
+                          if task_aware_reason is None else None)
         base_act=np.clip(action.numpy(),-1.,1.).astype(np.float32,copy=True)
         executed=base_act.copy()
         graft_receipt=None
@@ -785,14 +793,21 @@ class IntegratedAgent:
                 )
             self.last_telemetry['active_inference'] = act_inf_info
         graft_act=executed.copy()
+        selected_algorithm=getattr(self.config,'planner_algorithm','experience_mpc')
         planner_info={'mode':mode,'enabled':mode!='off','horizon':self.config.experience_horizon,
+                      'algorithm':selected_algorithm,
                       'scope':'experimental short-horizon planning; heuristic uncertainty'}
         if mode!='off':
             from .experience_planner import ExperienceMPC
-            value_guided = getattr(self.config, 'value_guided_planning', False)
-            planner=ExperienceMPC(self.experience_model,horizon=self.config.experience_horizon,value_guided=value_guided)
-            planned,diagnostics=planner.plan(experience_state,executed,
-                memory=self.surprise_memory if mode=='memory' else None)
+            use_task_aware=(selected_algorithm=='task_value_mpc' and task_aware_state is not None)
+            if selected_algorithm=='task_value_mpc' and not use_task_aware:
+                planner_info['fallback_reason']=task_aware_reason or 'task-aware state is unavailable'
+            model=self.task_aware_model if use_task_aware else self.experience_model
+            planner_state=task_aware_state if use_task_aware else experience_state
+            value_guided=True if use_task_aware else getattr(self.config,'value_guided_planning',False)
+            planner=ExperienceMPC(model,horizon=self.config.experience_horizon,value_guided=value_guided)
+            planned,diagnostics=planner.plan(planner_state,executed,
+                memory=None if use_task_aware else (self.surprise_memory if mode=='memory' else None))
             candidate=np.asarray(planned,dtype=np.float32)
             if candidate.shape!=(5,) or not np.isfinite(candidate).all():
                 raise ValueError('planner must return a finite five-dimensional action')
@@ -815,7 +830,14 @@ class IntegratedAgent:
             executed=np.clip(candidate,np.maximum(-1.,executed-.35),np.minimum(1.,executed+.35))
             planner_info.update(diagnostics)
             planner_info['mode']=mode
-            planner_info['algorithm']=getattr(self.config, 'planner_algorithm', 'experience_mpc')
+            planner_info['algorithm']=selected_algorithm
+            planner_info['active_algorithm']='task_value_mpc' if use_task_aware else (
+                'experience_mpc' if selected_algorithm=='task_value_mpc' else selected_algorithm)
+            planner_info['model_family']='task_aware_40d' if use_task_aware else 'legacy_16d'
+            if use_task_aware and mode=='memory':
+                planner_info['memory_disabled_reason']='task_value_mpc does not use surprise memory'
+            if use_task_aware:
+                planner_info['task_id']=configured_task
         planner_act=executed.copy()
         dvgem_diag=None
         if getattr(self, 'dvgem_memory', None) is not None:
@@ -846,7 +868,11 @@ class IntegratedAgent:
                     'distance':float(selected_recall['distance']),
                     'query_action':np.asarray(selected_recall['query_action'],dtype=np.float32).tolist(),
                 }
-        self.pending_transition={'state':np.array(experience_state,copy=True),'action':executed.copy(),'graft_receipt':graft_receipt,'learning':bool(learn),'memory_recall':memory_recall}
+        self.pending_transition={'state':np.array(experience_state,copy=True),
+            'task_aware_state':None if task_aware_state is None else np.array(task_aware_state,copy=True),
+            'task_id':configured_task if task_aware_state is not None else None,
+            'action':executed.copy(),'graft_receipt':graft_receipt,'learning':bool(learn),
+            'memory_recall':memory_recall}
         self.last_telemetry={'ticks':self.ticks,'graph_mean':float(r.mean()),'graph_delta':novelty,'tidal_intent':self.intent.tolist(),'tidal_routing':self.routing,'resources':self.resources.tolist(),'compass':float(self.compass.bump_angle),'mbon':mbon.tolist(),'curiosity':bonus,'recruited_expert':expert if recruited else None,'expert_usage':self.expert_usage.tolist(),'consolidations':self.consolidations,'readout':self.config.readout,'evoked_delta_norm':delta_norm,'evoked_baseline_norm':baseline_norm,'bridge_training':'experimental supervised preparation' if self.bridge_updates else 'untrained','camera_consumed':camera_consumed,'visual_latents':vis_latent.tolist() if vis_latent is not None else [],'visual_brightness':vis_info.get('mean_brightness',0.0),'visual_contrast':vis_info.get('contrast',0.0),'neuromodulators':self.neuromod.state.to_dict() if hasattr(self, 'neuromod') else {},'astrocytes':self.astrocytes.summary() if hasattr(self, 'astrocytes') else {},'predictive_coding':self.predictive.state.to_dict() if hasattr(self, 'predictive') else {}}
         self.last_telemetry['evoked_channels']={'channel_m_norm':baseline_norm,'channel_d_norm':delta_norm,'gate_alpha':gate_alpha,'persistent_norm':float(self.evoked.norm()) if hasattr(self,'evoked') else 0.0}
         self.last_telemetry['dormant_lifecycle']=self.dormant_lifecycle.summary() if hasattr(self,'dormant_lifecycle') else {}
@@ -858,6 +884,7 @@ class IntegratedAgent:
             self.last_telemetry['latent_reasoner']={'engaged':True,'recurrent_depth':latent_reasoner_trace.recurrent_depth,'ponder_cost':latent_reasoner_trace.ponder_cost,'accumulated_halt':latent_reasoner_trace.accumulated_halt}
         self.last_telemetry['experience_planner']=planner_info
         self.last_telemetry['experience_model']=self.experience_model.summary()
+        self.last_telemetry['task_aware_model']=self.task_aware_model.summary()
         self.last_telemetry['surprise_memory']=self.surprise_memory.summary()
         self.last_telemetry['memory_recall']=deepcopy(memory_recall)
         recon_telem = self.memory_reconsolidation.get_summary()
@@ -1080,6 +1107,16 @@ class IntegratedAgent:
         state=np.array(self.pending_transition['state'],copy=True)
         next_state=encode_experience_state(observation,self.last_features)
         diagnostics=self.experience_model.update(state,executed,next_state,float(reward),done=bool(done))
+        task_state=self.pending_transition.get('task_aware_state')
+        if task_state is not None:
+            task_id=self.pending_transition.get('task_id')
+            task_reason=task_aware_fallback_reason(observation,task_id)
+            if task_reason is None:
+                task_next=encode_task_aware_experience_state(observation,self.last_features,task_id)
+                diagnostics['task_aware_model']=self.task_aware_model.update(
+                    task_state,executed,task_next,float(reward),done=bool(done))
+            else:
+                diagnostics['task_aware_model']={'updated':False,'reason':task_reason}
         memory_recall=(self.pending_transition.get('memory_recall')
                        if self.pending_transition.get('learning',True) else None)
         recon=None
@@ -1400,7 +1437,7 @@ class IntegratedAgent:
         return candidate
 
     def export_state(self):
-        state=deepcopy({'schema':1,'config':self.config.to_dict(),'topology':{'pre':self.brain.graft_pre.numpy(),'post':self.brain.graft_post.numpy(),'initial_weights':self.plasticity.original_weights.numpy()},'modules':{k:v.state_dict() for k,v in self.modules.items()},'optimizer':self.opt.state_dict(),'curiosity_optimizer':self.curiosity.opt.state_dict(),'rng':self.rng.bit_generator.state,'transient':{k:getattr(self,k) for k in ('hidden','intent','evoked','ticks','last_compass','last_features','last_telemetry','last_obs','resources','expert_usage','consolidated','episodic','tool_memory','preparation_updates','bridge_updates','consolidations','pending_transition','_camera_consumed_any','last_memory_recall','last_memory_reconciliation')},'compass_angle':self.compass.bump_angle,'neuromod':self.neuromod.state.to_dict() if hasattr(self, 'neuromod') else None,'neuromod_context':{'v_predicted':self.neuromod.v_predicted,'history':self.neuromod.history},'astrocytes':self.astrocytes.export_state() if hasattr(self, 'astrocytes') else None,'predictive':self.predictive.export_state() if hasattr(self, 'predictive') else None,'routing':getattr(self,'routing',[]),'experience_model':self.experience_model.export_state(),'surprise_memory':self.surprise_memory.export_state(),'memory_reconsolidation':self.memory_reconsolidation.export_state(),'homeostasis':self.homeostasis.export_state() if hasattr(self,'homeostasis') else None,'neurogenesis':self.neurogenesis.export_state() if hasattr(self,'neurogenesis') else None,'dormant_lifecycle':self.dormant_lifecycle.export_state() if hasattr(self,'dormant_lifecycle') else None,'continual_backprop':self.continual_backprop.export_state() if (hasattr(self,'continual_backprop') and self.continual_backprop is not None) else None,'fast_weight_memory':self.fast_weight_memory.export_state() if (hasattr(self,'fast_weight_memory') and self.fast_weight_memory is not None) else None,'latent_reasoner':self.latent_reasoner.state_dict() if (hasattr(self,'latent_reasoner') and self.latent_reasoner is not None) else None,'self_model':self.self_model.export_state() if (hasattr(self,'self_model') and self.self_model is not None) else None})
+        state=deepcopy({'schema':1,'config':self.config.to_dict(),'topology':{'pre':self.brain.graft_pre.numpy(),'post':self.brain.graft_post.numpy(),'initial_weights':self.plasticity.original_weights.numpy()},'modules':{k:v.state_dict() for k,v in self.modules.items()},'optimizer':self.opt.state_dict(),'curiosity_optimizer':self.curiosity.opt.state_dict(),'rng':self.rng.bit_generator.state,'transient':{k:getattr(self,k) for k in ('hidden','intent','evoked','ticks','last_compass','last_features','last_telemetry','last_obs','resources','expert_usage','consolidated','episodic','tool_memory','preparation_updates','bridge_updates','consolidations','pending_transition','_camera_consumed_any','last_memory_recall','last_memory_reconciliation')},'compass_angle':self.compass.bump_angle,'neuromod':self.neuromod.state.to_dict() if hasattr(self, 'neuromod') else None,'neuromod_context':{'v_predicted':self.neuromod.v_predicted,'history':self.neuromod.history},'astrocytes':self.astrocytes.export_state() if hasattr(self, 'astrocytes') else None,'predictive':self.predictive.export_state() if hasattr(self, 'predictive') else None,'routing':getattr(self,'routing',[]),'experience_model':self.experience_model.export_state(),'task_aware_model':self.task_aware_model.export_state(),'surprise_memory':self.surprise_memory.export_state(),'memory_reconsolidation':self.memory_reconsolidation.export_state(),'homeostasis':self.homeostasis.export_state() if hasattr(self,'homeostasis') else None,'neurogenesis':self.neurogenesis.export_state() if hasattr(self,'neurogenesis') else None,'dormant_lifecycle':self.dormant_lifecycle.export_state() if hasattr(self,'dormant_lifecycle') else None,'continual_backprop':self.continual_backprop.export_state() if (hasattr(self,'continual_backprop') and self.continual_backprop is not None) else None,'fast_weight_memory':self.fast_weight_memory.export_state() if (hasattr(self,'fast_weight_memory') and self.fast_weight_memory is not None) else None,'latent_reasoner':self.latent_reasoner.state_dict() if (hasattr(self,'latent_reasoner') and self.latent_reasoner is not None) else None,'self_model':self.self_model.export_state() if (hasattr(self,'self_model') and self.self_model is not None) else None})
         state['neural_graft']=self.neural_graft.export_state() if self.neural_graft is not None else None
         if getattr(self, 'auditory_encoder', None) is not None:
             state['auditory_encoder_state'] = {
@@ -1521,6 +1558,12 @@ class IntegratedAgent:
             self.experience_model.import_state(state['experience_model'])
         else:
             self.experience_model=ExperienceWorldModel(state_dim=16,action_dim=5,ensemble_size=3,seed=self.config.seed,context_dim=2)
+        if 'task_aware_model' in state:
+            self.task_aware_model.import_state(state['task_aware_model'])
+        else:
+            task_model_seed=(self.config.seed+104729)%(2**31)
+            self.task_aware_model=ExperienceWorldModel(state_dim=40,action_dim=5,ensemble_size=3,
+                                                       seed=task_model_seed,context_dim=26)
         if 'surprise_memory' in state:
             self.surprise_memory.import_state(state['surprise_memory'])
         else:
