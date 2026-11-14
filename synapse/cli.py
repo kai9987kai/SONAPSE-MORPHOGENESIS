@@ -101,9 +101,11 @@ def main(argv=None):
     sub.add_parser('connectome-inventory')
     p=sub.add_parser('planning-study'); p.add_argument('--name',default='planning-pilot')
     p.add_argument('--seeds',type=int,nargs='+',default=[23,29,31])
-    p.add_argument('--tasks',nargs='+',default=['forage','push'])
+    p.add_argument('--tasks',nargs='+',default=['forage','delayed_match','button_sequence'])
     p.add_argument('--support-steps',type=int,default=64)
-    p.add_argument('--query-steps',type=int,default=64)
+    p.add_argument('--query-steps',type=int,default=256)
+    p.add_argument('--task-horizon',type=int,default=3)
+    p.add_argument('--study-nodes',type=int,default=16)
     p.add_argument('--horizons',type=int,nargs='+',default=[1,3])
     p=sub.add_parser('planning-verify'); p.add_argument('path',type=Path)
     args=parser.parse_args(argv)
@@ -228,9 +230,16 @@ def main(argv=None):
         elif args.command=='planning-study':
             from .planning_study import run_planning_study
             from .server import safe_name
-            result=run_planning_study(args.output/'planning-studies'/safe_name(args.name),
+            study_dir=args.output/'planning-studies'/safe_name(args.name)
+            receipt=run_planning_study(study_dir,
                 {'seeds':args.seeds,'tasks':args.tasks,'support_steps':args.support_steps,
-                 'query_steps':args.query_steps,'nodes_per_source':config.nodes_per_source,'horizons':args.horizons})
+                 'query_steps':args.query_steps,'nodes_per_source':args.study_nodes,
+                 'horizons':args.horizons,'task_horizon':args.task_horizon})
+            result={'schema':receipt['schema'],'status':receipt['status'],
+                    'receipt':str(study_dir/'receipt.json'),'report':str(study_dir/'report.md'),
+                    'promotion':receipt['summary']['promotion'],
+                    'arms':receipt['summary']['arms'],'costs':receipt['costs'],
+                    'integrity':receipt['integrity']}
         elif args.command=='evidence':
             from .adaptation_study import run_adaptation_study,verify_adaptation_study,format_adaptation_report
             from .server import safe_name

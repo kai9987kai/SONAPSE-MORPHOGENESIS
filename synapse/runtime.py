@@ -173,7 +173,10 @@ class LabRuntime:
             }
             self.last['homeostasis']=self.agent.homeostasis.summary()
             self.total_steps+=1
-            self.recent=(self.recent+[{'step':self.total_steps,'reward':float(reward),'done':bool(done)}])[-128:]
+            recent_row={'step':self.total_steps,'reward':float(reward),'done':bool(done)}
+            if done and 'outcome' in info:
+                recent_row['outcome']=info['outcome']
+            self.recent=(self.recent+[recent_row])[-128:]
             if done:
                 self.agent.reset_episode()
                 self.obs=self.world.reset()
