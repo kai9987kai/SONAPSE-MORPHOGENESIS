@@ -1,6 +1,6 @@
 # SYNAPSE whole-project advancement
 
-**Status:** Approved for implementation  
+**Status:** Implemented locally; task-aware planner remains opt-in
 **Date:** 14 November 2026
 
 ## Intent
@@ -141,3 +141,22 @@ live planner and evaluate whether that gives useful behavior.
   but must freeze them before confirmation and report the resulting precision.
 - This is a local research result. Receipts establish recorded provenance and
   arithmetic, not authenticity or real-world reliability.
+
+## Observed outcome and delivery status
+
+The frozen confirmation covered six seeds, three tasks, and 18 paired
+seed/task units. No arm completed an episode; 17 of 18 episodes per arm were
+incomplete at the 256-step query cap. Task-aware minus actor completion was
+0.000 (descriptive paired 95% interval `[0.000, 0.000]`), and return was −0.2283
+(`[−0.4863, −0.0274]`). The task-aware planner did not meet the frozen promotion
+rule and remains opt-in and off by default. Because most episodes were
+right-censored, this result does not resolve terminal task performance.
+
+The confirmation did not include a separate task-context ablation, so it cannot
+attribute any effect to the task identity, graph, or donor-state coordinates
+individually. The [study report](../../results/2026-11-14-task-aware-planning.md),
+[frozen protocol](../../results/2026-11-14-task-aware-planning-protocol.json),
+and [receipt](../../results/2026-11-14-task-aware-planning-receipt.json) retain
+the measured source set and outcome records. Receipt verification checks the
+recorded hashes and arithmetic; it does not re-run the environments or
+authenticate source history.

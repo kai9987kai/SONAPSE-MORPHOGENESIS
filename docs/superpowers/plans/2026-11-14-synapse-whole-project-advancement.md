@@ -45,14 +45,14 @@
 - Add planner algorithm `task_value_mpc`; it uses `task_aware_model` with `ExperienceMPC(..., value_guided=True)`, with no surprise-memory input.
 - Store a task-aware pending state only when the configured task is a supported base task and its observed one-hot agrees with the task name.
 
-- [ ] Create or reuse branch `codex/whole-project-advancement`; commit the approved design and plan before source changes.
-- [ ] Add `encode_task_aware_experience_state(obs, features, task_id)` with bounds, exact native task-code validation, and the fixed 40-value coordinate order above.
-- [ ] Initialize the separate 40-value model and update it from actual outcomes on supported native tasks; keep the existing 16-value model and memory path intact.
-- [ ] Add `task_value_mpc` config selection and route its acting path through the task-aware model, value-guided MPC, support gate, trust region, and actor fallback. Keep it off by default.
-- [ ] Route the pure preview endpoint through the same selected model and provide explicit fallback reasons for `auto`, complex, or mismatched task identities.
-- [ ] Add the task-aware model to agent export/import. If absent, leave the old model and memory untouched and initialize the new model cold; reject malformed task-aware state atomically.
-- [ ] Manually inspect a native-task preview, an unsupported-task fallback, and loading an existing 16-value checkpoint before starting the study.
-- [ ] Commit the task-aware model path after its manual review.
+- [x] Create or reuse branch `codex/whole-project-advancement`; commit the approved design and plan before source changes.
+- [x] Add `encode_task_aware_experience_state(obs, features, task_id)` with bounds, exact native task-code validation, and the fixed 40-value coordinate order above.
+- [x] Initialize the separate 40-value model and update it from actual outcomes on supported native tasks; keep the existing 16-value model and memory path intact.
+- [x] Add `task_value_mpc` config selection and route its acting path through the task-aware model, value-guided MPC, support gate, trust region, and actor fallback. Keep it off by default.
+- [x] Route the pure preview endpoint through the same selected model and provide explicit fallback reasons for `auto`, complex, or mismatched task identities.
+- [x] Add the task-aware model to agent export/import. If absent, leave the old model and memory untouched and initialize the new model cold; reject malformed task-aware state atomically.
+- [x] Manually inspect a native-task preview, an unsupported-task fallback, and loading an existing 16-value checkpoint before starting the study.
+- [x] Commit the task-aware model path after its manual review.
 
 ### Task 2: Extend the paired planning study and receipt
 
@@ -67,16 +67,16 @@
 - Each query record contains one episode outcome (`success`, `fail`, `timeout`, or `incomplete`), actual query steps, reward, planner-use/abstention counts, model work, frozen-state digests, and trace digest. Terminal labels come from the environment `info` returned by `world.step`.
 - The study configuration bounds the total executed transitions at 32,768 and the per-episode query limit at 256 steps.
 
-- [ ] Update the learning-state digest and source fingerprints to include the task-aware model.
-- [ ] Add the `task_value_h3` arm and train both learner paths during shared support; export the same support state to each query arm and freeze all learned state during query.
-- [ ] Add the environment's terminal `info['outcome']` to the runtime's recent transition record; keep the value absent on nonterminal steps.
-- [ ] Change query collection to one episode per seed/task/arm, stopping at a terminal result or 256 steps; capture the environment outcome and record failures, timeouts, and incomplete episodes separately.
-- [ ] Add aggregate and task-specific success rates, returns, paired intervals, planner costs, and incomplete counts; keep seed/task pairs as bootstrap units.
-- [ ] Extend `verify_planning_study` for schema v2 to recompute arm pairing, episode outcomes, frozen-state hashes, metrics, costs, source hashes, and integrity while preserving v1 verification.
-- [ ] Add bounded CLI options for task-aware horizon and query-step limit; constrain the total run to 32,768 world transitions.
-- [ ] Run a bounded development pilot. Before viewing confirmation outcomes, freeze fresh confirmation seeds, support/query budgets, and this promotion rule: task-aware pooled completion improves at least 10 percentage points over actor with a positive paired 95% descriptive bootstrap interval; `forage` completion is no worse than 5 percentage points; the 32,768-transition run cap is respected. Then run and verify the held-out study.
-- [ ] Write the result report with the frozen protocol, all per-task outcomes, intervals, costs, source fingerprints, and a clear promote/keep-opt-in decision. Retain negative and inconclusive outcomes.
-- [ ] Commit the verified v2 study and report as one measured-evidence change.
+- [x] Update the learning-state digest and source fingerprints to include the task-aware model.
+- [x] Add the `task_value_h3` arm and train both learner paths during shared support; export the same support state to each query arm and freeze all learned state during query.
+- [x] Add the environment's terminal `info['outcome']` to the runtime's recent transition record; keep the value absent on nonterminal steps.
+- [x] Change query collection to one episode per seed/task/arm, stopping at a terminal result or 256 steps; capture the environment outcome and record failures, timeouts, and incomplete episodes separately.
+- [x] Add aggregate and task-specific success rates, returns, paired intervals, planner costs, and incomplete counts; keep seed/task pairs as bootstrap units.
+- [x] Extend `verify_planning_study` for schema v2 to recompute arm pairing, episode outcomes, frozen-state hashes, metrics, costs, source hashes, and integrity while preserving v1 verification.
+- [x] Add bounded CLI options for task-aware horizon and query-step limit; constrain the total run to 32,768 world transitions.
+- [x] Run a bounded development pilot. Before viewing confirmation outcomes, freeze fresh confirmation seeds, support/query budgets, and this promotion rule: task-aware pooled completion improves at least 10 percentage points over actor with a positive paired 95% descriptive bootstrap interval; `forage` completion is no worse than 5 percentage points; the 32,768-transition run cap is respected. Then run and verify the held-out study.
+- [x] Write the result report with the frozen protocol, all per-task outcomes, intervals, costs, source fingerprints, and a clear promote/keep-opt-in decision. Retain negative and inconclusive outcomes.
+- [x] Commit the verified v2 study and report as one measured-evidence change.
 
 ### Task 3: Surface measured capability and align project claims
 
@@ -95,11 +95,11 @@
 - Add a read-only endpoint for loading a named planning receipt from the configured output directory; names pass through `safe_name`, and the existing verifier determines whether a receipt is valid.
 - Add a focused panel for task-aware model status, active/fallback reason, task completion, return, planner use/abstentions, and model cost. Keep forecasts visually distinct from realized outcomes.
 
-- [ ] Add the task-aware planner option and a clear unsupported-task fallback label to the existing experience controls.
-- [ ] Add receipt selection/loading and display the validated protocol, task-level summary, costs, and evidence scope without exposing arbitrary filesystem paths.
-- [ ] Manually review the flow on a supported native task, a complex task using the legacy fallback, and a valid/invalid planning receipt.
-- [ ] Reconcile README, model card, data card, SAIL roadmap, design audit, and capability catalog against the measured result and current runtime. Label standalone, opt-in, illustrative, unavailable, and measured behavior distinctly.
-- [ ] Commit the workbench and evidence-boundary updates after manual review.
+- [x] Add the task-aware planner option and a clear unsupported-task fallback label to the existing experience controls.
+- [x] Add receipt selection/loading and display the validated protocol, task-level summary, costs, and evidence scope without exposing arbitrary filesystem paths.
+- [x] Manually review the flow on a supported native task, a complex task using the legacy fallback, and a valid/invalid planning receipt.
+- [x] Reconcile README, model card, data card, SAIL roadmap, design audit, and capability catalog against the measured result and current runtime. Label standalone, opt-in, illustrative, unavailable, and measured behavior distinctly.
+- [x] Commit the workbench and evidence-boundary updates after manual review.
 
 ### Task 4: Finish the local delivery
 
@@ -107,9 +107,17 @@
 - Modify: `docs/superpowers/specs/2026-11-14-whole-project-advancement-design.md`
 - Modify: `docs/superpowers/plans/2026-11-14-synapse-whole-project-advancement.md`
 
-- [ ] Set the final evidence status in the design and plan from the observed study outcome; keep the feature opt-in if the promotion rule is not met.
-- [ ] Review the final diff and confirm the working tree contains only this approved project scope.
-- [ ] Commit the approved design, implementation plan, capability work, measured receipt/report, and polish on a `codex/` branch with clear task-level commits.
+**Observed outcome (14 November 2026):** The frozen confirmation did not meet
+the promotion rule. Task-aware minus actor completion was 0.000, return was
+−0.2283, and 17/18 episodes per arm were incomplete at the query cap. The
+planner remains opt-in and off by default; this capped run leaves terminal
+performance mostly unresolved. The confirmation had no separate context
+ablation, so it does not identify the contribution of individual context
+inputs.
+
+- [x] Set the final evidence status in the design and plan from the observed study outcome; keep the feature opt-in if the promotion rule is not met.
+- [x] Review the final diff and confirm the working tree contains only this approved project scope.
+- [x] Commit the approved design, implementation plan, capability work, measured receipt/report, and polish on a `codex/` branch with clear task-level commits.
 
 ## Review Gate
 
