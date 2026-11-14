@@ -5580,33 +5580,76 @@ function renderPlanningReceipt(result) {
     warning.textContent = `Current source differs from the recorded study snapshot: ${warnings.join('; ')}`;
     target.append(warning);
   }
+  const schemaV1 = receipt.schema === 'synapse-planning-study-v1';
+  const schemaV2 = receipt.schema === 'synapse-planning-study-v2';
+  if (!schemaV1 && !schemaV2) {
+    const unsupported = document.createElement('p');
+    unsupported.className = 'muted';
+    unsupported.textContent = `The receipt is verified, but this viewer does not support ${receipt.schema || 'an unknown schema'}.`;
+    target.append(unsupported);
+    return;
+  }
   const config = receipt.config || {};
-  const promo = summary.promotion || {};
+  const formatNumber = (value, digits = 3) => typeof value === 'number' && Number.isFinite(value)
+    ? value.toFixed(digits) : 'not recorded';
+  const formatPercent = value => typeof value === 'number' && Number.isFinite(value)
+    ? `${(value * 100).toFixed(1)}%` : 'not recorded';
+  const formatCount = value => Number.isSafeInteger(value) && value >= 0 ? String(value) : 'not recorded';
+  const formatInterval = value => Array.isArray(value) && value.length === 2
+    ? `[${formatNumber(value[0])}, ${formatNumber(value[1])}]` : 'not recorded';
   const protocol = document.createElement('p');
   protocol.className = 'muted';
-  protocol.textContent = `Protocol ${result.name} · ${receipt.schema || 'unknown schema'} · seeds ${(config.seeds || []).join(', ')} · tasks ${(config.tasks || []).join(', ')} · ${summary.paired_units || 0} paired seed/task units · ${receipt.source_fingerprint_count || 0} source fingerprints · integrity ${String(receipt.integrity || '').slice(0, 12)} · ${receipt.scope || ''}`;
+  protocol.textContent = `Protocol ${result.name} · ${receipt.schema} · seeds ${Array.isArray(config.seeds) ? config.seeds.join(', ') : 'not recorded'} · tasks ${Array.isArray(config.tasks) ? config.tasks.join(', ') : 'not recorded'} · ${formatCount(summary.paired_units)} paired seed/task units · ${formatCount(receipt.source_fingerprint_count)} source fingerprints · integrity ${String(receipt.integrity || '').slice(0, 12)} · ${receipt.scope || summary.interpretation || ''}`;
   target.append(protocol);
   const decision = document.createElement('p');
   decision.className = 'evidence-decision';
-  const returnDelta = summary.comparisons?.task_value_h3_minus_actor?.return || {};
-  decision.textContent = `${promo.eligible ? 'PROMOTION RULE PASSED' : 'KEEP OPT-IN'} · pooled completion difference ${Number(promo.pooled_completion_improvement || 0).toFixed(3)} (descriptive 95% interval ${(promo.pooled_completion_interval || []).map(x => Number(x).toFixed(3)).join(' to ')}) · return difference ${Number(returnDelta.mean_difference || 0).toFixed(3)} (interval ${(returnDelta.descriptive_bootstrap_95 || []).map(x => Number(x).toFixed(3)).join(' to ')}) · forage difference ${Number(promo.forage_completion_difference || 0).toFixed(3)} · transition cap ${promo.transition_budget_respected ? 'respected' : 'exceeded'}`;
+  if (schemaV2) {
+    const promo = summary.promotion || {};
+    const taskArm = Number.isInteger(config.task_horizon) ? `task_value_h${config.task_horizon}` : null;
+    const returnDelta = taskArm ? summary.comparisons?.[`${taskArm}_minus_actor`]?.return : null;
+    const decisionLabel = typeof promo.eligible === 'boolean'
+      ? (promo.eligible ? 'PROMOTION RULE PASSED' : 'KEEP OPT-IN') : 'PROMOTION STATUS NOT RECORDED';
+    const budgetStatus = typeof promo.transition_budget_respected === 'boolean'
+      ? (promo.transition_budget_respected ? 'respected' : 'exceeded') : 'not recorded';
+    decision.textContent = `${decisionLabel} · pooled completion difference ${formatNumber(promo.pooled_completion_improvement)} (descriptive 95% interval ${formatInterval(promo.pooled_completion_interval)}) · return difference ${formatNumber(returnDelta?.mean_difference)} (interval ${formatInterval(returnDelta?.descriptive_bootstrap_95)}) · forage difference ${formatNumber(promo.forage_completion_difference)} · transition cap ${budgetStatus}`;
+  } else {
+    decision.textContent = 'Version 1 development receipt · terminal episode outcomes and the version 2 promotion criteria were not recorded.';
+  }
   target.append(decision);
 
   const tasks = document.createElement('div');
   tasks.className = 'table-scroll';
   const table = document.createElement('table');
   const header = document.createElement('tr');
-  for (const label of ['Task', 'Arm', 'Outcome S/F/T/I', 'Success', 'Mean return', 'Steps', 'Planner use', 'Abstain', 'Model eval / step']) {
+  const columns = schemaV2
+    ? ['Task', 'Arm', 'Outcome S/F/T/I', 'Success', 'Mean return', 'Steps', 'Planner use', 'Abstain', 'Model eval / step']
+    : ['Arm', 'Mean return', 'Planner use', 'Mean model eval / step'];
+  for (const label of columns) {
     const th = document.createElement('th'); th.textContent = label; header.append(th);
   }
   table.append(header);
-  for (const [task, arms] of Object.entries(summary.task_summaries || {})) {
-    for (const [arm, row] of Object.entries(arms || {})) {
+  const appendRow = values => {
       const tr = document.createElement('tr');
-      const counts = row.outcome_counts || {};
-      const values = [task, arm, `${counts.success || 0}/${counts.fail || 0}/${counts.timeout || 0}/${counts.incomplete || 0}`, `${(100 * Number(row.success_rate || 0)).toFixed(1)}%`, Number(row.mean_return || 0).toFixed(3), Number(row.mean_steps || 0).toFixed(1), `${(100 * Number(row.planner_use_fraction || 0)).toFixed(1)}%`, `${(100 * Number(row.planner_abstention_fraction || 0)).toFixed(1)}%`, Number(row.mean_model_evaluations_per_step || 0).toFixed(2)];
       for (const value of values) { const td = document.createElement('td'); td.textContent = String(value); tr.append(td); }
       table.append(tr);
+  };
+  if (schemaV2) {
+    for (const [task, arms] of Object.entries(summary.task_summaries || {})) {
+      for (const [arm, row] of Object.entries(arms || {})) {
+        const counts = row.outcome_counts || {};
+        const outcomeCount = key => Number.isSafeInteger(counts[key]) ? String(counts[key]) : '?';
+        const values = [task, arm, `${outcomeCount('success')}/${outcomeCount('fail')}/${outcomeCount('timeout')}/${outcomeCount('incomplete')}`,
+          formatPercent(row.success_rate),
+          formatNumber(row.mean_return), formatNumber(row.mean_steps, 1),
+          formatPercent(row.planner_use_fraction), formatPercent(row.planner_abstention_fraction),
+          formatNumber(row.mean_model_evaluations_per_step, 2)];
+        appendRow(values);
+      }
+    }
+  } else {
+    for (const [arm, row] of Object.entries(summary.arms || {})) {
+      appendRow([arm, formatNumber(row.mean_return), formatPercent(row.planner_use_fraction),
+        formatNumber(row.mean_model_evaluations, 2)]);
     }
   }
   tasks.append(table); target.append(tasks);
@@ -5614,7 +5657,10 @@ function renderPlanningReceipt(result) {
   const costs = document.createElement('p');
   costs.className = 'muted';
   const cost = receipt.costs || {};
-  costs.textContent = `Realized study cost · ${cost.executed_transitions || 0}/${cost.transition_limit || 0} transitions · ${cost.model_evaluations || 0} model evaluations · ${cost.member_evaluations || 0} ensemble-member evaluations · ${cost.query_update_calls || 0} query updates`;
+  const transitionTotal = Number.isSafeInteger(cost.executed_transitions)
+    ? `${formatCount(cost.executed_transitions)}/${formatCount(cost.transition_limit)} transitions`
+    : `executed total not recorded (support ${formatCount(cost.support_world_steps)}, query ${formatCount(cost.query_world_steps)} transitions)`;
+  costs.textContent = `Realized study cost · ${transitionTotal} · ${formatCount(cost.model_evaluations)} model evaluations · ${formatCount(cost.member_evaluations)} ensemble-member evaluations · ${formatCount(cost.query_update_calls)} query updates`;
   target.append(costs);
   const scope = document.createElement('p');
   scope.className = 'muted';

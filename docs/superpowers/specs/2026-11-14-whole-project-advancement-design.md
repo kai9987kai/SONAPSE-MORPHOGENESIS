@@ -145,8 +145,9 @@ live planner and evaluate whether that gives useful behavior.
 ## Observed outcome and delivery status
 
 The frozen confirmation covered six seeds, three tasks, and 18 paired
-seed/task units. No arm completed an episode; 17 of 18 episodes per arm were
-incomplete at the 256-step query cap. Task-aware minus actor completion was
+seed/task units. No arm achieved a success; each arm recorded one terminal
+failure and 17 incomplete episodes at the 256-step query cap. Task-aware minus
+actor completion was
 0.000 (descriptive paired 95% interval `[0.000, 0.000]`), and return was −0.2283
 (`[−0.4863, −0.0274]`). The task-aware planner did not meet the frozen promotion
 rule and remains opt-in and off by default. Because most episodes were

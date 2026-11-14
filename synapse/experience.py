@@ -276,15 +276,45 @@ class TDValueModel:
                 'samples': self.samples, 'td_error_ema': float(self.td_error_ema)}
 
     def import_state(self, state):
-        if not isinstance(state, dict) or state.get('schema') != 1:
+        if not isinstance(state, dict) or type(state.get('schema')) is not int or state['schema'] != 1:
             raise ValueError('invalid TDValueModel schema')
-        self.state_dim = int(state['state_dim'])
-        self.gamma = float(state['gamma'])
-        self.lr = float(state['lr'])
-        self.dim = 1 + 2 * self.state_dim
-        self.weights = np.asarray(state['weights'], dtype=np.float64).copy()
-        self.samples = int(state['samples'])
-        self.td_error_ema = float(state.get('td_error_ema', 0.0))
+        state_dim = state.get('state_dim')
+        if type(state_dim) is not int or state_dim != self.state_dim:
+            raise ValueError('TDValueModel state dimension mismatch')
+        gamma, lr = state.get('gamma'), state.get('lr')
+        numeric = (int, float, np.integer, np.floating)
+        if (isinstance(gamma, (bool, np.bool_)) or not isinstance(gamma, numeric)
+                or not np.isfinite(gamma) or not 0.0 <= gamma <= 1.0):
+            raise ValueError('invalid TDValueModel discount')
+        if (isinstance(lr, (bool, np.bool_)) or not isinstance(lr, numeric)
+                or not np.isfinite(lr) or not 0.0 < lr <= 1.0):
+            raise ValueError('invalid TDValueModel learning rate')
+        try:
+            raw_weights = np.asarray(state['weights'])
+        except (KeyError, TypeError, ValueError, OverflowError):
+            raise ValueError('invalid TDValueModel weights') from None
+        if raw_weights.dtype.kind not in 'iuf':
+            raise ValueError('invalid TDValueModel weights')
+        weights = raw_weights.astype(np.float64, copy=False)
+        dim = 1 + 2 * state_dim
+        if weights.shape != (dim,) or not np.isfinite(weights).all():
+            raise ValueError('invalid TDValueModel weights')
+        if float(np.linalg.norm(weights)) > 100.000001:
+            raise ValueError('TDValueModel weights exceed their bound')
+        samples = state.get('samples')
+        if type(samples) is not int or samples < 0:
+            raise ValueError('invalid TDValueModel sample count')
+        td_error_ema = state.get('td_error_ema', 0.0)
+        if (isinstance(td_error_ema, (bool, np.bool_))
+                or not isinstance(td_error_ema, numeric)
+                or not np.isfinite(td_error_ema) or td_error_ema < 0.0):
+            raise ValueError('invalid TDValueModel error estimate')
+        self.gamma = float(gamma)
+        self.lr = float(lr)
+        self.dim = dim
+        self.weights = weights.copy()
+        self.samples = samples
+        self.td_error_ema = float(td_error_ema)
 
 
 class ExperienceWorldModel:
@@ -581,7 +611,7 @@ class ExperienceWorldModel:
                           'residual_calibrator': self.residual_calibrator.export_state(),
                           'value_model': self.value_model.export_state()})
 
-    def import_state(self, state):
+    def import_state(self, state, *, require_value_model=False):
         """Validate fully before replacing the resident model."""
         if not isinstance(state, dict) or state.get('schema') != 1:
             raise ValueError('invalid experience state schema')
@@ -625,7 +655,11 @@ class ExperienceWorldModel:
         # Old checkpoints predate residual calibration and safely start cold.
         if 'residual_calibrator' in state:
             candidate.residual_calibrator.import_state(state['residual_calibrator'])
+        if require_value_model and 'value_model' not in state:
+            raise ValueError('task-aware experience state is missing its TD value model')
         if 'value_model' in state:
             candidate.value_model.import_state(state['value_model'])
+            if require_value_model and candidate.value_model.samples > candidate.samples:
+                raise ValueError('task-aware TD value samples exceed transition samples')
         candidate.rng.bit_generator.state = deepcopy(state['rng'])
         self.__dict__.update(candidate.__dict__)

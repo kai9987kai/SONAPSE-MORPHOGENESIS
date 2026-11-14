@@ -108,8 +108,9 @@
 - Modify: `docs/superpowers/plans/2026-11-14-synapse-whole-project-advancement.md`
 
 **Observed outcome (14 November 2026):** The frozen confirmation did not meet
-the promotion rule. Task-aware minus actor completion was 0.000, return was
-−0.2283, and 17/18 episodes per arm were incomplete at the query cap. The
+the promotion rule. No arm achieved a success; each arm had one terminal
+failure and 17 incomplete episodes. Task-aware minus actor completion was
+0.000, return was −0.2283, and the incomplete episodes stopped at the query cap. The
 planner remains opt-in and off by default; this capped run leaves terminal
 performance mostly unresolved. The confirmation had no separate context
 ablation, so it does not identify the contribution of individual context

@@ -88,8 +88,9 @@ episodes without one are recorded as incomplete.
 | `delayed_match` | 6 | 0 success, 1 fail, 0 timeout, 5 incomplete | 0.0000 |
 | `button_sequence` | 6 | 0 success, 0 fail, 0 timeout, 6 incomplete | 0.0000 |
 
-Across 18 paired seed/task units, no arm completed an episode. The task-aware
-completion difference was 0.000 with descriptive paired 95% interval
+Across 18 paired seed/task units, no arm achieved a success. Each arm recorded
+one terminal failure and 17 incomplete episodes. The task-aware completion
+difference was 0.000 with descriptive paired 95% interval
 `[0.000, 0.000]`; mean return difference was −0.2283 (`[−0.4863, −0.0274]`).
 The run used 18,832 transitions against a 32,768 limit. Most episodes were
 right-censored by the query cap, so this study does not resolve terminal task

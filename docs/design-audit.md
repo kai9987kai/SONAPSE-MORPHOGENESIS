@@ -126,8 +126,8 @@ when older checkpoints do not contain it. This is an opt-in engineering path,
 not a general planner replacement.
 
 The frozen held-out comparison covered six seeds, three tasks, and 18 paired
-seed/task units. It produced no successes in any arm; 17 of 18 episodes per arm
-were incomplete at the query cap. Task-aware minus actor completion was 0.000
+seed/task units. No arm achieved a success; each recorded one terminal failure
+and 17 of 18 episodes were incomplete at the query cap. Task-aware minus actor completion was 0.000
 (`[0.000, 0.000]` descriptive interval) and return was −0.2283
 (`[−0.4863, −0.0274]`). The rule failed, so default behavior remains unchanged
 and task-aware planning stays opt-in. Most episodes were right-censored, which
@@ -139,7 +139,8 @@ No separate task-context ablation was included, so the comparison does not
 isolate which context coordinates contribute to the integrated route's result.
 
 The workbench receipt viewer verifies hashes and recorded arithmetic but does
-not re-run environments. Because the viewer and snapshot API were added after
-the study, current verification remains `ok` and reports the expected source
-drift in `capabilities.py`, `runtime.py`, and `server.py`; the report keeps the
-measured source fingerprint set unchanged.
+not re-run environments. The viewer, snapshot endpoint, and checkpoint-import
+validation were updated after the study, so current verification remains `ok`
+but reports source drift in `agent.py`, `capabilities.py`, `experience.py`,
+`runtime.py`, and `server.py`; the report keeps the measured source fingerprint
+set unchanged.

@@ -104,9 +104,9 @@
 
 The 14 November 2026 frozen local study compared actor, horizon 1, horizon 3,
 and task-aware horizon 3 across 18 paired seed/task units in `forage`,
-`delayed_match`, and `button_sequence`. No arm completed an episode; 17 of 18
-episodes per arm were incomplete at the 256-step query cap. Task-aware minus
-actor completion was 0.000 (descriptive paired 95% interval `[0.000, 0.000]`),
+`delayed_match`, and `button_sequence`. No arm achieved a success; each arm
+recorded one terminal failure and 17 incomplete episodes at the 256-step query
+cap. Task-aware minus actor completion was 0.000 (descriptive paired 95% interval `[0.000, 0.000]`),
 and return was −0.2283 (interval `[−0.4863, −0.0274]`). The task-aware path
 therefore remains opt-in. These are small local synthetic-world results, and the
 query cap leaves terminal performance mostly unresolved. See the [study report](results/2026-11-14-task-aware-planning.md)

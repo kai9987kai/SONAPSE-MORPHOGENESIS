@@ -1559,7 +1559,7 @@ class IntegratedAgent:
         else:
             self.experience_model=ExperienceWorldModel(state_dim=16,action_dim=5,ensemble_size=3,seed=self.config.seed,context_dim=2)
         if 'task_aware_model' in state:
-            self.task_aware_model.import_state(state['task_aware_model'])
+            self.task_aware_model.import_state(state['task_aware_model'], require_value_model=True)
         else:
             task_model_seed=(self.config.seed+104729)%(2**31)
             self.task_aware_model=ExperienceWorldModel(state_dim=40,action_dim=5,ensemble_size=3,

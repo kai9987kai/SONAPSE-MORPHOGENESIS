@@ -32,7 +32,8 @@ implemented for exact native task identities, with a legacy-model fallback for
 complex, automatic, or mismatched identities. The fresh paired confirmation
 covered six seeds and three tasks with shared 64-step support and a 256-step
 query cap. It recorded no successes in 18 paired seed/task units; 17/18 episodes
-per arm remained incomplete. Task-aware minus actor completion was 0.000
+per arm remained incomplete and each arm also recorded one terminal failure.
+Task-aware minus actor completion was 0.000
 (`[0.000, 0.000]` descriptive paired 95% interval), while return was −0.2283
 (`[−0.4863, −0.0274]`). The frozen promotion rule therefore failed and the
 planner remains off by default. The cap leaves terminal performance mostly
