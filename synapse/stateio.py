@@ -1,6 +1,6 @@
 """Content-bound tensor/primitive checkpoints. No arbitrary pickle objects accepted."""
 from pathlib import Path
-import hashlib, json, math, os, tempfile
+import hashlib, json, math, os, shutil, tempfile
 import uuid
 import zlib
 import numpy as np
@@ -108,6 +108,45 @@ def _atomic(path,data):
     finally:
         if os.path.exists(tmp): os.unlink(tmp)
 
+def _encoded_payload_bytes(value):
+    """Conservatively estimate serialized bytes for an encoded checkpoint."""
+    kind=value.get('kind') if isinstance(value,dict) else None
+    if kind=='tensor':
+        tensor=value['value']
+        return tensor.untyped_storage().nbytes()+512
+    if kind=='ndarray':
+        return len(value['bytes'])+len(value.get('dtype',''))+256
+    if kind=='scalar':
+        scalar=value.get('value')
+        if isinstance(scalar,bytes): size=len(scalar)
+        elif isinstance(scalar,str): size=len(scalar.encode('utf-8'))
+        else: size=32
+        return size+256
+    if kind=='dict':
+        return 512+sum(_encoded_payload_bytes(key)+_encoded_payload_bytes(item)+32
+                        for key,item in value['items'])
+    if kind in ('list','tuple'):
+        return 256+sum(_encoded_payload_bytes(item)+16 for item in value['items'])
+    return 512
+
+def _require_checkpoint_space(path,encoded):
+    """Reject a snapshot before serialization if its output volume is too full."""
+    data_bytes=_encoded_payload_bytes(encoded)
+    # ZIP metadata, pickle framing, and the atomic manifest need headroom beyond
+    # raw arrays and tensor storages. Keep the margin proportional for large
+    # checkpoints and useful for small ones.
+    required=max(1024**2,data_bytes+max(1024**2,data_bytes//20))
+    available=int(shutil.disk_usage(path.parent).free)
+    if available<required:
+        raise OSError(
+            'checkpoint requires at least '
+            f'{required/1024**3:.2f} GiB free on {path.parent}; '
+            f'only {available/1024**3:.2f} GiB is available. '
+            'The existing checkpoint was not changed. Free disk space or choose '
+            'an output folder on a roomier volume, then retry.'
+        )
+    return {'required_free_bytes':required,'available_free_bytes':available}
+
 def save_state(path,payload):
     import io
     path=Path(path); encoded=_encode(payload)
@@ -134,10 +173,11 @@ def save_state_snapshot(path,payload):
     cloned a second time during serialization, reducing peak export memory.
     """
     path=Path(path)
+    path.parent.mkdir(parents=True,exist_ok=True)
     encoded=_encode(payload,clone_tensors=False)
+    _require_checkpoint_space(path,encoded)
     checkpoint_id=uuid.uuid4().hex
     state_digest=digest(payload)
-    path.parent.mkdir(parents=True,exist_ok=True)
     fd,tmp=tempfile.mkstemp(prefix='.'+path.name,dir=path.parent)
     try:
         with os.fdopen(fd,'wb') as f:

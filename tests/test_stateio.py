@@ -2,11 +2,13 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import shutil
+from types import SimpleNamespace
 import numpy as np
 import pytest
 import torch
 import synapse.stateio as stateio
-from synapse.stateio import digest, save_state, load_state
+from synapse.stateio import digest, save_state, save_state_snapshot, load_state
 
 def test_state_archive_preserves_types_and_rejects_tamper(tmp_path):
     value={'a':np.array([1,2],dtype=np.int64),'t':torch.tensor([3.25]),'rng':np.random.default_rng(2).bit_generator.state,'tuple':(1,'x')}
@@ -93,3 +95,25 @@ def test_unreadable_manifest_recovers_checkpoint(tmp_path):
     assert load_state(path)=={'generation':3}
     manifest=json.loads(Path(str(path)+'.json').read_text(encoding='utf-8'))
     assert manifest['state_digest']==digest({'generation':3})
+
+
+def test_snapshot_rejects_low_disk_space_before_creating_temp_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(shutil, 'disk_usage', lambda _path: SimpleNamespace(free=0))
+    path = tmp_path / 'session.pt'
+
+    with pytest.raises(OSError, match='checkpoint requires'):
+        save_state_snapshot(path, {'weights': np.asarray([1.0, 2.0], dtype=np.float32)})
+
+    assert not path.exists()
+    assert not Path(str(path) + '.json').exists()
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_snapshot_space_guard_allows_exact_round_trip_when_space_is_available(tmp_path, monkeypatch):
+    monkeypatch.setattr(shutil, 'disk_usage', lambda _path: SimpleNamespace(free=1024**3))
+    value = {'weights': np.asarray([1.0, 2.0], dtype=np.float32), 'step': 7}
+    path = tmp_path / 'session.pt'
+
+    save_state_snapshot(path, value)
+
+    assert digest(load_state(path)) == digest(value)

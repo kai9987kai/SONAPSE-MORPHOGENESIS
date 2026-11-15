@@ -54,6 +54,19 @@ def _ensure_max_checkpoint_space(output_dir, neurons: int, *, free_bytes=None) -
     return {'available_free_bytes': available, 'required_free_bytes': required}
 
 
+def _save_max_checkpoint(workbench, runtime, neurons: int):
+    """Recheck storage at the commit boundary before writing the final snapshot.
+
+    The caller holds ``workbench.lock`` so the saved state and listed
+    checkpoints describe one stable workbench boundary.
+    """
+    storage = _ensure_max_checkpoint_space(workbench.root, neurons)
+    saved = runtime.save('tandem_max_session')
+    checkpoint_list = workbench.get('/api/checkpoints')
+    final_state = runtime.snapshot()
+    return storage, saved, checkpoint_list, final_state
+
+
 def run_diffusion_and_dpo_assay(runtime, horizon: int = 5, seed: int = 42) -> Dict[str, Any]:
     """Execute Masked Diffusion Trajectory Repair and Machine-Verifiable DPO on live runtime state."""
     from .diffusion_repair import DiffusionRepairSidecar
@@ -803,11 +816,15 @@ def run_tandem_max_orchestration(workbench, data: Optional[Dict[str, Any]] = Non
     # SECTION 05: Exact Mid-Episode Checkpoint & Cryptographic Digest
     # -------------------------------------------------------------------
     with workbench.lock:
-        ckpt_save = runtime.save('tandem_max_session')
-        ckpt_list = workbench.get('/api/checkpoints')
-        final_state = runtime.snapshot()
+        # The earlier preflight cannot account for files written while Sections
+        # 01–04 run (or for other processes using the same volume). Recheck at
+        # the commit boundary before the large atomic checkpoint is staged.
+        checkpoint_storage_final, ckpt_save, ckpt_list, final_state = _save_max_checkpoint(
+            workbench, runtime, neurons
+        )
     section_05 = {
         'section': '05 · Checkpoints & Mid-Episode Integrity',
+        'checkpoint_storage_preflight': checkpoint_storage_final,
         'saved_checkpoint': ckpt_save,
         'available_checkpoints': ckpt_list.get('checkpoints', []),
     }
