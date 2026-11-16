@@ -357,7 +357,20 @@ class Workbench:
         threading.Thread(target=worker,daemon=True,name=f'{kind}-{ident[:8]}').start()
         return deepcopy(job)
 
+    def neuroweave_api(self):
+        """Lazily built NEUROWEAVE Lab API (``/api/neuroweave/*``); never touches Sonapse defaults."""
+        api=getattr(self,'_neuroweave_api',None)
+        if api is None:
+            from .neuroweave.workbench_api import NeuroWeaveWorkbenchAPI
+            api=self._neuroweave_api=NeuroWeaveWorkbenchAPI(self)
+        return api
+    # NEUROWEAVE Lab routes: GET /api/neuroweave/catalog, '/api/neuroweave/status', '/api/neuroweave/observatory',
+    # '/api/neuroweave/ledger', '/api/neuroweave/ecology'; POST '/api/neuroweave/configure', '/api/neuroweave/step',
+    # '/api/neuroweave/experiment', '/api/neuroweave/topology', '/api/neuroweave/lesion', '/api/neuroweave/sensory',
+    # '/api/neuroweave/export', '/api/neuroweave/inspect', '/api/neuroweave/sequence-search'.
     def get(self,path):
+        if path.startswith('/api/neuroweave/'):
+            return self.neuroweave_api().get(path)
         receipt_prefix='/api/planning-study/receipt/'
         if path.startswith(receipt_prefix):
             name=safe_name(path[len(receipt_prefix):])
@@ -625,6 +638,8 @@ class Workbench:
                 return self.consolidation_engine.get_summary()
         raise KeyError('unknown API endpoint')
     def post(self,path,data):
+        if path.startswith('/api/neuroweave/'):
+            return self.neuroweave_api().post(path,data)
         if path=='/api/export': return self.start_portable_export()
         if path=='/api/training/pretrain': return self.start_enhancement('pretrain',data)
         if path=='/api/rsi/live': return self.start_enhancement('rsi',data)
@@ -911,6 +926,8 @@ class Workbench:
                     if isinstance(cfg.get('connectome_sources'),list): cfg['connectome_sources']=tuple(cfg['connectome_sources'])
                     if 'dsag' not in cfg:
                         cfg['dsag']=self.runtime.config.dsag
+                    if 'neuroweave' not in cfg:
+                        cfg['neuroweave']=getattr(self.runtime.config,'neuroweave',None)
                     from .runtime import LabRuntime
                     self.runtime=LabRuntime(SynapseConfig(**cfg),output_root=self.root)
                     if hasattr(self, 'sim_worker') and self.sim_worker is not None:

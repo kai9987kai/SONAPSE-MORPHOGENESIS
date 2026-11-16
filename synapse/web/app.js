@@ -7066,3 +7066,611 @@ setInterval(async () => {
     stdpAndAllostasisView();
   } catch (_) {}
 }, 1500);
+// -------------------------------------------------------------------------
+// NEUROWEAVE Lab (additive). Every control calls a real /api/neuroweave/*
+// endpoint. Webcam/microphone data are reduced to scalars in this browser;
+// raw frames and audio buffers are never posted.
+// -------------------------------------------------------------------------
+const nwl = { catalog: null, obs: null, results: [], receipts: [], csv: [], autoTimer: null, webcam: null, mic: null, lastScene: null };
+
+function nwlFmt(v, digits = 3) {
+  if (v === null || v === undefined) return '—';
+  if (typeof v === 'number') return Number.isInteger(v) ? String(v) : v.toFixed(digits);
+  if (Array.isArray(v)) return v.map(x => nwlFmt(x, digits)).join(', ');
+  return String(v);
+}
+
+function nwlBars(el, rows, scale) {
+  if (!el) return;
+  const maxAbs = scale || Math.max(1e-9, ...rows.map(([, v]) => Math.abs(Number(v) || 0)));
+  el.replaceChildren(...rows.map(([label, value]) => {
+    const row = document.createElement('div');
+    row.className = 'nwl-bar';
+    const name = document.createElement('span');
+    name.textContent = label;
+    name.title = label;
+    const track = document.createElement('div');
+    track.className = 'nwl-track';
+    const fill = document.createElement('i');
+    const v = Number(value) || 0;
+    fill.style.width = `${Math.min(100, 100 * Math.abs(v) / maxAbs).toFixed(1)}%`;
+    if (v < 0) fill.className = 'neg';
+    track.append(fill);
+    const num = document.createElement('b');
+    num.textContent = nwlFmt(value);
+    row.append(name, track, num);
+    return row;
+  }));
+}
+
+function nwlKV(el, obj) {
+  if (!el) return;
+  const entries = Object.entries(obj || {}).filter(([, v]) => v === null || typeof v !== 'object' || Array.isArray(v));
+  if (!entries.length) { el.textContent = 'No data.'; return; }
+  el.replaceChildren(...entries.map(([k, v]) => {
+    const d = document.createElement('div');
+    const s = document.createElement('span');
+    s.textContent = k;
+    const b = document.createElement('b');
+    b.textContent = nwlFmt(v);
+    d.append(s, b);
+    return d;
+  }));
+}
+
+function nwlDownload(text, filename, mime) {
+  const blob = new Blob([text], { type: mime || 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+async function nwlAwaitJob(id, label) {
+  for (let i = 0; i < 900; i++) {
+    await new Promise(r => setTimeout(r, 1000));
+    const r = await api('jobs');
+    const job = (r.jobs || []).find(j => j.id === id);
+    if (!job) continue;
+    $('nwl-exp-status').textContent = `${label} · job ${id.slice(0, 8)} · ${job.status} · ${i + 1}s`;
+    if (!['queued', 'running'].includes(job.status)) {
+      if (job.status === 'failed') throw Error(job.error || 'NEUROWEAVE job failed');
+      return job.result;
+    }
+  }
+  throw Error('NEUROWEAVE job did not finish within 15 minutes');
+}
+
+async function nwlLoadCatalog() {
+  if (nwl.catalog) return nwl.catalog;
+  const c = await api('neuroweave/catalog');
+  nwl.catalog = c;
+  $('nwl-exp-select').replaceChildren(...c.experiments.map(e => {
+    const o = document.createElement('option');
+    o.value = e.id;
+    o.textContent = `${e.title} (${e.kind})`;
+    return o;
+  }));
+  $('nwl-eco-config').replaceChildren(...c.ecology_configs.map(name => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    return o;
+  }));
+  $('nwl-external-channel').replaceChildren(...c.sensory_channels.map(ch => {
+    const o = document.createElement('option');
+    o.value = ch.id; o.textContent = ch.id;
+    return o;
+  }));
+  $('nwl-mech-list').replaceChildren(...c.mechanisms.map(m => {
+    const label = document.createElement('label');
+    label.title = m.description || '';
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.value = m.id;
+    box.dataset.nwmech = m.id;
+    const small = document.createElement('small');
+    small.textContent = ` ${m.category}`;
+    label.append(box, document.createTextNode(m.title || m.id), small);
+    return label;
+  }));
+  $('nwl-channels').replaceChildren(...c.sensory_channels.map(ch => {
+    const tr = document.createElement('tr');
+    const name = document.createElement('td'); name.textContent = ch.id;
+    const modality = document.createElement('td'); modality.textContent = ch.modality;
+    const modeCell = document.createElement('td');
+    const sel = document.createElement('select');
+    sel.dataset.channel = ch.id;
+    for (const mode of c.sensory_modes) {
+      const o = document.createElement('option');
+      o.value = mode; o.textContent = mode;
+      sel.append(o);
+    }
+    modeCell.append(sel);
+    const value = document.createElement('td'); value.dataset.nwvalue = ch.id; value.textContent = '—';
+    const rel = document.createElement('td'); rel.dataset.nwrel = ch.id; rel.textContent = '—';
+    tr.append(name, modality, modeCell, value, rel);
+    return tr;
+  }));
+  return c;
+}
+
+function nwlSelectedMechanisms() {
+  return [...document.querySelectorAll('#nwl-mech-list input[data-nwmech]')].filter(b => b.checked).map(b => b.value);
+}
+
+function nwlDrawConnectivity(conn) {
+  const [x, w, h] = canvas('nwl-conn-canvas');
+  if (!x || !conn) return;
+  const n = conn.regions.length;
+  const pad = 110, top = 16;
+  const cell = Math.max(4, Math.min((w - pad - 10) / n, (h - top - 10) / n));
+  let maxAbs = 1e-9;
+  conn.weight_sum.forEach(row => row.forEach(v => { maxAbs = Math.max(maxAbs, Math.abs(v)); }));
+  x.font = '10px Consolas, monospace';
+  x.textBaseline = 'middle';
+  for (let i = 0; i < n; i++) {
+    x.fillStyle = '#8b9daf';
+    x.textAlign = 'right';
+    x.fillText(conn.regions[i].slice(0, 16), pad - 6, top + (i + 0.5) * cell);
+    for (let j = 0; j < n; j++) {
+      const v = conn.weight_sum[i][j];
+      const a = Math.min(1, Math.abs(v) / maxAbs);
+      x.fillStyle = v >= 0 ? `rgba(93,224,193,${0.08 + 0.92 * a})` : `rgba(236,124,141,${0.08 + 0.92 * a})`;
+      x.fillRect(pad + j * cell, top + i * cell, cell - 1, cell - 1);
+      if (cell > 22 && conn.counts[i][j]) {
+        x.fillStyle = '#e6edf4';
+        x.textAlign = 'center';
+        x.fillText(String(conn.counts[i][j]), pad + (j + 0.5) * cell, top + (i + 0.5) * cell);
+      }
+    }
+  }
+}
+
+function nwlRenderObservatory(o) {
+  nwl.obs = o;
+  $('nwl-source').textContent = `source: ${o.source} · step ${o.step} · ${o.mechanisms.length} mechanisms`;
+  const ne = o.neural || {};
+  nwlBars($('nwl-region-bars'), (ne.region_activity || []).map(r => [`${r.region} (${r.neurons})`, r.abs_mean]));
+  nwlDrawConnectivity(ne.region_connectivity);
+  const soma = {};
+  for (const [k, v] of Object.entries(ne.soma_means || {})) soma[`soma.${k}`] = v;
+  for (const [k, v] of Object.entries(ne.dendrite_means || {})) soma[`dendrite.${k}`] = v;
+  nwlKV($('nwl-soma'), soma);
+  const axon = {};
+  for (const [k, v] of Object.entries(ne.axon || {})) axon[`axon.${k}`] = v;
+  for (const [k, v] of Object.entries(ne.synapses || {})) axon[`synapse.${k}`] = v;
+  nwlKV($('nwl-axon'), axon);
+  const nm = o.neuromodulation || {};
+  nwlBars($('nwl-modulators'), Object.entries(nm.levels || {}), 1);
+  nwlBars($('nwl-affect'), Object.entries(nm.affect || {}).filter(([, v]) => typeof v === 'number'), 1);
+  const rec = {};
+  for (const [k, v] of Object.entries(nm.receptors || {})) { rec[`${k} mean`] = v.mean; rec[`${k} sd`] = v.std; }
+  nwlKV($('nwl-receptors'), rec);
+  nwlKV($('nwl-controls'), { active: nm.active, ...(nm.controls || {}) });
+  const se = o.sensory || {};
+  const modes = Object.fromEntries((o.spec?.sensory_modes || []).map(([c, m]) => [c, m]));
+  document.querySelectorAll('#nwl-channels select[data-channel]').forEach((sel, i) => {
+    if (document.activeElement !== sel) sel.value = modes[sel.dataset.channel] || 'simulated';
+    const valueCell = document.querySelector(`td[data-nwvalue="${sel.dataset.channel}"]`);
+    const relCell = document.querySelector(`td[data-nwrel="${sel.dataset.channel}"]`);
+    if (valueCell) valueCell.textContent = nwlFmt(se.last_values ? se.last_values[i] : null);
+    if (relCell) relCell.textContent = nwlFmt(se.last_reliability ? se.last_reliability[i] : null);
+  });
+  $('nwl-sensory-pe').textContent = `Mean prediction error: ${nwlFmt(se.last_mean_prediction_error)} · imputed: ${(se.imputed || []).join(', ') || 'none'}`;
+  const le = o.learning || {};
+  const micro = le.micro || {};
+  const load = micro.load || {};
+  nwlBars($('nwl-expert-load'), (load.fraction || []).map((v, i) => [`expert ${i} (${(load.counts || [])[i] ?? 0})`, v]), 1);
+  nwlKV($('nwl-loss'), {
+    active: micro.active, experts: micro.experts,
+    validation_loss: micro.last_validation_loss, best_validation_loss: micro.best_validation_loss,
+    persistence_loss: micro.persistence_loss, zero_baseline_loss: micro.zero_baseline_loss,
+    beats_persistence: (micro.last_validation_loss != null && micro.persistence_loss != null) ? micro.last_validation_loss < micro.persistence_loss : null,
+    rollbacks: micro.rollbacks, lr: micro.lr,
+  });
+  const plast = {};
+  for (const [k, v] of Object.entries(le.plasticity || {})) plast[k] = v;
+  for (const [k, v] of Object.entries(le.structural_changes || {})) plast[`structural.${k}`] = v;
+  for (const [k, v] of Object.entries(le.fusion_weights || {})) plast[`fusion.${k}`] = v;
+  nwlKV($('nwl-plasticity'), plast);
+  if (o.environment) nwlKV($('nwl-eco-summary'), o.environment);
+}
+
+function nwlRenderLedger(l) {
+  $('nwl-ledger-summary').textContent = `${l.source} engine · ${l.total} structural events · ` +
+    Object.entries(l.by_kind || {}).map(([k, v]) => `${k} ${v}`).join(' · ');
+  const rows = (l.events || []).slice(-40).reverse();
+  $('nwl-ledger-body').replaceChildren(...rows.map(e => {
+    const tr = document.createElement('tr');
+    for (const v of [e.step, e.kind, e.src, e.dst, e.reason, e.utility]) {
+      const td = document.createElement('td');
+      td.textContent = nwlFmt(v);
+      tr.append(td);
+    }
+    return tr;
+  }));
+  if (!rows.length) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 6; td.textContent = 'No structural events yet.';
+    tr.append(td);
+    $('nwl-ledger-body').replaceChildren(tr);
+  }
+}
+
+async function nwlRefresh() {
+  await nwlLoadCatalog();
+  const [status, obs, ledger] = await Promise.all([api('neuroweave/status'), api('neuroweave/observatory'), api('neuroweave/ledger')]);
+  $('nwl-status').textContent = `Observing ${status.observed_source} engine · live runtime NEUROWEAVE ${status.live.enabled ? 'enabled' : 'not configured'} · browser sensory pushes to lab engine ${status.sensory_updates}${status.run_active ? ' · run active' : ''}`;
+  nwlRenderObservatory(obs);
+  nwlRenderLedger(ledger);
+}
+
+function nwlDrawScene(scene) {
+  nwl.lastScene = scene;
+  const [x, w, h] = canvas('nwl-eco-canvas');
+  if (!x) return;
+  if (!scene) {
+    x.fillStyle = '#8b9daf';
+    x.font = '12px Segoe UI, sans-serif';
+    x.fillText('No ecology attached to the lab engine yet: run ecology steps.', 14, 24);
+    return;
+  }
+  const s = Math.min(w / scene.width, h / scene.height);
+  const ox = (w - scene.width * s) / 2, oy = (h - scene.height * s) / 2;
+  x.strokeStyle = '#213449';
+  x.strokeRect(ox, oy, scene.width * s, scene.height * s);
+  for (const [cx, cy, r, sign, inten] of scene.thermal) {
+    x.fillStyle = sign >= 0 ? `rgba(237,188,117,${0.10 + 0.15 * inten})` : `rgba(128,170,255,${0.10 + 0.15 * inten})`;
+    x.beginPath(); x.arc(ox + cx * s, oy + cy * s, r * s, 0, Math.PI * 2); x.fill();
+  }
+  x.strokeStyle = '#8b9daf'; x.lineWidth = 2;
+  for (const [x1, y1, x2, y2] of scene.walls) {
+    x.beginPath(); x.moveTo(ox + x1 * s, oy + y1 * s); x.lineTo(ox + x2 * s, oy + y2 * s); x.stroke();
+  }
+  x.lineWidth = 1;
+  for (const [cx, cy, r] of scene.obstacles) {
+    x.fillStyle = '#ec7c8d';
+    x.beginPath(); x.arc(ox + cx * s, oy + cy * s, Math.max(2, r * s), 0, Math.PI * 2); x.fill();
+  }
+  for (const [cx, cy, r, amount] of scene.food) {
+    x.fillStyle = `rgba(133,211,142,${0.3 + 0.7 * Math.max(0, Math.min(1, amount))})`;
+    x.beginPath(); x.arc(ox + cx * s, oy + cy * s, Math.max(2, r * s), 0, Math.PI * 2); x.fill();
+  }
+  for (const [cx, cy, r] of scene.landmarks) {
+    x.strokeStyle = '#c084fc';
+    x.beginPath(); x.arc(ox + cx * s, oy + cy * s, Math.max(2, r * s), 0, Math.PI * 2); x.stroke();
+  }
+  for (const [ax, ay, heading] of scene.agents) {
+    const px = ox + ax * s, py = oy + ay * s;
+    x.fillStyle = '#5de0c1';
+    x.beginPath(); x.arc(px, py, 6, 0, Math.PI * 2); x.fill();
+    x.strokeStyle = '#e6edf4';
+    x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(heading) * 14, py + Math.sin(heading) * 14); x.stroke();
+  }
+  nwlKV($('nwl-eco-summary'), scene.summary);
+}
+
+function nwlAddResults(result) {
+  nwl.results.push(...(result.rows || []));
+  nwl.receipts.push(...(result.receipts || []));
+  if (result.csv) nwl.csv.push(result.csv);
+  $('nwl-results-body').replaceChildren(...nwl.results.slice().reverse().map(r => {
+    const tr = document.createElement('tr');
+    for (const v of [r.experiment_id, r.task, r.comparison, r.metric, r.mean_difference, r.ci95 ? `[${nwlFmt(r.ci95[0])}, ${nwlFmt(r.ci95[1])}]` : '—', r.n]) {
+      const td = document.createElement('td');
+      td.textContent = nwlFmt(v);
+      tr.append(td);
+    }
+    const verdict = document.createElement('td');
+    verdict.textContent = r.verdict || '—';
+    verdict.className = `verdict-${r.verdict}`;
+    tr.append(verdict);
+    return tr;
+  }));
+}
+
+async function nwlPostSensory(payload) {
+  const r = await api('neuroweave/sensory', payload);
+  show('nwl-sensory-out', r);
+  return r;
+}
+
+function nwlVisualFeatures(data, prev) {
+  const n = 32 * 24;
+  const lum = new Float32Array(n);
+  let sl = 0, rg = 0, by = 0;
+  for (let i = 0; i < n; i++) {
+    const r = data[4 * i] / 255, g = data[4 * i + 1] / 255, b = data[4 * i + 2] / 255;
+    lum[i] = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    sl += lum[i]; rg += r - g; by += b - (r + g) / 2;
+  }
+  let edges = 0, motion = 0;
+  for (let yy = 1; yy < 23; yy++) {
+    for (let xx = 1; xx < 31; xx++) {
+      const i = yy * 32 + xx;
+      const gx = lum[i + 1] - lum[i - 1], gy = lum[i + 32] - lum[i - 32];
+      if (Math.abs(gx) + Math.abs(gy) > 0.12) edges++;
+    }
+  }
+  if (prev) for (let i = 0; i < n; i++) motion += Math.abs(lum[i] - prev[i]);
+  return { lum, feats: { luminance: sl / n, red_green: rg / n, blue_yellow: by / n, edge_density: edges / (30 * 22), motion: prev ? motion / n : 0 } };
+}
+
+async function nwlWebcamStart() {
+  if (nwl.webcam || nwl.webcamStarting) return;
+  if (!navigator.mediaDevices?.getUserMedia) throw Error('Camera access is not available in this browser context');
+  nwl.webcamStarting = true;   // guard set before the await: a second click cannot open a second stream
+  $('nwl-webcam-start').disabled = true;
+  let stream = null;
+  const video = $('nwl-webcam-video');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 }, audio: false });
+    if (nwl.webcam) { stream.getTracks().forEach(t => t.stop()); return; }
+    video.srcObject = stream;
+    await video.play();
+  } catch (e) {
+    if (stream) stream.getTracks().forEach(t => t.stop());   // never leave the camera on without a Stop control
+    video.srcObject = null;
+    if (!nwl.webcam) $('nwl-webcam-start').disabled = false;
+    throw e;
+  } finally {
+    nwl.webcamStarting = false;
+  }
+  const off = document.createElement('canvas');
+  off.width = 32; off.height = 24;
+  const ctx = off.getContext('2d', { willReadFrequently: true });
+  const cam = { stream, prev: null, inflight: false, sent: 0, timer: null };
+  cam.timer = setInterval(async () => {
+    if (cam.inflight || video.readyState < 2) return;
+    cam.inflight = true;
+    try {
+      ctx.drawImage(video, 0, 0, 32, 24);
+      const { lum, feats } = nwlVisualFeatures(ctx.getImageData(0, 0, 32, 24).data, cam.prev);
+      cam.prev = lum;   // derived 32x24 luminance stays in this tab only
+      await nwlPostSensory({ visual: feats });
+      cam.sent++;
+      $('nwl-sensory-status').textContent = `Webcam: ${cam.sent} scalar feature updates sent (luminance ${feats.luminance.toFixed(3)}, motion ${feats.motion.toFixed(3)}).`;
+    } catch (e) {
+      $('nwl-sensory-status').textContent = `Webcam feature update failed: ${e.message}`;
+    } finally {
+      cam.inflight = false;
+    }
+  }, 250);
+  nwl.webcam = cam;
+  $('nwl-webcam-start').disabled = true;
+  $('nwl-webcam-stop').disabled = false;
+}
+
+function nwlWebcamStop() {
+  const cam = nwl.webcam;
+  if (!cam) return;
+  clearInterval(cam.timer);
+  cam.stream.getTracks().forEach(t => t.stop());
+  $('nwl-webcam-video').srcObject = null;
+  nwl.webcam = null;
+  $('nwl-webcam-start').disabled = false;
+  $('nwl-webcam-stop').disabled = true;
+  $('nwl-sensory-status').textContent = 'Webcam stopped; no frames were sent.';
+}
+
+async function nwlMicStart() {
+  if (nwl.mic || nwl.micStarting) return;
+  let ctx = null, stream = null, own = false, source = null, analyser = null;
+  nwl.micStarting = true;   // guard set before the await: a second click cannot open a second stream
+  $('nwl-mic-start').disabled = true;
+  try {
+    if (liveAudioCtx && liveAudioStream) {
+      ctx = liveAudioCtx; stream = liveAudioStream;   // reuse the existing Live Mic stream
+    } else {
+      if (!navigator.mediaDevices?.getUserMedia) throw Error('Microphone access is not available in this browser context');
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } });
+      own = true;
+      if (nwl.mic) { stream.getTracks().forEach(t => t.stop()); return; }
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    source = ctx.createMediaStreamSource(stream);
+    analyser = ctx.createAnalyser();
+    analyser.fftSize = 1024;
+    source.connect(analyser);
+  } catch (e) {
+    if (source) { try { source.disconnect(); } catch (_) {} }
+    if (own) {   // only release what this function opened; the Live Mic stream is not ours to stop
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      if (ctx) { try { ctx.close(); } catch (_) {} }
+    }
+    if (!nwl.mic) $('nwl-mic-start').disabled = false;
+    throw e;
+  } finally {
+    nwl.micStarting = false;
+  }
+  const freq = new Float32Array(analyser.frequencyBinCount);
+  const wave = new Float32Array(analyser.fftSize);
+  const mic = { ctx, stream, own, source, analyser, inflight: false, sent: 0, timer: null };
+  mic.timer = setInterval(async () => {
+    if (mic.inflight) return;
+    mic.inflight = true;
+    try {
+      analyser.getFloatFrequencyData(freq);
+      analyser.getFloatTimeDomainData(wave);
+      const hz = ctx.sampleRate / analyser.fftSize;
+      const bands = { low: 0, mid: 0, high: 0 };
+      let total = 1e-12;
+      for (let i = 1; i < freq.length; i++) {
+        const f = i * hz, p = Number.isFinite(freq[i]) ? Math.pow(10, freq[i] / 10) : 0;
+        total += p;
+        if (f >= 20 && f < 300) bands.low += p;
+        else if (f >= 300 && f < 2000) bands.mid += p;
+        else if (f >= 2000 && f < 16000) bands.high += p;
+      }
+      let rms = 0;
+      for (const v of wave) rms += v * v;
+      rms = Math.sqrt(rms / wave.length);
+      const feats = { amplitude: Math.min(1, rms * 4), low: bands.low / total, mid: bands.mid / total, high: bands.high / total };
+      await nwlPostSensory({ audio: feats });
+      mic.sent++;
+      $('nwl-sensory-status').textContent = `Microphone: ${mic.sent} band-energy updates sent (amplitude ${feats.amplitude.toFixed(3)}).`;
+    } catch (e) {
+      $('nwl-sensory-status').textContent = `Microphone feature update failed: ${e.message}`;
+    } finally {
+      mic.inflight = false;
+    }
+  }, 250);
+  nwl.mic = mic;
+  $('nwl-mic-start').disabled = true;
+  $('nwl-mic-stop').disabled = false;
+}
+
+async function nwlMicStop() {
+  const mic = nwl.mic;
+  if (!mic) return;
+  clearInterval(mic.timer);
+  try { mic.source.disconnect(); } catch (_) {}
+  if (mic.own) {
+    mic.stream.getTracks().forEach(t => t.stop());
+    try { await mic.ctx.close(); } catch (_) {}
+  }
+  nwl.mic = null;
+  $('nwl-mic-start').disabled = false;
+  $('nwl-mic-stop').disabled = true;
+  $('nwl-sensory-status').textContent = 'Microphone features stopped; no audio was sent.';
+}
+
+async function nwlExport(kind) {
+  $('nwl-studio-status').textContent = `Exporting ${kind}…`;
+  const r = await api('neuroweave/export', { kind, source: $('nwl-export-source').value });
+  nwlDownload(r.text, r.filename, r.mime);
+  const extra = kind === 'html' ? ` · not executed in standalone: ${(r.not_executed || []).length} mechanisms` :
+    kind === 'fpga' ? ` · manifest valid ${r.valid} · RTL generated ${r.rtl_generated} · hardware validated ${r.hardware_validated}` :
+    ` · valid ${r.valid} · fingerprint ${String(r.fingerprint).slice(0, 16)}`;
+  const limit = kind === 'package' && r.inspectable_in_workbench === false ? ` · warning: ${r.inspect_limit_note}` : '';
+  $('nwl-studio-status').textContent = `${r.filename} (${r.bytes} bytes, ${r.source} engine)${extra}${limit}`;
+}
+
+async function nwlRunLab(path, payload, label) {
+  $('nwl-exp-status').textContent = `${label} running…`;
+  let result = await api(path, payload);
+  if (payload.background && result.id) result = await nwlAwaitJob(result.id, label);
+  show('nwl-lab-out', result);
+  return result;
+}
+
+if ($('neuroweave')) {
+  document.querySelectorAll('[data-nwpanel]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('[data-nwpanel]').forEach(n => n.classList.toggle('active', n === b));
+    document.querySelectorAll('.nwl-panel').forEach(p => p.classList.toggle('active', p.id === `nwl-panel-${b.dataset.nwpanel}`));
+    if (b.dataset.nwpanel === 'neural' && nwl.obs) nwlDrawConnectivity(nwl.obs.neural?.region_connectivity);
+    if (b.dataset.nwpanel === 'environment') action(async () => nwlDrawScene((await api('neuroweave/ecology')).scene));
+  });
+  const nwlNav = document.querySelector('nav button[data-tab="neuroweave"]');
+  if (nwlNav) nwlNav.addEventListener('click', () => action(nwlRefresh));
+  $('nwl-refresh').onclick = () => action(nwlRefresh);
+  $('nwl-step-run').onclick = () => action(async () => {
+    const r = await api('neuroweave/step', { steps: Number($('nwl-step-count').value) });
+    $('nwl-status').textContent = `Lab engine stepped ${r.steps} times → step ${r.step} · readout p ${nwlFmt(r.readout_probability.last)}`;
+    await nwlRefresh();
+  });
+  $('nwl-auto').onclick = () => {
+    if (nwl.autoTimer) { clearInterval(nwl.autoTimer); nwl.autoTimer = null; }
+    if ($('nwl-auto').checked) {
+      nwl.autoTimer = setInterval(() => {
+        if ($('neuroweave').classList.contains('active')) action(nwlRefresh);
+      }, 2000);
+    }
+  };
+  $('nwl-ledger-refresh').onclick = () => action(async () => nwlRenderLedger(await api('neuroweave/ledger')));
+  $('nwl-modes-apply').onclick = () => action(async () => {
+    await nwlLoadCatalog();
+    const modes = {};
+    document.querySelectorAll('#nwl-channels select[data-channel]').forEach(sel => { modes[sel.dataset.channel] = sel.value; });
+    const r = await api('neuroweave/configure', { sensory_modes: modes });
+    $('nwl-sensory-pe').textContent = `Lab engine rebuilt with new channel modes (spec ${r.spec_digest.slice(0, 12)}).`;
+    await nwlRefresh();
+  });
+  $('nwl-webcam-start').onclick = () => action(nwlWebcamStart);
+  $('nwl-webcam-stop').onclick = () => action(async () => nwlWebcamStop());
+  $('nwl-mic-start').onclick = () => action(nwlMicStart);
+  $('nwl-mic-stop').onclick = () => action(nwlMicStop);
+  $('nwl-external-send').onclick = () => action(async () => {
+    await nwlPostSensory({ external: { [$('nwl-external-channel').value]: Number($('nwl-external-value').value) } });
+  });
+  $('nwl-eco-run').onclick = () => action(async () => {
+    await nwlLoadCatalog();
+    const r = await api('neuroweave/ecology', { config: $('nwl-eco-config').value || 'default', steps: Number($('nwl-eco-steps').value) });
+    nwlDrawScene(r.scene);
+    $('nwl-status').textContent = `Ecology ${r.run.steps} steps · reward ${nwlFmt(r.run.total_reward)} · food ${nwlFmt(r.run.food_eaten)} · collisions ${nwlFmt(r.run.collisions)}`;
+  });
+  $('nwl-eco-refresh').onclick = () => action(async () => nwlDrawScene((await api('neuroweave/ecology')).scene));
+  $('nwl-exp-run').onclick = () => action(async () => {
+    await nwlLoadCatalog();
+    const id = $('nwl-exp-select').value;
+    const payload = { id, seeds: Number($('nwl-exp-seeds').value), steps: Number($('nwl-exp-steps').value),
+      quick: $('nwl-exp-quick').checked, background: $('nwl-exp-background').checked, mechanisms: nwlSelectedMechanisms() };
+    $('nwl-exp-run').disabled = true;
+    try {
+      const result = await nwlRunLab('neuroweave/experiment', payload, `Experiment ${id}`);
+      nwlAddResults(result);
+      $('nwl-exp-status').textContent = `Experiment ${id}: ${(result.rows || []).map(r => r.verdict).join(', ')} (evidence tier ${result.evidence_tier})`;
+    } finally {
+      $('nwl-exp-run').disabled = false;
+    }
+  });
+  $('nwl-topology-run').onclick = () => action(async () => {
+    const result = await nwlRunLab('neuroweave/topology', { neurons: 48, seeds: 2, background: $('nwl-exp-background').checked }, 'Topology sweep');
+    $('nwl-exp-status').textContent = `Topology sweep: ${Object.keys(result.topologies || {}).length} topologies × ${(result.seeds || []).length} seeds measured.`;
+  });
+  $('nwl-lesion-run').onclick = () => action(async () => {
+    const result = await nwlRunLab('neuroweave/lesion', { quick: true, background: $('nwl-exp-background').checked }, 'Lesion assay');
+    $('nwl-exp-status').textContent = `Lesion assay verdict: ${result.result?.verdict} · originals untouched: ${result.result?.originals_untouched}`;
+  });
+  if ($('nwl-sequence-run')) $('nwl-sequence-run').onclick = () => action(async () => {
+    $('nwl-sequence-run').disabled = true;
+    try {
+      const result = await nwlRunLab('neuroweave/sequence-search', { quick: true, background: $('nwl-exp-background').checked }, 'Sequence-variant search');
+      const r = result.result || {};
+      const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      $('nwl-sequence-body').innerHTML = (r.results || []).map(x => `<tr><td>${esc(x.label)}</td><td>${nwlFmt(x.mean_best_fitness)}</td><td>${(100 * x.top1pct_hit_rate).toFixed(1)}%</td><td>${esc(x.runs)}</td><td>${esc(x.queries_per_run)}</td></tr>`).join('');
+      const c = r.comparisons || {};
+      const fmtc = k => c[k] ? `${k}: Δ ${nwlFmt(c[k].mean)} (${c[k].verdict})` : '';
+      $('nwl-sequence-status').textContent = `${r.config?.landscapes} landscapes × ${r.config?.seeds} seeds · ${[fmtc('sparse_vs_evolution'), fmtc('sparse_vs_random')].filter(Boolean).join(' · ')} · ${r.evidence_tier} · ${r.disclaimer || ''}`;
+      $('nwl-sequence-details').open = true;
+      $('nwl-exp-status').textContent = `Sequence-variant search verdict (sparse vs evolutionary): ${r.verdict} · digest ${String(r.digest).slice(0, 12)}`;
+    } finally {
+      $('nwl-sequence-run').disabled = false;
+    }
+  });
+  $('nwl-export-csv').onclick = () => {
+    if (!nwl.csv.length) { $('nwl-exp-status').textContent = 'No experiment results to export yet.'; return; }
+    const [first, ...rest] = nwl.csv;
+    const body = [first.trimEnd(), ...rest.map(c => c.split('\n').slice(1).join('\n').trimEnd())].filter(Boolean).join('\n') + '\n';
+    nwlDownload(body, 'neuroweave_experiments.csv', 'text/csv');
+  };
+  $('nwl-export-json').onclick = () => {
+    if (!nwl.receipts.length) { $('nwl-exp-status').textContent = 'No experiment receipts to export yet.'; return; }
+    nwlDownload(JSON.stringify(nwl.receipts, null, 2), 'neuroweave_experiment_receipts.json', 'application/json');
+  };
+  $('nwl-mech-apply').onclick = () => action(async () => {
+    const lab = await api('neuroweave/observatory/lab');
+    const r = await api('neuroweave/configure', { spec: { ...lab.spec, mechanisms: nwlSelectedMechanisms() } });
+    $('nwl-exp-status').textContent = `Lab engine rebuilt with ${r.spec.mechanisms.length} mechanisms (spec ${r.spec_digest.slice(0, 12)}).`;
+    await nwlRefresh();
+  });
+  $('nwl-mech-none').onclick = () => {
+    document.querySelectorAll('#nwl-mech-list input[data-nwmech]').forEach(b => { b.checked = false; });
+  };
+  $('nwl-export-package').onclick = () => action(() => nwlExport('package'));
+  $('nwl-export-html').onclick = () => action(() => nwlExport('html'));
+  $('nwl-export-fpga').onclick = () => action(() => nwlExport('fpga'));
+  $('nwl-import-file').onchange = () => action(async () => {
+    const file = $('nwl-import-file').files[0];
+    if (!file) return;
+    if (file.size > 1000000) { show('nwl-inspect-out', { read_only: true, error: `file is ${file.size} bytes; the workbench inspect limit is 1000000` }); return; }
+    const r = await api('neuroweave/inspect', { text: await file.text() });
+    show('nwl-inspect-out', r);
+  });
+  window.addEventListener('beforeunload', () => { nwlWebcamStop(); nwlMicStop(); });
+}

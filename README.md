@@ -167,6 +167,19 @@ The current runtime has no CUDA, MPS, XPU, or TPU/XLA device available, so its
 verified Max Mode path uses CPU. The accelerator branch is optional and was not
 exercised on this machine.
 
+Max Mode also writes an additive `section_06` (NEUROWEAVE Laboratory) to its
+receipt, computed before the Section 05 checkpoint; `sections_completed` keeps
+its five entries. Section 06 runs the NEUROWEAVE engine in its ecology, a
+topology sweep, the Micro-Collective receipt, FPGA *mapping* and package checks,
+and, under bounded opt-in options: all 24 NEUROWEAVE experiments in quick mode with
+per-experiment verdicts and receipt digests (`neuroweave_experiments`, 0/1,
+default 0; 36 s on one CPU thread in a single measured run), a quick lesion assay
+(`neuroweave_lesion`, 0/1, default 0), and a few steps of a deep copy of the live
+Max Mode agent in a NEUROWEAVE ecology (`neuroweave_agent_steps`, 0–64, default
+4; the live agent is never stepped). It also reports the live NEUROWEAVE
+channel's telemetry. Everything in section 06 is a synthetic abstraction; quick
+verdicts are low-power smoke results.
+
 New workbench sessions use **4,000 total neurons**, allocated 1334/1333/1333 across
 the three default sources (FlyWire, MANC, Optic Lobe). The graph view includes all 4,000. Use
 `python -m synapse --total-neurons 4000 serve` or set **Total neurons** in the
@@ -386,3 +399,36 @@ SYNAPSE unifies innovations from:
 - **Supermix Beyond**: Interoceptive homeostatic drive regulation, MiMoMix dual-process cognitive deliberation, and complex multi-hazard virtual ecology.
 
 All source code is released under the Apache 2.0 license. Detailed source manifests and hashes are preserved in `synapse/source_manifest.json`.
+
+## NEUROWEAVE evolution (opt-in)
+
+NEUROWEAVE is an additive, opt-in extension in `synapse/neuroweave/`. It re-implements the mechanisms of the NEUROWEAVE-LAB 0.4.0 browser prototype in NumPy and connects them to Sonapse through a single residual graft-bus channel.
+
+It is **off by default**:
+- `SynapseConfig().neuroweave` is `None`.
+- With NEUROWEAVE neutral (unset, disabled, gain 0 or `observe_only`), Sonapse rates and actions are bit-identical to running with `neuroweave=None` (`tests/test_neuroweave_integration.py`). The full-suite comparison with the pre-NEUROWEAVE baseline is in [docs/neuroweave/BASELINE.md](docs/neuroweave/BASELINE.md).
+
+All results are `synthetic_abstraction`: not biological validation, not emotions, not FPGA hardware.
+
+What it includes:
+- 45 mechanisms (two are declared only)
+- 16 sensory channels with scalar-only privacy rules
+- 24 experiments with sealed receipts
+- package, standalone HTML and FPGA-mapping exports
+- the `neuroweave` CLI group
+- the "06 NEUROWEAVE Lab" workbench tab
+- Max Mode section 06
+
+```bash
+python -m synapse --neuroweave run --steps 20          # opt in for a run
+python -m synapse neuroweave smoke --steps 16           # engine smoke + exact replay check
+python -m synapse neuroweave experiment all --quick     # 24 experiments, quick mode
+python scripts/neuroweave_compat_manifest.py --check    # additive-only compatibility check
+```
+
+Further reading:
+- [NEUROWEAVE overview](docs/neuroweave/README.md)
+- [Feature matrix vs NEUROWEAVE 0.4.0](docs/neuroweave/FEATURE_MATRIX.md)
+- [Integration contract](docs/neuroweave/INTEGRATION_CONTRACT.md)
+- [Baseline record](docs/neuroweave/BASELINE.md)
+- [Changelog](docs/neuroweave/CHANGELOG.md)

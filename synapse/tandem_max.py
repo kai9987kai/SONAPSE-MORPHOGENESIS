@@ -10,6 +10,10 @@ Coordinates maximum-configuration execution across all five workbench sections:
 - Section 04: Bounded Live RSI, Reusable Macro-Skill Discovery, 6-Arm Continual Ablation,
   9-Arm Causal Connectome Controls, Unified Deployment Scorecard, and Reproducible Study Receipt.
 - Section 05: Exact Mid-Episode Checkpoint Persistence & Cryptographic Digest Verification.
+- Section 06 (additive, run before the Section 05 checkpoint): bounded NEUROWEAVE laboratory receipt
+  (engine ecology smoke, topology sweep, Micro-Collective receipt, FPGA mapping and package checks),
+  plus option-controlled quick experiments (all 24), a quick lesion assay, an isolated deep-copy drive of
+  the live Max Mode agent in a NeuroWeaveEcology and the live NEUROWEAVE channel telemetry.
 """
 from __future__ import annotations
 
@@ -497,6 +501,224 @@ def run_intensive_compute_boost(
     }
 
 
+def _tensor_bytes(obj: Any, depth: int = 0, seen: Optional[set] = None) -> int:
+    """Rough lower bound on tensor/array bytes reachable from ``obj`` (bounded walk)."""
+    seen = set() if seen is None else seen
+    if id(obj) in seen or depth > 4:
+        return 0
+    seen.add(id(obj))
+    if isinstance(obj, torch.Tensor):
+        return int(obj.element_size() * obj.nelement())
+    if isinstance(obj, np.ndarray):
+        return int(obj.nbytes)
+    if isinstance(obj, dict):
+        return sum(_tensor_bytes(v, depth + 1, seen) for v in obj.values())
+    if isinstance(obj, (list, tuple)):
+        return sum(_tensor_bytes(v, depth + 1, seen) for v in obj[:4096])
+    if isinstance(obj, torch.nn.Module):
+        return sum(_tensor_bytes(t, depth + 1, seen) for t in list(obj.parameters()) + list(obj.buffers()))
+    attrs = getattr(obj, '__dict__', None)
+    if isinstance(attrs, dict) and depth < 4:
+        return sum(_tensor_bytes(v, depth + 1, seen) for v in attrs.values())
+    return 0
+
+
+def _neuroweave_experiments_summary(spec, overrides: Optional[Dict[str, Any]] = None,
+                                    experiment_ids=None) -> Dict[str, Any]:
+    """Quick run of the registered experiments; compact per-experiment verdicts + receipt digests."""
+    from .neuroweave.experiments import run_all_experiments, verify_receipt
+    started = time.perf_counter()
+    receipts = run_all_experiments(quick=True, experiment_ids=experiment_ids, **dict(overrides or {}))
+    rows = []
+    counts: Dict[str, int] = {}
+    for r in receipts:
+        basis = r.get('verdict_basis') or {}
+        verdict = r.get('verdict')
+        counts[verdict] = counts.get(verdict, 0) + 1
+        rows.append({'experiment_id': r['experiment_id'], 'kind': r.get('kind'), 'task': r.get('task'),
+                     'verdict': verdict, 'basis_metric': basis.get('metric'), 'basis_section': basis.get('section'),
+                     'digest': r.get('digest'), 'digest_verified': bool(verify_receipt(r))})
+    digests = [row['digest'] for row in rows]
+    return {
+        'mode': 'quick', 'count': len(rows), 'overrides': dict(overrides or {}), 'verdict_counts': counts,
+        'experiments': rows,
+        'receipts_digest': hashlib.sha256(json.dumps(digests).encode('utf-8')).hexdigest(),
+        'all_digests_verified': all(row['digest_verified'] for row in rows),
+        'evidence_tier': 'synthetic_abstraction',
+        'note': 'quick smoke settings (2 seeds, short streams): verdicts are low-power, not conclusions',
+        'wallclock_s': round(time.perf_counter() - started, 3),
+    }
+
+
+def _neuroweave_lesion_summary() -> Dict[str, Any]:
+    from .neuroweave.cli_commands import LESION_QUICK
+    from .neuroweave.lesion import run_lesion_assay
+    started = time.perf_counter()
+    assay = run_lesion_assay(**LESION_QUICK)
+    return {'mode': 'quick', 'options': {k: list(v) if isinstance(v, tuple) else v for k, v in LESION_QUICK.items()},
+            'verdict': assay.get('verdict'), 'verdict_basis': assay.get('verdict_basis'),
+            'summary': assay.get('summary'), 'originals_untouched': assay.get('originals_untouched'),
+            'progressive_monotone_damage': assay.get('progressive_monotone_damage'),
+            'digest': assay.get('digest'), 'evidence_tier': assay.get('evidence_tier'),
+            'wallclock_s': round(time.perf_counter() - started, 3)}
+
+
+def _live_channel_digest(agent) -> Optional[str]:
+    channel = getattr(agent, 'neuroweave_channel', None)
+    return None if channel is None else channel.export_state().get('digest')
+
+
+def _neuroweave_live_channel_summary(agent) -> Dict[str, Any]:
+    """Telemetry + observatory summary of the live agent's NEUROWEAVE channel (read-only)."""
+    channel = getattr(agent, 'neuroweave_channel', None)
+    if channel is None:
+        return {'present': False, 'reason': 'live agent has no neuroweave channel'}
+    obs = channel.engine.observatory()
+    neural = obs.get('neural', {})
+    return {
+        'present': True,
+        'telemetry': channel.get_telemetry_dict(include_timing=False),
+        'observatory_summary': {
+            'schema': obs.get('schema'), 'step': obs.get('step'), 'mechanisms': len(obs.get('mechanisms', [])),
+            'neurons': neural.get('n'), 'synapses': (neural.get('synapses') or {}).get('count'),
+            'structural_events': (neural.get('ledger') or {}).get('total'),
+            'structural_by_kind': (neural.get('ledger') or {}).get('by_kind'),
+            'neuromodulator_levels': (obs.get('neuromodulation') or {}).get('levels'),
+            'memory': obs.get('memory'), 'prediction_metrics': (obs.get('prediction') or {}).get('metrics'),
+            'events': obs.get('events'),
+        },
+        'evidence_tier': obs.get('evidence_tier'),
+    }
+
+
+def _neuroweave_agent_ecology(agent, steps: int, seed: int) -> Dict[str, Any]:
+    """Drive a deep copy of the live agent in a NeuroWeaveEcology (live runtime is never stepped)."""
+    from .compute import available_memory_bytes
+    from .neuroweave.ecology import NeuroWeaveEcology
+    if agent is None:
+        return {'skipped': 'no live agent supplied'}
+    estimate = 2 * _tensor_bytes(agent) + 64 * 1024 * 1024
+    free = available_memory_bytes()
+    if free is not None and free - 256 * 1024 * 1024 < estimate:
+        return {'skipped': 'insufficient free memory for an isolated agent copy',
+                'estimated_copy_bytes': estimate, 'free_bytes': int(free)}
+    before = _live_channel_digest(agent)
+    started = time.perf_counter()
+    try:
+        isolated = deepcopy(agent)
+    except Exception as exc:  # pragma: no cover - depends on the live agent's attributes
+        return {'skipped': f'agent could not be isolated: {type(exc).__name__}: {exc}'}
+    eco = NeuroWeaveEcology('default', seed=int(seed))
+    run = eco.run_synapse_agent(isolated, steps, learn=False)
+    after = _live_channel_digest(agent)
+    copy_channel = getattr(isolated, 'neuroweave_channel', None)
+    del isolated
+    return {
+        'agent': 'deep copy of the live Max Mode agent (learn=False)', 'ecology_config': 'default',
+        'ecology_seed': int(seed), 'steps': run['steps'], 'total_reward': run['total_reward'],
+        'food_eaten': run['food_eaten'], 'eating_steps': run['eating_steps'], 'collisions': run['collisions'],
+        'final_energy': run['final_energy'], 'actions_finite': run['actions_finite'], 'rewards': run['rewards'],
+        'copy_channel_engine_steps': None if copy_channel is None else int(copy_channel.engine_steps),
+        'live_channel_digest_unchanged': before == after,
+        'estimated_copy_bytes': estimate,
+        'evidence_tier': run['evidence_tier'],
+        'wallclock_s': round(time.perf_counter() - started, 3),
+    }
+
+
+def run_neuroweave_laboratory(spec, steps: int = 16, topology_neurons: int = 48, *, experiments: int = 0,
+                              experiment_overrides: Optional[Dict[str, Any]] = None, experiment_ids=None,
+                              lesion: bool = False, agent=None, agent_steps: int = 0) -> Dict[str, Any]:
+    """Bounded NEUROWEAVE laboratory receipt (synthetic abstraction; no hardware/biology claims).
+
+    Runs the engine closed-loop in the default ecology, sweeps topology metrics
+    over every registered topology at a small population, records the
+    Micro-Collective training receipt, validates the FPGA *mapping* manifest and
+    round-trips a validated package. Wall-clock appears only in ``wallclock_s``
+    keys.
+
+    Optional, bounded extra work (all off by default for direct calls; Max Mode
+    enables them through its options):
+
+    * ``experiments=1`` runs the registered experiments in quick mode
+      (``experiment_ids``/``experiment_overrides`` narrow it) and reports each
+      verdict with its sealed receipt digest;
+    * ``lesion=True`` runs the quick lesion assay (clones only);
+    * ``agent`` (the live Sonapse agent) is summarised read-only (its NEUROWEAVE
+      channel telemetry and observatory) and, with ``agent_steps > 0``, a deep
+      copy of it is driven in a ``NeuroWeaveEcology``; the live agent is never
+      stepped and its channel digest is checked before/after.
+    """
+    from .neuroweave.engine import NeuroWeaveEngine
+    from .neuroweave.package import dumps_package, inspect_package, loads_package, validate_package
+    from .neuroweave.spec import EVIDENCE_TIER, TOPOLOGIES
+    from .neuroweave.topology import build_topology, topology_metrics
+
+    if type(steps) is not int or not 1 <= steps <= 256:
+        raise ValueError('neuroweave_steps must be an integer in [1,256]')
+    if type(experiments) is not int or experiments not in (0, 1):
+        raise ValueError('neuroweave_experiments must be 0 or 1')
+    if type(lesion) is not bool:
+        raise ValueError('lesion must be a boolean')
+    if type(agent_steps) is not int or not 0 <= agent_steps <= 64:
+        raise ValueError('neuroweave_agent_steps must be an integer in [0,64]')
+    started = time.perf_counter()
+    engine = NeuroWeaveEngine(spec)
+    engine.attach_ecology('default')
+    ecology = engine.run_ecology(steps, learn=True)
+    sweep = {}
+    for name in TOPOLOGIES:
+        m = topology_metrics(build_topology(name, topology_neurons, seed=spec.seed))
+        sweep[name] = {key: float(m[key]) for key in ('density', 'clustering_mean', 'modularity',
+                                                       'mean_shortest_path', 'global_efficiency',
+                                                       'in_degree_gini') if key in m}
+        sweep[name]['edges'] = int(m.get('edges', 0))
+    micro_receipt = engine.micro.receipt('tandem_max_laboratory')
+    fpga = engine.fpga_manifest()
+    package = engine.export_package()
+    text = dumps_package(package)
+    reloaded = loads_package(text)
+    validation = validate_package(reloaded)
+    inspection = inspect_package(text)
+    observatory = engine.observatory()
+    receipt = {
+        'section': '06 · NEUROWEAVE Laboratory',
+        'evidence_tier': EVIDENCE_TIER,
+        'spec_digest': spec.spec_digest,
+        'mechanisms': len(spec.mechanisms),
+        'engine_steps': int(engine.step_count),
+        'ecology': {k: ecology[k] for k in ('steps', 'total_reward', 'mean_readout_probability',
+                                            'food_eaten', 'collisions')},
+        'neurons_final': int(engine.n),
+        'structural_events': int(engine.brain.ledger.total),
+        'memory': observatory['memory']['provenance'],
+        'engine_counters': dict(engine.counters),
+        'topology_sweep': {'neurons': topology_neurons, 'metrics': sweep},
+        'micro_collective_receipt': micro_receipt,
+        'fpga_manifest': {'valid': bool(fpga['independent_validation'].get('valid')),
+                          'errors': list(fpga['independent_validation'].get('errors', []))[:8],
+                          'rtl_generated': fpga.get('rtl_generated'),
+                          'hardware_validated': fpga.get('hardware_validated')},
+        'package_round_trip': {'valid': bool(validation.get('valid')),
+                               'errors': list(validation.get('errors', []))[:8],
+                               'inspect_valid': bool(inspection.get('valid')),
+                               'bytes': len(text.encode('utf-8'))},
+        'raw_media_stored': False,
+    }
+    receipt['experiments'] = (_neuroweave_experiments_summary(spec, experiment_overrides, experiment_ids)
+                              if experiments == 1 else {'skipped': 'neuroweave_experiments=0'})
+    receipt['lesion_assay'] = _neuroweave_lesion_summary() if lesion else {'skipped': 'lesion assay not requested'}
+    if agent is not None:
+        receipt['live_channel'] = _neuroweave_live_channel_summary(agent)
+        receipt['live_agent_ecology'] = (_neuroweave_agent_ecology(agent, agent_steps, spec.seed)
+                                         if agent_steps > 0 else {'skipped': 'neuroweave_agent_steps=0'})
+    else:
+        receipt['live_channel'] = {'present': False, 'reason': 'no live agent supplied'}
+        receipt['live_agent_ecology'] = {'skipped': 'no live agent supplied'}
+    receipt['wallclock_s'] = round(time.perf_counter() - started, 3)
+    return json.loads(json.dumps(receipt, default=lambda v: v.item() if hasattr(v, 'item') else str(v)))
+
+
 def run_tandem_max_orchestration(workbench, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Switch the system to Maximum Configuration and execute Sections 01–05 in tandem."""
     from .runtime import LabRuntime
@@ -539,6 +761,11 @@ def run_tandem_max_orchestration(workbench, data: Optional[Dict[str, Any]] = Non
     eval_steps = _bounded_mode_int(data, 'omnibus_eval_steps', 2, 1, 100)
     six_arm_steps = _bounded_mode_int(data, 'six_arm_steps', 8, 1, 100)
     causal_steps = _bounded_mode_int(data, 'causal_9arm_steps', 10, 1, 60)
+    neuroweave_steps = _bounded_mode_int(data, 'neuroweave_steps', 16, 1, 256)
+    # opt-in (default 0): the quick experiment suite + lesion assay add ~45 s on one CPU thread
+    neuroweave_experiments = _bounded_mode_int(data, 'neuroweave_experiments', 0, 0, 1)
+    neuroweave_lesion = _bounded_mode_int(data, 'neuroweave_lesion', 0, 0, 1)
+    neuroweave_agent_steps = _bounded_mode_int(data, 'neuroweave_agent_steps', 4, 0, 64)
     default_tasks = ['forage', 'maze', 'push', 'delayed_match', 'ecosystem', 'continental_biosphere']
     omnibus_tasks = data.get('omnibus_tasks') or default_tasks
     six_arm_tasks = data.get('six_arm_tasks', ['forage', 'push', 'ecosystem'])
@@ -813,6 +1040,16 @@ def run_tandem_max_orchestration(workbench, data: Optional[Dict[str, Any]] = Non
     }
 
     # -------------------------------------------------------------------
+    # SECTION 06 (run before the Section 05 checkpoint): NEUROWEAVE laboratory
+    # -------------------------------------------------------------------
+    section_06 = (run_neuroweave_laboratory(max_cfg.neuroweave, steps=neuroweave_steps,
+                                            experiments=neuroweave_experiments,
+                                            lesion=bool(neuroweave_lesion), agent=runtime.agent,
+                                            agent_steps=neuroweave_agent_steps)
+                  if getattr(max_cfg, 'neuroweave', None) is not None else
+                  {'section': '06 · NEUROWEAVE Laboratory', 'skipped': 'neuroweave not configured'})
+
+    # -------------------------------------------------------------------
     # SECTION 05: Exact Mid-Episode Checkpoint & Cryptographic Digest
     # -------------------------------------------------------------------
     with workbench.lock:
@@ -861,6 +1098,8 @@ def run_tandem_max_orchestration(workbench, data: Optional[Dict[str, Any]] = Non
         'section_03': section_03,
         'section_04': section_04,
         'section_05': section_05,
+        # Additive: sections_completed keeps its historical five entries.
+        'section_06': section_06,
         'state': final_state,
     }
     workbench.last_tandem_receipt = receipt

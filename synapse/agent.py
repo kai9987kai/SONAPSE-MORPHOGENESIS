@@ -148,6 +148,7 @@ class IntegratedAgent:
         self.transfer_entropy=None
         self.neurowave_x2=None
         self.dsag_channel=None
+        self.neuroweave_channel=None
         self.sensory_fabric=None
         self.wpac=None
         self.wpac_programmer=None
@@ -337,6 +338,12 @@ class IntegratedAgent:
                 from .dsag.bridge import DSAGBusChannel
                 self.dsag_channel = DSAGBusChannel(dsag_spec, input_dim=self.brain.n)
                 self.graft_bus.register_channel("dsag", self.dsag_channel, gain=1.0)
+
+            neuroweave_spec = getattr(self.config, 'neuroweave', None)
+            if neuroweave_spec is not None and neuroweave_spec.enabled and self.neuroweave_channel is None:
+                from .neuroweave.bridge import NeuroWeaveBusChannel
+                self.neuroweave_channel = NeuroWeaveBusChannel(neuroweave_spec, input_dim=int(self.brain.n))
+                self.graft_bus.register_channel("neuroweave", self.neuroweave_channel, gain=1.0)
 
             # Route unified communication fabric
             if self.graft_bus.enabled:
@@ -630,6 +637,8 @@ class IntegratedAgent:
             gates=self.plasticity.gates(o); effective=self.plasticity.effective_weights(self.brain.graft_w,gates)
             if hasattr(self,'astrocytes'):
                 effective=self.astrocytes.modulate_graft_weights(effective,torch.as_tensor(self.graph.graft_pre,dtype=torch.long),self.brain.n)
+            if getattr(self, 'neuroweave_channel', None) is not None and self.neuroweave_channel.enabled:
+                self.neuroweave_channel.observe_sensory(obs, camera=camera)
             if getattr(self, 'graft_bus', None) is not None:
                 pre_ctx = torch.cat([o[:min(32, len(o))], self.hidden[0, :16], self.intent])
                 self.graft_bus.set_context(pre_ctx)
@@ -952,6 +961,9 @@ class IntegratedAgent:
             # Timing is sampled by the live status endpoint, not included in
             # exact-transition receipts that must replay byte-for-byte.
             self.last_telemetry['graft_bus'] = self.graft_bus.get_telemetry_dict(include_timing=False)
+        if getattr(self, 'neuroweave_channel', None) is not None:
+            # No wall-clock: exact-replay receipts compare telemetry byte-for-byte.
+            self.last_telemetry['neuroweave'] = self.neuroweave_channel.get_telemetry_dict(include_timing=False)
         if getattr(self, 'dpo_engine', None) is not None:
             self.last_telemetry['verifiable_dpo']={'enabled':True,'pairs':len(self.dpo_engine.preference_buffer),'last_margin':getattr(self.dpo_engine,'last_margin',0.0)}
         if getattr(self, 'sancf_fabric', None) is not None:
@@ -1247,6 +1259,8 @@ class IntegratedAgent:
             depletion=float(1.0-self.resources[1]) if hasattr(self, 'resources') and len(self.resources)>1 else 0.0
             self.neuromod.step(reward=float(reward), sensory_contrast=contrast, threat_level=threat, energy_depletion=depletion)
         self.episodic=(self.episodic+[{'reward':float(reward),'intent':self.intent.tolist(),'done':bool(done)}])[-128:]
+        if getattr(self, 'neuroweave_channel', None) is not None and self.neuroweave_channel.enabled:
+            self.neuroweave_channel.observe_outcome(float(reward), bool(done))
     def prepare(self,features,targets,steps=1):
         x=torch.as_tensor(features,dtype=torch.float32); y=torch.as_tensor(targets,dtype=torch.float32)
         if x.ndim!=2 or x.shape[1]!=64 or y.shape!=(len(x),5) or not torch.isfinite(x).all() or not torch.isfinite(y).all(): raise ValueError('finite feature [N,64] and motor target [N,5] required')
@@ -1473,6 +1487,14 @@ class IntegratedAgent:
                     channels = fabric_state.get('channels')
                     if isinstance(channels, dict):
                         channels.pop('dsag', None)
+        if getattr(self, 'neuroweave_channel', None) is not None:
+            state['neuroweave_v1'] = self.neuroweave_channel.export_state()
+            for fabric_key in ('graft_bus', 'comm_fabric'):
+                fabric_state = state.get(fabric_key)
+                if isinstance(fabric_state, dict):
+                    channels = fabric_state.get('channels')
+                    if isinstance(channels, dict):
+                        channels.pop('neuroweave', None)
         state['neurowave_x2']=self.neurowave_x2.export_state() if getattr(self,'neurowave_x2',None) is not None else None
         state['overflow_mini_brain']=self.overflow_mini_brain.state_dict() if getattr(self,'overflow_mini_brain',None) is not None else None
         state['selective_ssm']=self.selective_ssm.state_dict() if getattr(self,'selective_ssm',None) is not None else None
@@ -1526,6 +1548,18 @@ class IntegratedAgent:
         saved_dsag_enabled = (isinstance(saved_dsag, dict)
                               and saved_dsag.get('enabled') is True)
         additive_legacy_dsag = self.dsag_channel is not None and not saved_dsag_enabled
+        saved_neuroweave = saved_config.get('neuroweave') if isinstance(saved_config, dict) else None
+        saved_neuroweave_enabled = (isinstance(saved_neuroweave, dict)
+                                    and saved_neuroweave.get('enabled') is True)
+        additive_legacy_neuroweave = (getattr(self, 'neuroweave_channel', None) is not None
+                                      and not saved_neuroweave_enabled)
+        if state.get('neuroweave_v1') is not None:
+            if not saved_neuroweave_enabled:
+                raise ValueError('checkpoint contains NEUROWEAVE state but its saved config does not enable NEUROWEAVE')
+            if getattr(self, 'neuroweave_channel', None) is None:
+                raise ValueError('checkpoint contains NEUROWEAVE state but this agent has no NEUROWEAVE configuration')
+        elif saved_neuroweave_enabled and getattr(self, 'neuroweave_channel', None) is not None:
+            raise ValueError('NEUROWEAVE-enabled checkpoint is missing its NEUROWEAVE namespace')
         for k,v in state['modules'].items():
             if k == 'brain':
                 for buf_name in ('r', 'activity_ema', 'elig', 'heb', 'graft_pre', 'graft_post', 'base_pre', 'base_post', 'base_w', 'graft_site', 'bias', 'sensory_idx', 'motor_idx', 'probe_idx'):
@@ -1537,14 +1571,17 @@ class IntegratedAgent:
                 self.brain.n = len(v['r'])
             if k in self.modules:
                 module_state = v
-                if k == 'graft_bus' and additive_legacy_dsag and isinstance(v, dict):
+                if k == 'graft_bus' and (additive_legacy_dsag or additive_legacy_neuroweave) and isinstance(v, dict):
                     # The old bus has no context-gate parameters for the new
                     # channel. Carry only those fresh parameters forward; all
                     # other missing or unexpected tensors still fail strictly.
                     module_state = dict(v)
                     current_state = self.modules[k].state_dict()
+                    additive_prefixes = tuple(prefix for prefix, on in (
+                        ('context_gates.dsag.', additive_legacy_dsag),
+                        ('context_gates.neuroweave.', additive_legacy_neuroweave)) if on)
                     for key, value in current_state.items():
-                        if key.startswith('context_gates.dsag.') and key not in module_state:
+                        if key.startswith(additive_prefixes) and key not in module_state:
                             module_state[key] = value.detach().clone()
                 self.modules[k].load_state_dict(module_state)
         live_parameters=self._optimization_parameters()
@@ -1655,6 +1692,9 @@ class IntegratedAgent:
                 raise ValueError('DSAG-enabled checkpoint is missing its DSAG namespace')
             # Older checkpoints predate DSAG. Keep their learned/live state and
             # leave this runtime's newly configured channel at its seeded start.
+        if state.get('neuroweave_v1') is not None:
+            # Presence/config agreement was checked before any module was touched.
+            self.neuroweave_channel.import_state(state['neuroweave_v1'])
         if getattr(self,'neurowave_x2',None) is not None and state.get('neurowave_x2') is not None:
             self.neurowave_x2.import_state(state['neurowave_x2'])
         if getattr(self,'overflow_mini_brain',None) is not None and state.get('overflow_mini_brain') is not None:
