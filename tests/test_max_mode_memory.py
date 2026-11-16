@@ -1,5 +1,7 @@
 """Regression coverage for large Max Mode allocations."""
 
+from types import SimpleNamespace
+from unittest.mock import Mock
 import numpy as np
 import pytest
 from scipy import sparse
@@ -20,6 +22,20 @@ def test_max_mode_checkpoint_preflight_reports_low_disk_space():
     result = _ensure_max_checkpoint_space('unused-test-path', 9000, free_bytes=required)
     assert result['required_free_bytes'] == required
     assert result['available_free_bytes'] == required
+
+
+def test_max_mode_final_checkpoint_rechecks_space_before_saving(tmp_path, monkeypatch):
+    from synapse import tandem_max
+
+    runtime = Mock()
+    workbench = SimpleNamespace(root=tmp_path, get=Mock())
+    monkeypatch.setattr(tandem_max.shutil, 'disk_usage', lambda _path: SimpleNamespace(free=0))
+
+    with pytest.raises(RuntimeError, match='checkpoint requires'):
+        tandem_max._save_max_checkpoint(workbench, runtime, 9000)
+
+    runtime.save.assert_not_called()
+    workbench.get.assert_not_called()
 
 
 def test_neurogenesis_covariance_update_avoids_full_outer_temporary(monkeypatch):

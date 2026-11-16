@@ -117,8 +117,17 @@ class SynapseConfig:
     # Kept outside legacy config exports when absent so old checkpoint schemas
     # remain byte-for-byte the same under the default-off path.
     dsag: object | None = None
+    # NEUROWEAVE (synapse/neuroweave): same additive contract as DSAG. None is
+    # the default and is omitted from to_dict().
+    neuroweave: object | None = None
 
     def __post_init__(self):
+        if self.neuroweave is not None:
+            from .neuroweave.spec import NeuroWeaveSpecV1
+            if isinstance(self.neuroweave, dict):
+                object.__setattr__(self, 'neuroweave', NeuroWeaveSpecV1.from_dict(self.neuroweave))
+            elif not isinstance(self.neuroweave, NeuroWeaveSpecV1):
+                raise ValueError('neuroweave must be a NeuroWeaveSpecV1 or its mapping')
         if self.dsag is not None:
             from .dsag.config import DSAGSpecV1
             if isinstance(self.dsag, dict):
@@ -182,7 +191,7 @@ class SynapseConfig:
 
         if self.readout not in {'absolute', 'evoked', 'persistent_evoked'}:
             raise ValueError('unsupported graph readout')
-        if self.planner_algorithm not in {'experience_mpc', 'recurrent_latent', 'hybrid'}:
+        if self.planner_algorithm not in {'experience_mpc', 'recurrent_latent', 'hybrid', 'task_value_mpc'}:
             raise ValueError('unsupported planner algorithm')
         if self.connectome_mode not in {'proxy', 'prefer_authentic', 'strict_authentic'}:
             raise ValueError('unsupported connectome mode')
@@ -288,6 +297,7 @@ class SynapseConfig:
     def max_tandem(cls, total_neurons: int = 9000, seed: int = 7, task: str = 'continental_biosphere', **kwargs) -> 'SynapseConfig':
         """Maximum configuration with every optional subsystem enabled."""
         from .dsag.config import DSAGSpecV1
+        from .neuroweave.spec import NeuroWeaveSpecV1
 
         cfg_dict = dict(
             seed=seed,
@@ -390,6 +400,9 @@ class SynapseConfig:
                 richer_messages=True,
                 structural_growth_enabled=True,
             ),
+            # Bounded population: Max Mode stays within the machine budget.
+            neuroweave=NeuroWeaveSpecV1.max_preset(
+                seed=seed, neurons=min(256, max(48, int(total_neurons) // 32))),
         )
         cfg_dict.update(kwargs)
         return cls(**cfg_dict)
@@ -407,6 +420,10 @@ class SynapseConfig:
         d['connectome_sources'] = list(self.connectome_sources)
         if self.dsag is None:
             d.pop('dsag')
+        if self.neuroweave is None:
+            d.pop('neuroweave')
+        else:
+            d['neuroweave'] = self.neuroweave.to_dict()
         return d
 
     def max_tandem_feature_audit(self):
@@ -428,6 +445,14 @@ class SynapseConfig:
         else:
             enabled.extend(f'dsag_v1.{name}' for name in dsag_features if getattr(dsag, name))
             disabled.extend(f'dsag_v1.{name}' for name in dsag_features if not getattr(dsag, name))
+        neuroweave = self.neuroweave
+        if neuroweave is None or not neuroweave.enabled:
+            disabled.append('neuroweave_v1')
+        else:
+            from .neuroweave.spec import MECHANISM_IDS
+            enabled.append('neuroweave_v1')
+            enabled.extend(f'neuroweave_v1.{m}' for m in MECHANISM_IDS if m in neuroweave.mechanisms)
+            disabled.extend(f'neuroweave_v1.{m}' for m in MECHANISM_IDS if m not in neuroweave.mechanisms)
         return {
             'schema': 'max-tandem-feature-audit-v1',
             'enabled_count': len(enabled),
@@ -442,6 +467,7 @@ class SynapseConfig:
             return False
         normalized = {
             'dsag': None,
+            'neuroweave': None,
             'experience_planning': False, 'surprise_memory': True, 'experience_horizon': 1,
             'experimental_cognition': False, 'continual_backprop': False,
             'fast_weight_memory': False, 'dormant_lifecycle': True,
@@ -488,6 +514,19 @@ class SynapseConfig:
                     return False
                 if not saved_dsag_spec.enabled:
                     normalized['dsag'] = self.dsag
+        # NEUROWEAVE follows the same additive rule as DSAG.
+        if self.neuroweave is not None and getattr(self.neuroweave, 'enabled', False):
+            saved_nw = normalized.get('neuroweave')
+            if saved_nw is None:
+                normalized['neuroweave'] = self.neuroweave
+            elif isinstance(saved_nw, dict):
+                from .neuroweave.spec import NeuroWeaveSpecV1
+                try:
+                    saved_nw_spec = NeuroWeaveSpecV1.from_dict(saved_nw)
+                except (TypeError, ValueError):
+                    return False
+                if not saved_nw_spec.enabled:
+                    normalized['neuroweave'] = self.neuroweave
         try:
             restored = type(self)(**normalized)
         except (TypeError, ValueError):

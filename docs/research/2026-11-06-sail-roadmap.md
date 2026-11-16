@@ -25,6 +25,30 @@ The repository's 6 November 2026 empirical study (`docs/results/2026-11-06-exper
 
 **SAIL's Core Imperative:** Make the agent learn directly from verified physical and epistemic transitions, providing demonstrable empirical gains under matched compute budgets before scaling architectural complexity.
 
+### 2.1 Task-Aware Planning Follow-Up (14 November 2026)
+
+A separate 40-value task-aware experience model and value-guided MPC route were
+implemented for exact native task identities, with a legacy-model fallback for
+complex, automatic, or mismatched identities. The fresh paired confirmation
+covered six seeds and three tasks with shared 64-step support and a 256-step
+query cap. It recorded no successes in 18 paired seed/task units; 17/18 episodes
+per arm remained incomplete and each arm also recorded one terminal failure.
+Task-aware minus actor completion was 0.000
+(`[0.000, 0.000]` descriptive paired 95% interval), while return was −0.2283
+(`[−0.4863, −0.0274]`). The frozen promotion rule therefore failed and the
+planner remains off by default. The cap leaves terminal performance mostly
+unresolved, so this is a bounded negative/inconclusive local result rather than
+a general task-capability claim. See the [report](../results/2026-11-14-task-aware-planning.md),
+[protocol](../results/2026-11-14-task-aware-planning-protocol.json), and
+[receipt](../results/2026-11-14-task-aware-planning-receipt.json).
+
+The confirmation did not include a task-context ablation, so the result does not
+isolate the contribution of individual context inputs.
+
+The next SAIL planning study should give episodes time to reach their native
+terminal condition, retain a preregistered transition cap, and recruit fresh
+seeds before re-evaluating this or a revised learner.
+
 ---
 
 ## 3. SAIL Next-Generation Architecture

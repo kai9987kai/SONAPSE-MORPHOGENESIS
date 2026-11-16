@@ -16,6 +16,8 @@ def main(argv=None):
     parser.add_argument('--dsag',dest='dsag_enabled',action=argparse.BooleanOptionalAction,default=None,help='enable the synthetic DSAG residual channel (enabled by default for run, train, and serve)')
     parser.add_argument('--dsag-gain',type=float,default=0.05,help='maximum DSAG gain for the standard run profile')
     parser.add_argument('--dsag-config',type=Path,help='load an explicit DSAGSpecV1 YAML/JSON configuration')
+    parser.add_argument('--neuroweave',dest='neuroweave_enabled',action=argparse.BooleanOptionalAction,default=None,help='opt in to the NEUROWEAVE residual channel for run, train and serve (off by default)')
+    parser.add_argument('--neuroweave-config',dest='neuroweave_config',type=Path,help='load an explicit NeuroWeaveSpecV1 JSON configuration (sets SynapseConfig.neuroweave)')
     parser.add_argument('--programmed-connectome',action='store_true',help='bind the verified 128-neuron MaleCNS sparse prior')
     parser.add_argument('--connectome-mode',choices=['proxy','prefer_authentic','strict_authentic'],help='connectome source mode')
     size=parser.add_mutually_exclusive_group()
@@ -30,6 +32,23 @@ def main(argv=None):
     dsag_smoke=dsag_sub.add_parser('smoke'); dsag_smoke.add_argument('--seed',type=int,default=42); dsag_smoke.add_argument('--steps',type=int,default=24); dsag_smoke.add_argument('--input-dim',type=int,default=32); dsag_smoke.add_argument('--gain',type=float,default=0.05)
     dsag_inspect=dsag_sub.add_parser('inspect'); dsag_inspect.add_argument('--config',type=Path); dsag_inspect.add_argument('--input-dim',type=int,default=32)
     dsag_ablate=dsag_sub.add_parser('ablate'); dsag_ablate.add_argument('--feature',choices=['second_soma','axon_branches','rich_messages','phase_gate','plasticity','structural_growth'],required=True); dsag_ablate.add_argument('--seed',type=int,default=42); dsag_ablate.add_argument('--steps',type=int,default=24)
+    nw_parser=sub.add_parser('neuroweave',help='NEUROWEAVE synthetic laboratory (opt-in; JSON to stdout)')
+    nw_sub=nw_parser.add_subparsers(dest='neuroweave_action',required=True)
+    nw_sub.add_parser('mechanisms'); nw_sub.add_parser('experiments'); nw_sub.add_parser('manifest-check')
+    nw_validate=nw_sub.add_parser('validate'); nw_validate.add_argument('--config',dest='nw_config',type=Path,required=True)
+    def _nw_model_args(p, steps):
+        p.add_argument('--steps',dest='nw_steps',type=int,default=steps); p.add_argument('--seed',dest='nw_seed',type=int,default=7)
+        p.add_argument('--neurons',dest='nw_neurons',type=int,default=48); p.add_argument('--topology',dest='nw_topology',default='clustered')
+        p.add_argument('--mechanisms',dest='nw_mechanisms',default='all',help='all, none, or a comma-separated list of mechanism ids')
+    _nw_model_args(nw_sub.add_parser('smoke'), 16)
+    nw_topo=nw_sub.add_parser('topology'); nw_topo.add_argument('--neurons',dest='nw_neurons',type=int,default=48); nw_topo.add_argument('--seeds',dest='nw_seeds',type=int,nargs='+',default=[7])
+    nw_exp=nw_sub.add_parser('experiment'); nw_exp.add_argument('experiment_id'); nw_exp.add_argument('--seeds',dest='nw_seeds',type=int,nargs='+'); nw_exp.add_argument('--steps',dest='nw_steps',type=int); nw_exp.add_argument('--quick',dest='nw_quick',action='store_true'); nw_exp.add_argument('--csv',dest='nw_csv',type=Path)
+    nw_lesion=nw_sub.add_parser('lesion'); nw_lesion.add_argument('--quick',dest='nw_quick',action='store_true'); nw_lesion.add_argument('--seeds',dest='nw_seeds',type=int,nargs='+'); nw_lesion.add_argument('--steps',dest='nw_steps',type=int); nw_lesion.add_argument('--neurons',dest='nw_neurons',type=int)
+    nw_eco=nw_sub.add_parser('ecology'); _nw_model_args(nw_eco, 32); nw_eco.add_argument('--config',dest='nw_eco_config',default='default'); nw_eco.add_argument('--frozen',dest='nw_frozen',action='store_true'); nw_eco.add_argument('--synapse-agent',dest='nw_synapse_agent',action='store_true'); nw_eco.add_argument('--agent-nodes',dest='nw_agent_nodes',type=int,default=16)
+    nw_export=nw_sub.add_parser('export'); _nw_model_args(nw_export, 8); nw_export.add_argument('--out',dest='nw_out',type=Path,required=True); nw_export.add_argument('--html',dest='nw_html',type=Path); nw_export.add_argument('--fpga',dest='nw_fpga',type=Path)
+    nw_inspect=nw_sub.add_parser('inspect'); nw_inspect.add_argument('nw_file',type=Path)
+    nw_seq=nw_sub.add_parser('sequence-search',help='supplementary budget-matched synthetic sequence-variant search (not protein modelling)'); nw_seq.add_argument('--quick',dest='nw_quick',action='store_true'); nw_seq.add_argument('--landscapes',dest='nw_landscapes',type=int); nw_seq.add_argument('--seeds-per-landscape',dest='nw_seq_seeds',type=int); nw_seq.add_argument('--budget',dest='nw_budget',type=int)
+    nw_legacy=nw_sub.add_parser('import-legacy'); nw_legacy.add_argument('nw_file',type=Path); nw_legacy.add_argument('--out',dest='nw_out',type=Path)
     for name in ('run','train'):
         p=sub.add_parser(name); p.add_argument('--steps',type=int,default=100); p.add_argument('--save')
     p=sub.add_parser('serve'); p.add_argument('--port',type=int,default=8765); p.add_argument('--host',default='127.0.0.1')
@@ -101,9 +120,11 @@ def main(argv=None):
     sub.add_parser('connectome-inventory')
     p=sub.add_parser('planning-study'); p.add_argument('--name',default='planning-pilot')
     p.add_argument('--seeds',type=int,nargs='+',default=[23,29,31])
-    p.add_argument('--tasks',nargs='+',default=['forage','push'])
+    p.add_argument('--tasks',nargs='+',default=['forage','delayed_match','button_sequence'])
     p.add_argument('--support-steps',type=int,default=64)
-    p.add_argument('--query-steps',type=int,default=64)
+    p.add_argument('--query-steps',type=int,default=256)
+    p.add_argument('--task-horizon',type=int,default=3)
+    p.add_argument('--study-nodes',type=int,default=16)
     p.add_argument('--horizons',type=int,nargs='+',default=[1,3])
     p=sub.add_parser('planning-verify'); p.add_argument('path',type=Path)
     args=parser.parse_args(argv)
@@ -127,6 +148,9 @@ def main(argv=None):
             dsag_spec = DSAGSpecV1(enabled=True, gain=args.dsag_gain, max_gain=max(args.dsag_gain, 0.1), seed=args.seed)
         if dsag_spec is not None:
             config=replace(config,dsag=dsag_spec)
+        if args.neuroweave_enabled is not None or args.neuroweave_config is not None:
+            from .neuroweave.cli_commands import cli_neuroweave_spec
+            config=replace(config,neuroweave=cli_neuroweave_spec(args.neuroweave_enabled,args.neuroweave_config,args.seed))
         if args.command=='serve' and args.nodes is None and not getattr(args, 'frontier_all', False):
             import os
             config=replace(config,
@@ -209,6 +233,9 @@ def main(argv=None):
                     'telemetry': channel.get_telemetry_dict(),
                     'evidence_tier': 'synthetic_fixture',
                 }
+        elif args.command=='neuroweave':
+            from .neuroweave.cli_commands import run_neuroweave_command
+            result=run_neuroweave_command(args,config)
         elif args.command=='connectome-inventory':
             from .connectome_assets import get_source_inventory
             result={'sources':get_source_inventory()}
@@ -228,9 +255,16 @@ def main(argv=None):
         elif args.command=='planning-study':
             from .planning_study import run_planning_study
             from .server import safe_name
-            result=run_planning_study(args.output/'planning-studies'/safe_name(args.name),
+            study_dir=args.output/'planning-studies'/safe_name(args.name)
+            receipt=run_planning_study(study_dir,
                 {'seeds':args.seeds,'tasks':args.tasks,'support_steps':args.support_steps,
-                 'query_steps':args.query_steps,'nodes_per_source':config.nodes_per_source,'horizons':args.horizons})
+                 'query_steps':args.query_steps,'nodes_per_source':args.study_nodes,
+                 'horizons':args.horizons,'task_horizon':args.task_horizon})
+            result={'schema':receipt['schema'],'status':receipt['status'],
+                    'receipt':str(study_dir/'receipt.json'),'report':str(study_dir/'report.md'),
+                    'promotion':receipt['summary']['promotion'],
+                    'arms':receipt['summary']['arms'],'costs':receipt['costs'],
+                    'integrity':receipt['integrity']}
         elif args.command=='evidence':
             from .adaptation_study import run_adaptation_study,verify_adaptation_study,format_adaptation_report
             from .server import safe_name
@@ -602,7 +636,7 @@ def main(argv=None):
             result={**result,'measured':False,'evidence_kind':'illustrative',
                     'scope':'standalone synthetic inputs; no measured embodied performance; use planning-study or evidence for actual world trials'}
         print(json.dumps(result,indent=2,allow_nan=False,default=str))
-        return 1 if args.command in ('verify','adaptation-verify','planning-verify') and not result.get('ok',False) else 0
+        return 1 if (args.command in ('verify','adaptation-verify','planning-verify') and not result.get('ok',False)) or (args.command=='neuroweave' and result.get('ok') is False) else 0
     except (ValueError,TypeError,KeyError,OSError,RuntimeError) as exc:
         parser.exit(2,f'Error: {exc}\n')
 

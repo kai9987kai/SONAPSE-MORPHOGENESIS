@@ -173,7 +173,10 @@ class LabRuntime:
             }
             self.last['homeostasis']=self.agent.homeostasis.summary()
             self.total_steps+=1
-            self.recent=(self.recent+[{'step':self.total_steps,'reward':float(reward),'done':bool(done)}])[-128:]
+            recent_row={'step':self.total_steps,'reward':float(reward),'done':bool(done)}
+            if done and 'outcome' in info:
+                recent_row['outcome']=info['outcome']
+            self.recent=(self.recent+[recent_row])[-128:]
             if done:
                 self.agent.reset_episode()
                 self.obs=self.world.reset()
@@ -209,7 +212,10 @@ class LabRuntime:
         indices=np.linspace(0,g.n-1,min(8000,g.n)).astype(int)
         edge_indices=np.linspace(0,len(g.base_pre)-1,min(3200,len(g.base_pre))).astype(int)
         mode=('memory' if self.config.surprise_memory else 'model') if self.config.experience_planning else 'off'
-        experience={'model':self.agent.experience_model.summary(),'memory':self.agent.surprise_memory.summary(),'mode':mode,'planner':deepcopy(self.last.get('experience_planner',{}))}
+        experience={'model':self.agent.experience_model.summary(),
+                    'task_aware_model':self.agent.task_aware_model.summary(),
+                    'memory':self.agent.surprise_memory.summary(),'mode':mode,
+                    'planner':deepcopy(self.last.get('experience_planner',{}))}
         result={'config':self.config.to_dict(),'steps':self.total_steps,'world':self.world.snapshot(),'action':self.last_action.tolist(),'telemetry':deepcopy(self.last),'recent':deepcopy(self.recent),'experience':experience,'graph':{'nodes':[{'id':int(i),'origin':int(g.origin[i]),'role':str(g.role[i]),'activity':float(r[i])} for i in indices],'edges':[[int(g.base_pre[i]),int(g.base_post[i]),float(g.base_w[i])] for i in edge_indices],'neurons':g.n,'graft_edges':len(g.graft_pre)},'status':{'bridge_training':'experimental supervised preparation' if self.agent.bridge_updates else 'untrained','readout':self.config.readout,'camera_live':bool(self.last.get('camera_consumed',False)),'experience_planning':self.config.experience_planning}}
         from .compute import compute_summary
         result['compute']={**compute_summary(),'threads':self.config.compute_threads}

@@ -357,7 +357,49 @@ class Workbench:
         threading.Thread(target=worker,daemon=True,name=f'{kind}-{ident[:8]}').start()
         return deepcopy(job)
 
+    def neuroweave_api(self):
+        """Lazily built NEUROWEAVE Lab API (``/api/neuroweave/*``); never touches Sonapse defaults."""
+        api=getattr(self,'_neuroweave_api',None)
+        if api is None:
+            from .neuroweave.workbench_api import NeuroWeaveWorkbenchAPI
+            api=self._neuroweave_api=NeuroWeaveWorkbenchAPI(self)
+        return api
+    # NEUROWEAVE Lab routes: GET /api/neuroweave/catalog, '/api/neuroweave/status', '/api/neuroweave/observatory',
+    # '/api/neuroweave/ledger', '/api/neuroweave/ecology'; POST '/api/neuroweave/configure', '/api/neuroweave/step',
+    # '/api/neuroweave/experiment', '/api/neuroweave/topology', '/api/neuroweave/lesion', '/api/neuroweave/sensory',
+    # '/api/neuroweave/export', '/api/neuroweave/inspect', '/api/neuroweave/sequence-search'.
     def get(self,path):
+        if path.startswith('/api/neuroweave/'):
+            return self.neuroweave_api().get(path)
+        receipt_prefix='/api/planning-study/receipt/'
+        if path.startswith(receipt_prefix):
+            name=safe_name(path[len(receipt_prefix):])
+            studies_root=(self.root/'planning-studies').resolve()
+            if studies_root.parent!=self.root:
+                raise KeyError('planning study not found')
+            study_dir=(studies_root/name).resolve()
+            if study_dir.parent!=studies_root:
+                raise KeyError('planning study not found')
+            receipt_path=study_dir/'receipt.json'
+            try:
+                receipt_path=receipt_path.resolve(strict=True)
+            except (OSError, RuntimeError):
+                raise KeyError('planning study not found') from None
+            if receipt_path.parent!=study_dir or not receipt_path.is_file():
+                raise KeyError('planning study not found')
+            if receipt_path.stat().st_size>64*1024*1024:
+                raise ValueError('planning receipt exceeds the 64 MiB read limit')
+            receipt=json.loads(receipt_path.read_text(encoding='utf-8'),
+                               parse_constant=lambda value: (_ for _ in ()).throw(ValueError('nonfinite JSON')))
+            from .planning_study import verify_planning_study
+            verification=verify_planning_study(receipt_path)
+            summary={'schema':receipt.get('schema'),'status':receipt.get('status'),
+                     'config':receipt.get('config',{}),'scope':receipt.get('scope',''),
+                     'summary':receipt.get('summary',{}),'costs':receipt.get('costs',{}),
+                     'integrity':receipt.get('integrity'),
+                     'source_fingerprint_count':len(receipt.get('source_fingerprints',{}))
+                         if isinstance(receipt.get('source_fingerprints'),dict) else 0}
+            return {'name':name,'receipt':summary,'verification':verification}
         if path.startswith('/api/export/status/'):
             ident=path.rsplit('/',1)[-1]
             if not re.fullmatch(r'[0-9a-f]{32}',ident): raise KeyError('portable export not found')
@@ -596,6 +638,8 @@ class Workbench:
                 return self.consolidation_engine.get_summary()
         raise KeyError('unknown API endpoint')
     def post(self,path,data):
+        if path.startswith('/api/neuroweave/'):
+            return self.neuroweave_api().post(path,data)
         if path=='/api/export': return self.start_portable_export()
         if path=='/api/training/pretrain': return self.start_enhancement('pretrain',data)
         if path=='/api/rsi/live': return self.start_enhancement('rsi',data)
@@ -777,7 +821,8 @@ class Workbench:
                     steps=integer(data.get('steps',24),'steps',8,64),seeds=data.get('seeds',[19,23]),
                     min_gain=float(data.get('min_gain',0.)))
             if path=='/api/experience/preview':
-                from .experience import encode_experience_state
+                from .experience import (encode_experience_state,
+                    encode_task_aware_experience_state, task_aware_fallback_reason)
                 from .experience_planner import ExperienceMPC
                 horizon=integer(data.get('horizon',self.runtime.config.experience_horizon),'horizon',1,5)
                 use_memory=data.get('memory',self.runtime.config.surprise_memory)
@@ -785,13 +830,30 @@ class Workbench:
                 value_guided=data.get('value_guided',getattr(self.runtime.config,'value_guided_planning',False))
                 if type(value_guided) is not bool: raise ValueError('value_guided must be boolean')
                 algo=str(data.get('planner_algorithm',getattr(self.runtime.config,'planner_algorithm','experience_mpc')))
-                if algo not in ('experience_mpc','recurrent_latent','hybrid'):
-                    raise ValueError('planner_algorithm must be experience_mpc, recurrent_latent, or hybrid')
+                if algo not in ('experience_mpc','recurrent_latent','hybrid','task_value_mpc'):
+                    raise ValueError('planner_algorithm must be experience_mpc, recurrent_latent, hybrid, or task_value_mpc')
                 agent=self.runtime.agent
                 state=encode_experience_state(self.runtime.obs,agent.last_features)
+                model=agent.experience_model
+                planner_state=state
+                planner_memory=agent.surprise_memory if use_memory else None
+                planner_value_guided=value_guided
+                fallback_reason=None
+                active_algorithm=algo
+                if algo=='task_value_mpc':
+                    task_id=getattr(self.runtime.config,'task','auto')
+                    fallback_reason=task_aware_fallback_reason(self.runtime.obs,task_id)
+                    if fallback_reason is None:
+                        planner_state=encode_task_aware_experience_state(
+                            self.runtime.obs,agent.last_features,task_id)
+                        model=agent.task_aware_model
+                        planner_memory=None
+                        planner_value_guided=True
+                    else:
+                        active_algorithm='experience_mpc'
                 baseline=self.runtime.last_action.copy()
-                proposed,diagnostics=ExperienceMPC(agent.experience_model,horizon=horizon,value_guided=value_guided).plan(
-                    state,baseline,memory=agent.surprise_memory if use_memory else None)
+                proposed,diagnostics=ExperienceMPC(model,horizon=horizon,value_guided=planner_value_guided).plan(
+                    planner_state,baseline,memory=planner_memory)
                 extra_diag={}
                 if algo in ('recurrent_latent','hybrid') and getattr(agent,'recurrent_planner',None) is not None:
                     import numpy as _np
@@ -802,7 +864,11 @@ class Workbench:
                         proposed=rec_act
                     elif algo=='hybrid':
                         proposed=_np.clip(0.55*proposed+0.45*rec_act,-1.0,1.0).astype(_np.float32)
-                return {**diagnostics,**extra_diag,'planner_algorithm':algo,'horizon':horizon,'source_step':self.runtime.total_steps,
+                return {**diagnostics,**extra_diag,'planner_algorithm':algo,
+                        'active_algorithm':active_algorithm,
+                        'model_family':'task_aware_40d' if model is agent.task_aware_model else 'legacy_16d',
+                        'fallback_reason':fallback_reason,
+                        'horizon':horizon,'source_step':self.runtime.total_steps,
                         'baseline':baseline.tolist(),'proposed_action':proposed.tolist(),
                         'action_order':['drive','turn','reach','height','grip'],
                         'baseline_source':'repeat previous executed action; current observation with last neural context',
@@ -815,8 +881,8 @@ class Workbench:
                 value_guided=data.get('value_guided',getattr(self.runtime.config,'value_guided_planning',False))
                 if type(value_guided) is not bool: raise ValueError('value_guided must be boolean')
                 algo=str(data.get('planner_algorithm',getattr(self.runtime.config,'planner_algorithm','experience_mpc')))
-                if algo not in ('experience_mpc','recurrent_latent','hybrid'):
-                    raise ValueError('planner_algorithm must be experience_mpc, recurrent_latent, or hybrid')
+                if algo not in ('experience_mpc','recurrent_latent','hybrid','task_value_mpc'):
+                    raise ValueError('planner_algorithm must be experience_mpc, recurrent_latent, hybrid, or task_value_mpc')
                 config=dataclasses.replace(self.runtime.config,experience_planning=mode!='off',surprise_memory=mode!='model',experience_horizon=horizon,value_guided_planning=value_guided,planner_algorithm=algo)
                 self.runtime.config=config; self.runtime.agent.config=config
                 if hasattr(self.runtime.agent,'_setup_frontier_extensions'):
@@ -860,6 +926,8 @@ class Workbench:
                     if isinstance(cfg.get('connectome_sources'),list): cfg['connectome_sources']=tuple(cfg['connectome_sources'])
                     if 'dsag' not in cfg:
                         cfg['dsag']=self.runtime.config.dsag
+                    if 'neuroweave' not in cfg:
+                        cfg['neuroweave']=getattr(self.runtime.config,'neuroweave',None)
                     from .runtime import LabRuntime
                     self.runtime=LabRuntime(SynapseConfig(**cfg),output_root=self.root)
                     if hasattr(self, 'sim_worker') and self.sim_worker is not None:

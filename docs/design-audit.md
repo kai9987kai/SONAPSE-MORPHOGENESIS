@@ -115,3 +115,32 @@ To ensure zero regressions across the `ddf7406` (Antigravity) and `ffb1514` (Cod
    - Added `quantum_bifurcation` and `cybernetic_sanctuary` (featuring autonomous cooperative `helper_drones` that project a protective shield aura mitigating sentinel detection and predator proximity).
 8. **Tandem Max Mode (`SynapseConfig.max_tandem`, `POST /api/tandem/max`)**:
    - Added the one-click `⚡ Run Complete System in Tandem at MAX Mode (Sections 01–05)` button and `/api/tandem/max` orchestrator (`synapse/tandem_max.py`) that configures 2,000 neurons across all logical CPU threads (`os.cpu_count()`), enables every optional subsystem, and executes Sections 01–05 in tandem with a cryptographic SHA-256 receipt.
+
+## Task-Aware Planning: Current Evidence (14 November 2026)
+
+`task_value_mpc` adds a separate 40-value transition model and value-guided
+short-horizon route for exact native task identities. The existing 16-value
+experience model remains the fallback for `auto`, complex tasks, and observed
+task-code mismatches. The new model is checkpointed separately and starts cold
+when older checkpoints do not contain it. This is an opt-in engineering path,
+not a general planner replacement.
+
+The frozen held-out comparison covered six seeds, three tasks, and 18 paired
+seed/task units. No arm achieved a success; each recorded one terminal failure
+and 17 of 18 episodes were incomplete at the query cap. Task-aware minus actor completion was 0.000
+(`[0.000, 0.000]` descriptive interval) and return was −0.2283
+(`[−0.4863, −0.0274]`). The rule failed, so default behavior remains unchanged
+and task-aware planning stays opt-in. Most episodes were right-censored, which
+limits what this run says about terminal task success. The [report](results/2026-11-14-task-aware-planning.md)
+and [receipt](results/2026-11-14-task-aware-planning-receipt.json) preserve the
+full outcomes, costs, source fingerprints, and verification scope.
+
+No separate task-context ablation was included, so the comparison does not
+isolate which context coordinates contribute to the integrated route's result.
+
+The workbench receipt viewer verifies hashes and recorded arithmetic but does
+not re-run environments. The viewer, snapshot endpoint, and checkpoint-import
+validation were updated after the study, so current verification remains `ok`
+but reports source drift in `agent.py`, `capabilities.py`, `experience.py`,
+`runtime.py`, and `server.py`; the report keeps the measured source fingerprint
+set unchanged.

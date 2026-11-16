@@ -1930,6 +1930,26 @@ def _handle_memory_fast_weights(payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _handle_planning_task_value_mpc(payload: Dict[str, Any]) -> Dict[str, Any]:
+    from .experience import NATIVE_TASKS
+    task=payload.get('task')
+    if task is not None and type(task) is not str:
+        raise ValueError('task must be a string when provided')
+    supported=task in NATIVE_TASKS if task is not None else None
+    return {
+        'status':'ok',
+        'scope':'catalog metadata for the opt-in task-aware 40D value-guided MPC route; no action or world is advanced',
+        'planner_algorithm':'task_value_mpc',
+        'evidence_decision':'keep_opt_in',
+        'enabled_by_default':False,
+        'supported_native_tasks':list(NATIVE_TASKS),
+        'selected_task_supported':supported,
+        'runtime_context_check':'configured task identity must be an exact native task and match the observed task code',
+        'unsupported_route':'legacy_16d with an explicit fallback reason',
+        'confirmation_report':'docs/results/2026-11-14-task-aware-planning.md',
+    }
+
+
 def _handle_planning_multistep_recurrent(payload: Dict[str, Any]) -> Dict[str, Any]:
     from .multistep_planner import MultistepRecurrentPlanner, compare_planning_horizons
     planner = MultistepRecurrentPlanner(state_dim=32, action_dim=5, obs_dim=155, seed=int(payload.get('seed', 42)))
@@ -1988,6 +2008,7 @@ _REGISTRY: Dict[str, Dict[str, Any]] = {
     'learning.continual_backprop': {'id': 'learning.continual_backprop', 'family': 'learning', 'name': 'Continual Backpropagation Engine', 'description': 'Utility-driven mature neuron replacement, zeroing stale Adam moments and preserving Dale constraints.', 'scope': 'continual backpropagation and utility-guided neuron replacement', 'status': 'available', 'input_schema': {'type': 'object', 'properties': {'neurons': {'type': 'integer'}}}, 'example': {'neurons': 16}, 'handler': _handle_learning_continual_backprop},
     'learning.trainable_sleep': {'id': 'learning.trainable_sleep', 'family': 'learning', 'name': 'Trainable Sleep Consolidation', 'description': 'Multi-objective offline student-teacher distillation with task, replay, and parameter regularization losses.', 'scope': 'trainable sleep consolidation with multi-objective student distillation', 'status': 'available', 'input_schema': {'type': 'object', 'properties': {'memories': {'type': 'integer'}}}, 'example': {'memories': 8}, 'handler': _handle_learning_trainable_sleep},
     'memory.fast_weights': {'id': 'memory.fast_weights', 'family': 'memory', 'name': 'Universal Fast-Weight Memory (uTTT & Titans)', 'description': 'Shared associative fast-weight memory matrix with self-supervised test-time gradient adaptation.', 'scope': 'shared neural fast-weight memory with universal test-time training', 'status': 'available', 'input_schema': {'type': 'object', 'properties': {'surprisal': {'type': 'number'}}}, 'example': {'surprisal': 0.5}, 'handler': _handle_memory_fast_weights},
+    'planning.task_value_mpc': {'id': 'planning.task_value_mpc', 'family': 'planning', 'name': 'Task-Aware Value-Guided MPC (Experimental)', 'description': 'Opt-in native-task 40D experience model with value-guided short-horizon MPC, support abstention, and an explicit legacy fallback. Held-out completion promotion criteria were not met; keep disabled by default.', 'scope': 'finite local synthetic-world planning experiment; no general capability or real-world reliability claim', 'status': 'available', 'input_schema': {'type': 'object', 'properties': {'task': {'type': 'string'}}}, 'example': {'task': 'forage'}, 'handler': _handle_planning_task_value_mpc},
     'planning.multistep_recurrent': {'id': 'planning.multistep_recurrent', 'family': 'planning', 'name': 'Recurrent Multistep MPC Planner', 'description': 'Multi-step predictive control over recurrent latent trajectories with calibrated epistemic uncertainty penalties.', 'scope': 'recurrent multi-step model predictive control with uncertainty penalties', 'status': 'available', 'input_schema': {'type': 'object', 'properties': {'horizons': {'type': 'array'}}}, 'example': {'horizons': [1, 3, 5]}, 'handler': _handle_planning_multistep_recurrent},
     'curriculum.verifiable_relift': {'id': 'curriculum.verifiable_relift', 'family': 'curriculum', 'name': 'Verifiable Curriculum Engine (ReLIFT)', 'description': 'Procedural environment generator with verifiable intermediate subgoals and cryptographic process receipts.', 'scope': 'verifiable procedural environment curriculum with cryptographic process receipts', 'status': 'available', 'input_schema': {'type': 'object', 'properties': {'seed': {'type': 'integer'}}}, 'example': {'seed': 42}, 'handler': _handle_curriculum_verifiable_relift},
     'structural.causal_evolution': {'id': 'structural.causal_evolution', 'family': 'structural', 'name': 'Causal Connectome Evolution', 'description': 'Interventional do-calculus screening evaluating Delta J(m) on cloned agents with multi-objective wiring penalties.', 'scope': 'causal connectome evolution and interventional do-calculus screening', 'status': 'available', 'input_schema': {'type': 'object', 'properties': {'seed': {'type': 'integer'}}}, 'example': {'seed': 42}, 'handler': _handle_structural_causal_evolution},

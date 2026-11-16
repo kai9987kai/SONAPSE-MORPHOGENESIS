@@ -17,6 +17,7 @@
     <button data-tab="patches">03 <span>Weight programs</span></button>
     <button data-tab="experiments">04 <span>Experiments & RSI</span></button>
     <button data-tab="checkpoints">05 <span>State archive</span></button>
+    <button data-tab="neuroweave">06 <span>NEUROWEAVE Lab</span></button>
   </nav>
   <div class="sidebar-note">
     <i></i> LOCAL / CPU<br>
@@ -913,6 +914,7 @@
             <option value="experience_mpc">experience_mpc</option>
             <option value="recurrent_latent">recurrent_latent</option>
             <option value="hybrid">hybrid</option>
+            <option value="task_value_mpc">task_value_mpc (experimental, native tasks)</option>
           </select>
         </label>
         <label><input name="continual_backprop" type="checkbox"> Continual Backprop</label>
@@ -1000,6 +1002,7 @@
             <option value="experience_mpc">Experience MPC</option>
             <option value="recurrent_latent">Recurrent Latent World Model v2</option>
             <option value="hybrid">Hybrid (MPC + Latent + Diffusion)</option>
+            <option value="task_value_mpc">Task-aware value MPC · native tasks · experimental</option>
           </select>
         </label>
         <label><input id="experience-value-guided" type="checkbox"> Value-guided critic</label>
@@ -1007,13 +1010,31 @@
         <button id="experience-preview">Inspect forecast</button>
       </div>
       <p id="experience-summary" class="muted">Waiting for experience data.</p>
+      <div class="contract-strip" aria-live="polite">
+        <div class="contract-item"><small>Task-aware model</small><span id="task-aware-status">Not active</span></div>
+        <div class="contract-item"><small>Observed support</small><span id="task-aware-support">0 transitions</span></div>
+        <div class="contract-item"><small>Current route</small><span id="task-aware-route">Actor or legacy planner</span></div>
+      </div>
+      <details class="planning-evidence" open>
+        <summary>Measured planning study · local receipt</summary>
+        <p class="muted">Loads a named receipt from this workbench's configured output folder. Realized episode outcomes and model forecasts are shown separately.</p>
+        <div class="toolbar">
+          <label>Study name
+            <input id="planning-receipt-name" type="text" value="task-aware-confirmation-20261114" maxlength="64" autocomplete="off">
+          </label>
+          <button id="planning-receipt-load" type="button">Load and verify</button>
+        </div>
+        <p id="planning-receipt-status" class="muted" aria-live="polite">No study receipt loaded.</p>
+        <div id="planning-receipt-result"></div>
+      </details>
+      <p class="muted forecast-boundary">Forecasts below are model predictions for candidate actions. Study tables contain realized transitions from frozen query episodes; episodes without an environment terminal event remain incomplete.</p>
       <div id="learning-contract" class="contract-strip" aria-live="polite"></div>
       <div id="plan-preview" hidden>
         <div class="panel-head"><h3>Counterfactual plan inspector</h3><span id="plan-step" class="tag"></span></div>
         <p id="plan-reason" aria-live="polite"></p>
         <div id="plan-actions" class="plan-actions"></div>
         <div id="plan-candidates" class="plan-candidates"></div>
-        <p class="muted">Preview repeats the previous executed action as its baseline. It reads the model without advancing the actor or world. Forecasts omit terminal events and future neural context changes.</p>
+        <p class="muted">Model forecast only. Preview repeats the previous executed action as its baseline. It reads the model without advancing the actor or world. Forecasts omit terminal events and future neural context changes.</p>
         <details><summary>Candidate sequences and model trajectory</summary><pre id="plan-details"></pre></details>
       </div>
       <details>
@@ -1257,6 +1278,167 @@
       <div id="checkpointlist"></div>
       <pre id="checkpointresult"></pre>
     </article>
+  </section>
+
+  <!-- 06 NEUROWEAVE LAB (additive; every control calls /api/neuroweave/*) -->
+  <section id="neuroweave" class="tab">
+    <article>
+      <div class="panel-head">
+        <div><h2>NEUROWEAVE Lab</h2><span class="tag">SYNTHETIC ABSTRACTION · OPT-IN · RAW MEDIA NEVER SENT OR STORED</span></div>
+        <span id="nwl-source" class="status-pill">source: —</span>
+      </div>
+      <p class="muted">Observes the live runtime's NEUROWEAVE channel when the runtime was started with <code>--neuroweave</code>; otherwise a separate lab engine kept on this workbench. Stepping, configuring and sensory input act only on the lab engine.</p>
+      <div class="toolbar">
+        <button id="nwl-refresh" class="primary">Refresh observatories</button>
+        <label class="nwl-inline">Lab steps <input id="nwl-step-count" type="number" min="1" max="256" value="16"></label>
+        <button id="nwl-step-run">Step lab engine</button>
+        <label class="toggle-label"><input id="nwl-auto" type="checkbox"> Auto-refresh (2 s)</label>
+      </div>
+      <p id="nwl-status" class="muted" role="status">Not loaded.</p>
+      <div class="nwl-subnav" role="tablist">
+        <button data-nwpanel="neural" class="active">Neural</button>
+        <button data-nwpanel="neuromod">Neuromodulation</button>
+        <button data-nwpanel="sensory">Sensory</button>
+        <button data-nwpanel="learning">Learning</button>
+        <button data-nwpanel="environment">Environment</button>
+        <button data-nwpanel="lab">Experimental laboratory</button>
+        <button data-nwpanel="studio">Model studio</button>
+      </div>
+    </article>
+
+    <div id="nwl-panel-neural" class="nwl-panel active">
+      <div class="visual-grid">
+        <article><h2>Region activity</h2><div id="nwl-region-bars" class="nwl-bars"></div></article>
+        <article><h2>Region connectivity</h2><p class="muted">Rows = source region, columns = target region; colour = signed summed weight.</p><canvas id="nwl-conn-canvas" height="300"></canvas></article>
+      </div>
+      <div class="visual-grid">
+        <article><h2>Soma &amp; dendrite state means</h2><div id="nwl-soma" class="nwl-kv"></div></article>
+        <article><h2>Axon &amp; synapse statistics</h2><div id="nwl-axon" class="nwl-kv"></div></article>
+      </div>
+      <article>
+        <div class="panel-head"><h2>Structural event ledger</h2><button id="nwl-ledger-refresh">Refresh ledger</button></div>
+        <p id="nwl-ledger-summary" class="muted">—</p>
+        <div class="table-scroll"><table><thead><tr><th>step</th><th>kind</th><th>src</th><th>dst</th><th>reason</th><th>utility</th></tr></thead><tbody id="nwl-ledger-body"></tbody></table></div>
+      </article>
+    </div>
+
+    <div id="nwl-panel-neuromod" class="nwl-panel">
+      <div class="visual-grid">
+        <article><h2>Neuromodulators</h2><div id="nwl-modulators" class="nwl-bars"></div></article>
+        <article><h2>Affect variables</h2><p class="muted">Bounded control variables, not emotions.</p><div id="nwl-affect" class="nwl-bars"></div></article>
+      </div>
+      <div class="visual-grid">
+        <article><h2>Receptor statistics</h2><div id="nwl-receptors" class="nwl-kv"></div></article>
+        <article><h2>Applied controls</h2><div id="nwl-controls" class="nwl-kv"></div></article>
+      </div>
+    </div>
+
+    <div id="nwl-panel-sensory" class="nwl-panel">
+      <article>
+        <div class="panel-head"><h2>Sensory channels</h2><button id="nwl-modes-apply" class="primary">Apply channel modes (rebuilds lab engine)</button></div>
+        <div class="table-scroll"><table><thead><tr><th>channel</th><th>modality</th><th>mode</th><th>value</th><th>reliability</th></tr></thead><tbody id="nwl-channels"></tbody></table></div>
+        <p id="nwl-sensory-pe" class="muted">Mean prediction error: —</p>
+      </article>
+      <div class="visual-grid">
+        <article>
+          <h2>Local webcam &amp; microphone features</h2>
+          <p class="muted">Frames are drawn to an off-screen 32×24 canvas and audio to an analyser in this browser; only derived scalars (luminance, opponency, edges, motion, band energies) are posted. Set the visual/audio channels to <b>live</b> above for them to reach the lab engine.</p>
+          <div class="toolbar">
+            <button id="nwl-webcam-start">Enable webcam features</button>
+            <button id="nwl-webcam-stop" disabled>Stop webcam</button>
+            <button id="nwl-mic-start">Enable microphone bands</button>
+            <button id="nwl-mic-stop" disabled>Stop microphone</button>
+          </div>
+          <video id="nwl-webcam-video" class="nwl-hidden" muted playsinline></video>
+          <p id="nwl-sensory-status" class="muted" role="status">Webcam and microphone are off.</p>
+        </article>
+        <article>
+          <h2>External channel value</h2>
+          <div class="toolbar">
+            <select id="nwl-external-channel"></select>
+            <input id="nwl-external-value" type="number" min="-1" max="1" step="0.05" value="0.5">
+            <button id="nwl-external-send">Send external value</button>
+          </div>
+          <pre id="nwl-sensory-out">No sensory values sent.</pre>
+        </article>
+      </div>
+    </div>
+
+    <div id="nwl-panel-learning" class="nwl-panel">
+      <div class="visual-grid">
+        <article><h2>Expert routing load</h2><div id="nwl-expert-load" class="nwl-bars"></div></article>
+        <article><h2>Validation loss vs persistence</h2><div id="nwl-loss" class="nwl-kv"></div></article>
+      </div>
+      <article><h2>Plasticity &amp; structural statistics</h2><div id="nwl-plasticity" class="nwl-kv"></div></article>
+    </div>
+
+    <div id="nwl-panel-environment" class="nwl-panel">
+      <article>
+        <div class="panel-head"><h2>Ecology arena (1200 × 660)</h2><span class="tag">LAB ENGINE · CLOSED LOOP</span></div>
+        <div class="toolbar">
+          <select id="nwl-eco-config"></select>
+          <label class="nwl-inline">Steps <input id="nwl-eco-steps" type="number" min="1" max="256" value="32"></label>
+          <button id="nwl-eco-run" class="primary">Run ecology steps</button>
+          <button id="nwl-eco-refresh">Redraw arena</button>
+        </div>
+        <canvas id="nwl-eco-canvas" height="330"></canvas>
+        <div id="nwl-eco-summary" class="nwl-kv"></div>
+      </article>
+    </div>
+
+    <div id="nwl-panel-lab" class="nwl-panel">
+      <article>
+        <div class="panel-head"><h2>Experimental laboratory</h2><span class="tag">BOUNDED · PAIRED 95% CI · DIGEST-SEALED RECEIPTS</span></div>
+        <div class="toolbar">
+          <select id="nwl-exp-select"></select>
+          <label class="nwl-inline">Seeds <input id="nwl-exp-seeds" type="number" min="1" max="3" value="2"></label>
+          <label class="nwl-inline">Steps <input id="nwl-exp-steps" type="number" min="4" max="200" value="24"></label>
+          <label class="toggle-label"><input id="nwl-exp-quick" type="checkbox" checked> Quick</label>
+          <label class="toggle-label"><input id="nwl-exp-background" type="checkbox" checked> Background job</label>
+          <button id="nwl-exp-run" class="primary">Run experiment</button>
+        </div>
+        <details open><summary>Mechanisms (extra candidate mechanisms for the experiment, or apply to the lab engine)</summary>
+          <div id="nwl-mech-list" class="nwl-mechs"></div>
+          <div class="toolbar"><button id="nwl-mech-apply">Apply selected mechanisms to lab engine</button><button id="nwl-mech-none">Clear selection</button></div>
+        </details>
+        <div class="toolbar">
+          <button id="nwl-topology-run">Run topology sweep</button>
+          <button id="nwl-lesion-run">Run quick lesion assay</button>
+          <button id="nwl-sequence-run" title="Supplementary, budget-matched synthetic sequence-variant search: sparse random-projection guidance vs evolutionary vs random search. Not protein modelling.">Run sequence-variant search (quick)</button>
+          <button id="nwl-export-csv">Export results CSV</button>
+          <button id="nwl-export-json">Export results JSON</button>
+        </div>
+        <p id="nwl-exp-status" class="muted" role="status">No experiment run yet.</p>
+        <div class="table-scroll"><table><thead><tr><th>experiment</th><th>task</th><th>comparison</th><th>metric</th><th>mean Δ</th><th>95% CI</th><th>n</th><th>verdict</th></tr></thead><tbody id="nwl-results-body"></tbody></table></div>
+        <details id="nwl-sequence-details"><summary>Supplementary: synthetic sequence-variant search</summary>
+          <p class="muted">Equal query budget per strategy; the top-1% hit threshold is the empirical 99th percentile of a fixed random reference sample per landscape. Synthetic additive-plus-epistatic landscape — not a protein-folding model, not a ProteinGym assay and not evidence about real protein engineering.</p>
+          <div class="table-scroll"><table><thead><tr><th>strategy</th><th>mean best fitness</th><th>top-1% hit rate</th><th>runs</th><th>queries / run</th></tr></thead><tbody id="nwl-sequence-body"></tbody></table></div>
+          <p id="nwl-sequence-status" class="muted" role="status">No sequence-variant search run yet.</p>
+        </details>
+        <details><summary>Last lab receipt</summary><pre id="nwl-lab-out">—</pre></details>
+      </article>
+    </div>
+
+    <div id="nwl-panel-studio" class="nwl-panel">
+      <div class="visual-grid">
+        <article>
+          <h2>Export model</h2>
+          <div class="toolbar">
+            <select id="nwl-export-source"><option value="lab">lab engine</option><option value="live">live runtime engine</option></select>
+            <button id="nwl-export-package" class="primary">Download package (.json)</button>
+            <button id="nwl-export-html">Download standalone HTML</button>
+            <button id="nwl-export-fpga">Download FPGA mapping manifest</button>
+          </div>
+          <p id="nwl-studio-status" class="muted" role="status">No export yet.</p>
+        </article>
+        <article>
+          <h2>Inspect package (read-only)</h2>
+          <p class="muted">The file is read in this browser and its text is sent for inspection only; nothing is imported into live state (limit 1 MB).</p>
+          <input id="nwl-import-file" type="file" accept=".json,application/json">
+          <pre id="nwl-inspect-out">No package inspected.</pre>
+        </article>
+      </div>
+    </div>
   </section>
 
   <footer>

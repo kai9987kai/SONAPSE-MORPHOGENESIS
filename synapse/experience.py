@@ -9,6 +9,11 @@ from __future__ import annotations
 from copy import deepcopy
 import numpy as np
 
+from . import sources as _sources
+
+_sources.activate()
+from graftbrain.world import TASKS as NATIVE_TASKS
+
 
 def _vector(value, size, name):
     array = np.asarray(value, dtype=np.float64)
@@ -40,6 +45,47 @@ def encode_experience_state(obs, features=None):
                     obs[151] - obs[152], obs[154],
                     features[:32].mean(), features[32:48].mean()])
     return np.clip(np.asarray(summary, dtype=np.float64), -2, 2)
+
+
+def task_aware_fallback_reason(obs, task_id):
+    """Explain why task-conditioned state encoding is unavailable.
+
+    Complex-world task names can share the base environment's nine-value task
+    code, so the configured identity must name a native task and exactly match
+    the observed code before that identity is used by the learner.
+    """
+    if type(task_id) is not str or task_id == 'auto':
+        return 'automatic or missing task identity has no fixed native task context'
+    if task_id not in NATIVE_TASKS:
+        return 'configured task is not a validated native task identity'
+    observation = _vector(obs, 155, 'observation')
+    expected = np.zeros(len(NATIVE_TASKS), dtype=np.float64)
+    expected[NATIVE_TASKS.index(task_id)] = 1.0
+    if not np.array_equal(observation[140:149], expected):
+        return 'observed task code does not match the configured native task'
+    return None
+
+
+def encode_task_aware_experience_state(obs, features, task_id):
+    """Encode 14 predicted signals with fixed graph, task, and donor context.
+
+    The task code is admitted only for a named native task whose visible
+    observation one-hot matches exactly. No complex-task alias is distinguishable
+    from the observation and such tasks must stay on the legacy representation.
+    """
+    reason = task_aware_fallback_reason(obs, task_id)
+    if reason is not None:
+        raise ValueError(reason)
+    features = _vector(features, 64, 'features')
+    predicted = encode_experience_state(obs, features)[:14]
+    graph_summary = np.clip(features[:32].mean(), -2.0, 2.0)
+    task_code = np.zeros(len(NATIVE_TASKS), dtype=np.float64)
+    task_code[NATIVE_TASKS.index(task_id)] = 1.0
+    donor_state = np.clip(features[32:48], -2.0, 2.0)
+    state = np.concatenate((predicted, [graph_summary], task_code, donor_state))
+    if state.shape != (40,) or not np.isfinite(state).all():
+        raise ValueError('task-aware state must contain 40 finite values')
+    return state.astype(np.float64, copy=False)
 
 
 class AdaptiveResidualCalibrator:
@@ -230,15 +276,45 @@ class TDValueModel:
                 'samples': self.samples, 'td_error_ema': float(self.td_error_ema)}
 
     def import_state(self, state):
-        if not isinstance(state, dict) or state.get('schema') != 1:
+        if not isinstance(state, dict) or type(state.get('schema')) is not int or state['schema'] != 1:
             raise ValueError('invalid TDValueModel schema')
-        self.state_dim = int(state['state_dim'])
-        self.gamma = float(state['gamma'])
-        self.lr = float(state['lr'])
-        self.dim = 1 + 2 * self.state_dim
-        self.weights = np.asarray(state['weights'], dtype=np.float64).copy()
-        self.samples = int(state['samples'])
-        self.td_error_ema = float(state.get('td_error_ema', 0.0))
+        state_dim = state.get('state_dim')
+        if type(state_dim) is not int or state_dim != self.state_dim:
+            raise ValueError('TDValueModel state dimension mismatch')
+        gamma, lr = state.get('gamma'), state.get('lr')
+        numeric = (int, float, np.integer, np.floating)
+        if (isinstance(gamma, (bool, np.bool_)) or not isinstance(gamma, numeric)
+                or not np.isfinite(gamma) or not 0.0 <= gamma <= 1.0):
+            raise ValueError('invalid TDValueModel discount')
+        if (isinstance(lr, (bool, np.bool_)) or not isinstance(lr, numeric)
+                or not np.isfinite(lr) or not 0.0 < lr <= 1.0):
+            raise ValueError('invalid TDValueModel learning rate')
+        try:
+            raw_weights = np.asarray(state['weights'])
+        except (KeyError, TypeError, ValueError, OverflowError):
+            raise ValueError('invalid TDValueModel weights') from None
+        if raw_weights.dtype.kind not in 'iuf':
+            raise ValueError('invalid TDValueModel weights')
+        weights = raw_weights.astype(np.float64, copy=False)
+        dim = 1 + 2 * state_dim
+        if weights.shape != (dim,) or not np.isfinite(weights).all():
+            raise ValueError('invalid TDValueModel weights')
+        if float(np.linalg.norm(weights)) > 100.000001:
+            raise ValueError('TDValueModel weights exceed their bound')
+        samples = state.get('samples')
+        if type(samples) is not int or samples < 0:
+            raise ValueError('invalid TDValueModel sample count')
+        td_error_ema = state.get('td_error_ema', 0.0)
+        if (isinstance(td_error_ema, (bool, np.bool_))
+                or not isinstance(td_error_ema, numeric)
+                or not np.isfinite(td_error_ema) or td_error_ema < 0.0):
+            raise ValueError('invalid TDValueModel error estimate')
+        self.gamma = float(gamma)
+        self.lr = float(lr)
+        self.dim = dim
+        self.weights = weights.copy()
+        self.samples = samples
+        self.td_error_ema = float(td_error_ema)
 
 
 class ExperienceWorldModel:
@@ -535,7 +611,7 @@ class ExperienceWorldModel:
                           'residual_calibrator': self.residual_calibrator.export_state(),
                           'value_model': self.value_model.export_state()})
 
-    def import_state(self, state):
+    def import_state(self, state, *, require_value_model=False):
         """Validate fully before replacing the resident model."""
         if not isinstance(state, dict) or state.get('schema') != 1:
             raise ValueError('invalid experience state schema')
@@ -579,7 +655,11 @@ class ExperienceWorldModel:
         # Old checkpoints predate residual calibration and safely start cold.
         if 'residual_calibrator' in state:
             candidate.residual_calibrator.import_state(state['residual_calibrator'])
+        if require_value_model and 'value_model' not in state:
+            raise ValueError('task-aware experience state is missing its TD value model')
         if 'value_model' in state:
             candidate.value_model.import_state(state['value_model'])
+            if require_value_model and candidate.value_model.samples > candidate.samples:
+                raise ValueError('task-aware TD value samples exceed transition samples')
         candidate.rng.bit_generator.state = deepcopy(state['rng'])
         self.__dict__.update(candidate.__dict__)
