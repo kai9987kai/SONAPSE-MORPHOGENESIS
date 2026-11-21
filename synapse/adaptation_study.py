@@ -63,13 +63,13 @@ def _learned_hash(agent):
 
 
 def _source_fingerprints():
-    from .config import ARTIFACTS
+    from .config import tidal_checkpoint_path
     root = Path(__file__).resolve().parent
     names = sorted(p.name for p in root.glob('*.py'))
     names.extend(f'_vendor/graftbrain/graftbrain/{name}.py' for name in ('brain', 'plasticity', 'neuro_modules', 'world', 'connectomes', 'graft'))
     names.append('_vendor/poseidon/poseidon/core.py')
     values = {name: _file_hash(root/name) for name in names}
-    values['artifact:tidal_core.pt'] = _file_hash(ARTIFACTS/'tidal_core.pt')
+    values['artifact:tidal_core.pt'] = _file_hash(tidal_checkpoint_path())
     return values
 
 

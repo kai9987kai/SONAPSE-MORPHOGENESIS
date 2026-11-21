@@ -68,7 +68,7 @@ The pre-NEUROWEAVE system is frozen at git tag
 | Packets / events | `packets.py`, `events.py` | typed representation packets, fusion, event bus |
 | Ecology | `ecology.py` | 1200×660 arena with 7 configs; Sonapse 155-d observation adapter |
 | Hardware / packages | `hardware.py`, `package.py` | INT8/Q8.8, tile schedule, FPGA mapping manifest, `SONAPSE_NEUROWEAVE_PACKAGE`, legacy import |
-| Engine | `engine.py` | `NeuroWeaveEngine` composes all subsystems |
+| Engine | `engine.py` | `NeuroWeaveEngine` composes all subsystems; engine-level `AssociativeTraceMemory` and `FastWeightMemory` (added 2026-11-19) |
 | Sonapse bridge | `bridge.py` (the only torch module) | `NeuroWeaveBusChannel`, `obs_to_sensory` |
 | Laboratory | `tasks.py`, `experiments.py`, `lesion.py`, `promotion.py` | 24 experiments, lesion assay, promotion ledger |
 | Standalone runner | `standalone.py` | offline HTML page with JS frozen inference |
@@ -154,9 +154,10 @@ extensions.
 - `connectome`: `brain.CONNECTOME_FLAGS`
 - `engine`: `engine.ENGINE_FLAGS`
 
-The union of these sets has 43 ids. **`associative_memory` and `fast_weights`
-are declared in the spec but no runtime code reads them.** They are marked
-*declared only* below. Memory behaviour comes from `memory_ecology`.
+The union of these sets covers all 45 ids. Until 2026-11-19
+`associative_memory` and `fast_weights` were declared in the spec but read by
+no runtime code. They are now engine-level mechanisms (rows 4 and 18; rules in
+section 6). `memory_ecology` is still a separate store.
 
 **Tests:** abbreviations for the test files.
 - `core` = `tests/test_neuroweave_core.py`
@@ -164,6 +165,7 @@ are declared in the spec but no runtime code reads them.** They are marked
 - `ms` = `test_neuroweave_modulation_sensory.py`
 - `mm` = `test_neuroweave_micro_memory.py`
 - `pp` = `test_neuroweave_prediction_packets.py`
+- `af` = `test_neuroweave_assoc_fastweights.py`
 - `hw` = `test_neuroweave_hardware_package.py`
 - `sa` = `test_neuroweave_standalone.py`
 
@@ -180,7 +182,7 @@ against Python for the four mechanism sets in that file.
 | 1 | `multi_soma` | neuroweave | implemented | cells | core::each_neuron_flag, core::each_consumed |
 | 2 | `structural_encoder` | neuroweave | implemented | brain | core::each_consumed; sa (embedded weights) |
 | 3 | `sparse_code` | neuroweave | implemented | cells, brain | core::each_neuron_flag, `test_q88_and_sparse` |
-| 4 | `associative_memory` | neuroweave | **declared only** | not read by the runtime | standalone lists it as not executed (`sa::test_capabilities_list_every_enabled_mechanism`) |
+| 4 | `associative_memory` | neuroweave | implemented (engine-level, since 2026-11-19; not executed by the standalone page) | engine (`AssociativeTraceMemory`) | `af::test_each_flag_alone_changes_outputs_from_the_step_after_the_first_write`, `af::test_associative_recall_picks_best_cosine_match_and_scales_the_stored_state`, `af::test_associative_store_gating_fifo_capacity_and_clipping`, `af::test_engine_step_feeds_exactly_recall_plus_fast_read_into_the_brain` |
 | 5 | `reward_plasticity` | neuroweave | implemented | connectome | `core::test_reward_update_bounded_sign_preserving_and_meta`, core::each_consumed |
 | 6 | `synaptic_delays` | neuroweave | implemented | connectome | `core::test_delay_ring_buffer`, core::each_consumed |
 | 7 | `homeostatic_governor` | neuroweave | implemented | cells | core::each_neuron_flag |
@@ -194,7 +196,7 @@ against Python for the four mechanism sets in that file.
 | 15 | `adaptive_conduction` | neuroweave | implemented | connectome | core::each_consumed, `core::test_frozen_step_does_not_change_synaptic_myelin` |
 | 16 | `quantised_synapses` | neuroweave | implemented | connectome | `core::test_quantised_int8`, `hw::test_quantise_int8_symmetric_and_bounded` |
 | 17 | `axonal_branches` | neuroweave | implemented | cells | core::each_neuron_flag, `core::test_cell_myelin_sets_axonal_release_efficacy` |
-| 18 | `fast_weights` | neuroweave | **declared only** | not read by the runtime | standalone lists it as not executed |
+| 18 | `fast_weights` | neuroweave | implemented (engine-level, since 2026-11-19; not executed by the standalone page) | engine (`FastWeightMemory`) | `af::test_each_flag_alone_changes_outputs_from_the_step_after_the_first_write`, `af::test_fast_weight_write_and_read_follow_the_rule_exactly`, `af::test_fast_weights_store_reward_signed_value_key_associations`, `af::test_engine_step_feeds_exactly_recall_plus_fast_read_into_the_brain` |
 | 19 | `efference_self_model` | neuroweave | implemented | engine / prediction | `eng::test_engine_level_mechanism_changes_outputs`, `pp::test_efference_*` (4 tests) |
 | 20 | `predictive_coding` | neuroweave | implemented | cells | core::each_neuron_flag |
 | 21 | `stdp` | neuroweave | implemented | connectome | `core::test_stdp_traces_bounded_and_timing_rule`, `core::test_stdp_learns_with_membrane_spikes` |
@@ -306,7 +308,91 @@ source sign is never flipped. Rows marked *(core)* are covered by
 | Specialist graft | A separate small recurrent predictor trained only through its own interface. Its coupling starts at 0. `detach()` removes it without residue. |
 | Representation fusion | Configured or delta-rule learned fusion weights. With zero weights or no packets the input passes through unchanged. |
 | Memory ecology | Store, retrieve, confirm, replay, forgetting and downscaling. `PREDICTED` items are never returned as verified and are promoted only by `confirm()`. |
+| Associative trace memory (`associative_memory`; engine, not synaptic) | **Key:** the first 32 values of the step's external drive, zero-padded and clipped to [−1, 1], taken before any attached extension. The external drive is the composed 40-value drive, or the task input when none of `multimodal_sensory`, `memory_ecology` or `representation_fusion` is on. **Store** (learning steps only): when the raw reward, clipped to [−1, 1], exceeds 0.35 and the step index is a multiple of 12, append `(key, unit outputs)`. The store is a FIFO of at most 32 episodes. **Recall** (every step, including frozen steps): take the episode with the highest cosine similarity `k·q / (‖k‖‖q‖ + 1e-9)`, the earliest on ties. If that similarity exceeds 0.35, unit *i* receives `0.11·sim·state_i`, with the state zero-padded or truncated to the current population. An empty store or a weak match adds nothing. Keys and states are clipped, so one recall adds at most 0.11 per unit. |
+| Universal fast weights (`fast_weights`; engine, not synaptic) | **Key `k`:** the first 8 drive values, clipped. **Read** (every step, including frozen steps): `f = M k`, and unit *i* receives `0.03·f[i mod 8]`, at most 0.24 in magnitude. **Write** (learning steps whose raw reward `R`, clipped to [−1, 1], is non-zero): `M ← clip(0.999·M + 0.0012·\|R\|·R·v kᵀ, −1, 1)`. Here `v` is the first 8 pooled readout features after the step, clipped. A zero matrix adds nothing. |
 | Neuromodulation controls | `learning_rate_scale`, `plasticity_scale`, `attention`, `threshold_shift`, `gain`, `sensory_weight`, … are consumed by the engine. `controls['applied_to_brain']` is reported per step. |
+
+**Associative trace memory and fast weights (engine-level, added 2026-11-19).**
+These are `AssociativeTraceMemory` and `FastWeightMemory` in `engine.py`. The
+recall and the fast-weight read are summed into one per-unit input,
+`NeuroWeaveBrain.step(unit_input=...)`. That input is added to the
+feed-forward drive after any receptor gain.
+
+Behaviour and tests (all in `af`):
+- **Exact no-op when off.** Without either flag the engine never passes
+  `unit_input`, and states and observatories gain no new keys
+  (`test_neither_flag_keeps_the_previous_code_path`). With the flags on but
+  nothing written yet, outputs are bit-identical to the engine without them
+  (`test_empty_store_and_zero_matrix_contribute_exactly_nothing`).
+- **Learning only with `learn=True`.** Only learning steps store or write.
+  Frozen steps still read what was learned
+  (`test_frozen_steps_read_but_never_write`).
+- **Known-answer tests** for both rules:
+  `test_associative_recall_picks_best_cosine_match_and_scales_the_stored_state`,
+  `test_associative_store_gating_fifo_capacity_and_clipping`,
+  `test_fast_weight_write_and_read_follow_the_rule_exactly`,
+  `test_fast_weights_store_reward_signed_value_key_associations` and
+  `test_engine_step_feeds_exactly_recall_plus_fast_read_into_the_brain`.
+- **Bounds and determinism.** Contributions and stored state stay bounded under
+  hostile inputs (`test_contributions_and_state_stay_bounded`). Same seed gives
+  the same outputs and state digest, a JSON round trip continues exactly, and
+  the global NumPy RNG is untouched
+  (`test_determinism_round_trip_and_no_global_rng_use`).
+- **Persistence.** The state is in `export_state()['associative_memory']` and
+  `['fast_weights']`, present only when the flag is on. `import_state`
+  validates both before it swaps anything in
+  (`test_import_validates_everything_before_mutating`). Besides shapes and
+  bounds it checks what the rules imply: episode steps are increasing
+  multiples of 12 below the engine step, exactly `min(stores, 32)` episodes
+  remain, there is at most one recall hit and one fast-weight write per step,
+  `stores` does not exceed the number of scheduled store steps, and a non-zero
+  matrix has at least one recorded write
+  (`test_from_state_enforces_capacity_and_per_step_counts`). A state saved
+  without these keys imports with an empty store and a zero matrix
+  (`test_states_saved_before_the_mechanisms_existed_import_with_fresh_memories`).
+- **Step results.** `step()` reports per-step `associative_memory` and
+  `fast_weights` records, and `observatory()['learning']` reports their
+  summaries.
+
+**Where the constants come from.** They follow the NEUROWEAVE-LAB 0.4.0
+`memory` and `fastWeights` switches as re-implemented in the sibling
+SONAPSE-EVO port (`src/sonapse_evo/neuroweave/memory/associative.py` and
+`memory/fast_weights.py`, read at commit `eb498fb`). All eleven constants
+match that port. The original JavaScript was not available to this build. This
+version differs from that port in four ways:
+- keys are taken from the engine's external drive, not the port's observation
+  vector;
+- keys, stored states and fast-weight values are clipped to [−1, 1];
+- the stored state is the unit-output vector, not the port's rate vector;
+- the fast-weight value is the first 8 of this engine's pooled readout
+  features (`NeuroWeaveBrain.readout_features`), not the port's
+  `pooled_features`.
+
+**Related work (inspired by, not reproductions).**
+- The fast weights are a hetero-associative, reward-signed variant of the
+  decaying outer-product fast weights of Ba et al. (2016),
+  `A(t) = λA(t−1) + η h(t)h(t)ᵀ`.
+- The recall resembles the key-similarity lookup of Neural Episodic Control
+  (Pritzel et al., 2017). It uses a single best cosine match, not that paper's
+  kernel-weighted sum over the p nearest neighbours.
+- Both writes are reward-gated, in the spirit of three-factor learning rules
+  (Frémaux & Gerstner, 2016).
+
+References (titles, authors, venues and the two rules quoted above checked
+against the publisher and arXiv pages on 2026-11-20):
+- J. Ba, G. E. Hinton, V. Mnih, J. Z. Leibo, C. Ionescu, "Using Fast Weights to
+  Attend to the Recent Past", *Advances in Neural Information Processing
+  Systems 29* (NIPS 2016), Dec 2016.
+  <https://proceedings.neurips.cc/paper/2016/hash/9f44e956e3a2b7b5598c625fcc802c36-Abstract.html>
+  (arXiv:1610.06258; its rule, Eq. 1, is Hebbian and not reward-gated)
+- A. Pritzel, B. Uria, S. Srinivasan, A. Puigdomènech Badia, O. Vinyals,
+  D. Hassabis, D. Wierstra, C. Blundell, "Neural Episodic Control", *Proc.
+  34th ICML*, PMLR 70:2827–2836, Aug 2017.
+  <https://proceedings.mlr.press/v70/pritzel17a.html> (arXiv:1703.01988; its
+  lookup uses p = 50 neighbours and an inverse-squared-distance kernel)
+- N. Frémaux, W. Gerstner, "Neuromodulated Spike-Timing-Dependent Plasticity,
+  and Theory of Three-Factor Learning Rules", *Frontiers in Neural Circuits* 9,
+  published 19 Jan 2016. <https://doi.org/10.3389/fncir.2015.00085>
 
 ## 7. Experiments (24) and methodology
 
@@ -479,7 +565,14 @@ setting and does not generalise.
 `neuroweave=NeuroWeaveSpecV1.max_preset(seed=seed, neurons=min(256, max(48, total_neurons // 32)))`.
 
 The preset:
-- turns every mechanism on
+- turns every mechanism on. Since 2026-11-19 this includes the engine-level
+  `associative_memory` and `fast_weights` (section 6). They can act only after
+  a learning step has written to them: any non-zero reward writes the fast
+  weights, and a reward above 0.35 on a step that is a multiple of 12 stores
+  an episode. Runs made after that date can therefore differ from earlier
+  ones. The preset also turns on `q88_state`, whose rounding can absorb the
+  small fast-weight read (section 12). The difference has not been measured in
+  a Max Mode run.
 - sets `gain=0.02`, `max_gain=0.1`, `ramp_steps=32`
 - uses topology `dense_multi_region`
 - sets `max_neurons = min(4096, 2·neurons)` and `max_synapses = min(250000, max(8192, 48·neurons))`
@@ -571,7 +664,9 @@ one of three lists:
 - **not executed:**
   - the learning-only mechanisms
   - the engine-level subsystems
-  - `associative_memory` and `fast_weights`
+  - `associative_memory` and `fast_weights`: their episode store and 8×8
+    matrix are engine state (`NeuroWeaveEngine.export_state`), which the
+    package does not carry, so the page runs neither read
 
 **Abstain / review outcome (heuristic, not calibrated).** Each step also
 reports `selective`: `margin = |2p−1|`, `risk = clip(router_entropy, 0, 1)`
@@ -691,6 +786,11 @@ to 1 (`OPENBLAS_NUM_THREADS=OMP_NUM_THREADS=MKL_NUM_THREADS=1`).
 - The core of Max Mode section 06 (`run_neuroweave_laboratory` at the max
   preset, 256 neurons, 16 steps, no opt-in extras) took 2.6–2.8 s over three
   runs on 2026-11-16, on one CPU thread on the same machine.
+- These timings predate the engine-level `associative_memory` and
+  `fast_weights` (added 2026-11-19). In the "all 45 on" columns those two did
+  no work then. Per step they now add a cosine search over at most 32 stored
+  keys of 32 values, an 8×8 read and write, and one per-unit vector addition.
+  The table has not been re-measured.
 
 **Estimates (not measurements):**
 - The brain's own profile estimates state memory as `synapses·40 + n·224`
@@ -717,9 +817,81 @@ to 1 (`OPENBLAS_NUM_THREADS=OMP_NUM_THREADS=MKL_NUM_THREADS=1`).
   full-size experiments have not been run. The supplementary sequence-variant
   search reports `worse` overall and `improved` only for sparse vs random in
   one synthetic setting. Complexity is not evidence of improvement.
-- **Two declared mechanisms are not implemented** in the runtime:
-  `associative_memory` and `fast_weights`. The `associative_memory`
-  experiment's measurable effect therefore comes only from `memory_ecology`.
+- **`associative_memory` and `fast_weights` are new and show no benefit
+  yet.** Before 2026-11-19 they were declared but not implemented. They are now
+  engine-level mechanisms (section 6). Quick-mode receipts were re-run on
+  2026-11-20 with `QUICK_ARGS`: seeds 0 and 1, held-out seed 100, 24 training
+  and 12 held-out steps, 24 neurons, one CPU thread. Each was run twice and
+  gave the same receipt digest both times. Other jobs were running on the
+  machine, so the wall-clock times are only indicative. Results:
+  - `associative_memory`: `no_detectable_difference` with reason
+    `degenerate_ci`; the held-out accuracy difference was 0 on both seeds. All
+    three ablations (`associative_memory`, `fast_weights`, `memory_ecology`)
+    are also `no_detectable_difference`, and none is inert. Wall-clock 2.30 s
+    and 1.91 s; digest `c331d9161422c3c8…`.
+  - `cross_modal_learning`, whose set includes `associative_memory`:
+    `no_detectable_difference`. The held-out accuracy difference was +0.042,
+    95% CI [−0.488, 0.571], over 2 seeds. Its three ablations are also
+    `no_detectable_difference`, and none is inert. Wall-clock 1.61 s and
+    1.96 s; digest `aa10527be1700e91…`.
+
+  Without either flag the engine matched the committed pre-change NEUROWEAVE
+  package (`synapse/neuroweave/` at commit `b9d8270`, loaded from a scratch
+  copy) bit for bit in a 2026-11-20 check: outputs, `export_state()` and
+  `observatory()['learning']` over 30 steps (24 learning and 6 frozen; seed 5;
+  spec and inputs as in the scratch checks below; a reward of 0.7 on every 4th
+  step and −0.5 otherwise). Three mechanism sets were checked: none;
+  `multi_soma`, `membrane_dynamics`, `synaptic_delays`, `reward_plasticity`,
+  `neuromodulator_field`, `multimodal_sensory`, `memory_ecology`,
+  `predictive_ensemble` and `micro_collective`; and all 43 others.
+
+  States saved by that pre-change package also import. In the same check, a
+  state exported by it after 25 rewarded steps, with both flags in the spec,
+  imported with an empty store and a zero matrix. Two engines that imported it
+  continued identically for 15 steps and then stored and wrote as usual. With
+  zero reward (so nothing is written), the new export equalled the old one
+  plus the two new keys.
+
+  Limits of these mechanisms:
+  - Runs of 12 or fewer training steps never store an episode. Stores happen
+    only on step indices that are multiples of 12, and the lab's step-0 reward
+    is 0, so the first possible store is on step 12. In such runs
+    `associative_memory` is reported as `inert_in_this_configuration`
+    (`af::test_lab_associative_experiment_measures_fast_weights_and_flags_the_short_run_store_as_inert`).
+    `fast_weights` is not inert there: with seeds 0 and 1, held-out seed 100,
+    8 training and 4 held-out steps and 16 neurons, its ablation verdict was
+    `no_detectable_difference` (2026-11-20).
+  - The lab's `trainable_parameters` budget (`experiments._budget`) counts
+    neither the 64 fast-weight entries nor the episode store. Both are counted
+    in `state_numbers`. So that receipt's `budget_matched_within_10pct: true`
+    (194 vs 194) leaves out 64 learned values on the candidate side. Counted,
+    the ratio would be 258/194 ≈ 1.33, outside the 10% band.
+  - At the reference constants (η = 0.0012, read gain 0.03) the fast-weight
+    read is small. Scratch checks on 2026-11-20 used
+    `NeuroWeaveSpecV1(neurons=24, max_neurons=48, structural_interval=5,
+    sleep_interval=10)`, with the task inputs and sensory vectors of
+    `tasks.make_stream(seed, steps)`, compared against the same spec without
+    the flag. Over 30 learning steps (seed 11, with `multi_soma`,
+    `membrane_dynamics`, `reward_plasticity`, `multimodal_sensory` and
+    `memory_ecology` on, and a reward of 0.7 on every 4th step from step 0 and
+    −0.5 otherwise):
+    - `fast_weights` alone: largest output change 4.7e-4; the largest matrix
+      entry was 1.6e-3 after 30 writes;
+    - `associative_memory` alone: largest output change 0.117, from 3 stores
+      and 28 recall hits;
+    - both first differed at step 1.
+  - With `q88_state` on, Q8.8 rounding can absorb that read entirely. Setup:
+    the other 43 mechanisms on, seed 5, a reward of 0 on step 0, then 0.7 on
+    every 4th step and −0.5 otherwise. Results:
+    - adding `fast_weights` changed no output in 40 steps with the inputs of
+      `make_stream(5, 40)`;
+    - with the inputs of `make_stream(5, 400)`, outputs first differed at
+      step 11;
+    - without `q88_state`, the 40-step comparison differed from step 2
+      (largest change 2.5e-5);
+    - adding `associative_memory` instead changed outputs from step 13, the
+      step after the first store.
+  - The standalone page and the package carry neither memory.
 - **Sonapse sensory mapping is approximate.** Three channels have no source,
   and `audio_mid` is a speed proxy.
 - **Not tested here:**

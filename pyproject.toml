@@ -1,19 +1,48 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+# setuptools>=77 implements PEP 639 (SPDX `license` expression + `license-files`).
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "synapse-connectome-lab"
-version = "0.2.0"
+version = "0.3.0"
 description = "Integrated connectome, weight-programming and bounded RSI research workbench"
-license = {text = "Apache-2.0"}
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
+keywords = [
+    "computational-neuroscience",
+    "connectomics",
+    "neuromorphic-computing",
+    "spiking-neural-networks",
+    "reinforcement-learning",
+    "reproducibility",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = ["torch>=2.4", "numpy>=1.26", "scipy>=1.11"]
+
+[project.urls]
+Homepage = "https://github.com/kai9987kai/Sonapse-LAB"
+"Model card" = "https://huggingface.co/Kai9987kai/Sonapse-LAB"
 
 [project.optional-dependencies]
 test = ["pytest>=8"]
 connectomes = ["pyarrow>=14", "pandas>=2"]
 yaml = ["PyYAML>=6.0"]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.8", "pip-audit>=2.7", "hypothesis>=6"]
 
 [project.scripts]
 synapse-lab = "synapse.cli:main"
@@ -24,6 +53,29 @@ include = ["synapse*"]
 [tool.setuptools.package-data]
 synapse = ["web/*", "source_manifest.json", "_vendor/**/*"]
 
+[tool.setuptools.exclude-package-data]
+"*" = ["*.pyc", "*.pyo", "**/*.pyc", "**/*.pyo"]
+
+[tool.setuptools.data-files]
+"share/synapse-connectome-lab" = ["artifacts/tidal_core.pt"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 140
+extend-exclude = ["synapse/_vendor"]
+
+[tool.ruff.lint]
+# Correctness checks
+# (syntax errors, version-incompatible syntax, broken format strings, undefined
+# exports, duplicate keys, invalid escapes, pylint errors, high-signal bugbear).
+# The broader F,E,W,B,UP backlog is recorded in docs/ENGINEERING.md.
+select = [
+    "E9", "F63", "F7", "F50", "F52", "F601", "F602", "F621", "F622", "F821", "F822", "F823", "F901",
+    "W605", "PLE",
+    "B002", "B003", "B004", "B011", "B012", "B013", "B014", "B015", "B016", "B019", "B020",
+    "B021", "B022", "B025", "B026", "B029", "B030", "B031", "B032", "B033", "B034", "B035", "B039",
+]

@@ -1,0 +1,20 @@
+# Hooks are frozen to full commit SHAs (resolved with `gh api .../git/ref/tags/<tag>`).
+# Ruff reads the same [tool.ruff] selection from pyproject.toml as CI.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 22f0422809455ec89ffdcf5a00170ba816e42ddb  # frozen: v0.15.16
+    hooks:
+      - id: ruff-check
+        exclude: ^synapse/_vendor/
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-json
+        exclude: ^(docs/results/|synapse/_vendor/)
+      # Whitespace fixers are limited to the configuration/metadata file types this
+      # change introduces, so they never rewrite existing Python, Markdown or data files.
+      - id: end-of-file-fixer
+        files: \.(cff|ya?ml)$
+      - id: trailing-whitespace
+        files: \.(cff|ya?ml)$

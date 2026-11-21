@@ -8,7 +8,10 @@ def test_measured_planning_study_pairs_worlds_freezes_queries_and_checks_tamperi
               'nodes_per_source': 16, 'horizons': [1, 3]}
     receipt = run_planning_study(tmp_path/'study', config)
     assert receipt['status'] == 'complete'
-    assert {r['arm'] for r in receipt['records']} == {'actor', 'horizon_1', 'horizon_3'}
+    # The task-aware value planner (commit 5de56f5) adds a `task_value_h{task_horizon}`
+    # arm at the validated default task horizon of 3; see
+    # docs/results/2026-11-14-task-aware-planning.md ("Arms: ...").
+    assert {r['arm'] for r in receipt['records']} == {'actor', 'horizon_1', 'horizon_3', 'task_value_h3'}
     assert len({r['query_seed'] for r in receipt['records']}) == 1
     assert len({r['support_digest'] for r in receipt['records']}) == 1
     assert all(r['learned_before'] == r['learned_after'] for r in receipt['records'])

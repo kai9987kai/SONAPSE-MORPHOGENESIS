@@ -3,6 +3,47 @@
 const $ = id => document.getElementById(id);
 const pretty = x => JSON.stringify(x, null, 2);
 
+// -------------------------------------------------------------------------
+// Theme selector (additive). Dark is the default and leaves <html> untouched;
+// Light and System set data-theme for the theme layer at the end of style.css.
+// Runs first so the stored choice applies before the rest of the workbench
+// initialises; storage failures (private mode, policy, quota) are ignored.
+// -------------------------------------------------------------------------
+(() => {
+  const KEY = 'synapse_theme_v1';
+  const MODES = ['dark', 'light', 'system'];
+  const root = document.documentElement;
+  const select = document.getElementById('theme-select');
+  function applyTheme(mode) {
+    const choice = MODES.includes(mode) ? mode : 'dark';
+    if (choice === 'dark') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', choice);
+    if (select && select.value !== choice) select.value = choice;
+    return choice;
+  }
+  let stored = null;
+  try {
+    stored = window.localStorage.getItem(KEY);
+  } catch (_) {
+    stored = null;
+  }
+  applyTheme(stored);
+  if (select) {
+    select.addEventListener('change', () => {
+      const choice = applyTheme(select.value);
+      try {
+        if (choice === 'dark') window.localStorage.removeItem(KEY);
+        else window.localStorage.setItem(KEY, choice);
+      } catch (_) {
+        // The theme still applies for this page view without storage.
+      }
+    });
+  }
+  window.addEventListener('storage', event => {
+    if (event.key === KEY) applyTheme(event.newValue);
+  });
+})();
+
 let state = {};
 let running = false;
 let busy = false;
@@ -5462,9 +5503,13 @@ function updateSimSpeed() {
 // Navigation & Core Controls
 // -------------------------------------------------------------------------
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('.tab,nav button').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.tab,nav button').forEach(n => {
+    n.classList.remove('active');
+    if (n.tagName === 'BUTTON') n.removeAttribute('aria-current');
+  });
   $(b.dataset.tab).classList.add('active');
   b.classList.add('active');
+  b.setAttribute('aria-current', 'page');
   $('title').textContent = b.querySelector('span').textContent;
   if (b.dataset.tab === 'overview') {
     window.requestAnimationFrame(() => render(state));
@@ -7674,3 +7719,171 @@ if ($('neuroweave')) {
   });
   window.addEventListener('beforeunload', () => { nwlWebcamStop(); nwlMicStop(); });
 }
+
+// -------------------------------------------------------------------------
+// Frontier Pack Lab (additive; every control calls /api/frontier/*)
+// -------------------------------------------------------------------------
+(() => {
+  const section = $('frontier');
+  if (!section) return;
+  const frl = { catalog: null, rows: [], receipts: [] };
+
+  function frlCell(text) {
+    const td = document.createElement('td');
+    td.textContent = text === null || text === undefined ? '—' : String(text);
+    return td;
+  }
+
+  function frlFmt(v, digits = 4) {
+    if (v === null || v === undefined) return '—';
+    return typeof v === 'number' && Number.isFinite(v) ? v.toFixed(digits) : String(v);
+  }
+
+  function frlRenderObservers(obsPayload) {
+    const host = $('frl-observers-grid');
+    if (!host) return;
+    host.textContent = '';
+    const summary = obsPayload && obsPayload.summary ? obsPayload.summary : null;
+    if (!summary) return;
+    const observers = summary.observers || {};
+    const entries = Object.entries(observers);
+    const meta = document.createElement('div');
+    meta.textContent = `source: ${obsPayload.source} · steps: ${summary.observed_steps}/${summary.agent_steps} · units: ${summary.observed_unit_count}/${summary.n_units} · active observers: ${entries.length}`;
+    host.appendChild(meta);
+    entries.forEach(([modId, data]) => {
+      const card = document.createElement('div');
+      const strong = document.createElement('strong');
+      strong.textContent = modId;
+      card.appendChild(strong);
+      const detail = document.createElement('div');
+      detail.className = 'muted';
+      const parts = [];
+      for (const key of ['observed_steps', 'observed', 'global_synchrony_index', 'R_last', 'metastability_index', 'fvu_ema', 'mean_abs_fc', 'ce', 'ce_excess']) {
+        if (data && Object.prototype.hasOwnProperty.call(data, key) && data[key] !== null && data[key] !== undefined) {
+          parts.push(`${key}=${frlFmt(data[key], 3)}`);
+        }
+      }
+      detail.textContent = parts.length ? parts.join(' · ') : 'ready';
+      card.appendChild(detail);
+      host.appendChild(card);
+    });
+  }
+
+  function frlRenderResults() {
+    const tbody = $('frl-results-body');
+    if (!tbody) return;
+    tbody.textContent = '';
+    frl.rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      const ci = Array.isArray(row.ci95) && row.ci95.length === 2
+        ? `[${frlFmt(row.ci95[0], 4)}, ${frlFmt(row.ci95[1], 4)}]` : '—';
+      tr.appendChild(frlCell(row.experiment_id));
+      tr.appendChild(frlCell(row.kind));
+      tr.appendChild(frlCell(row.primary_comparison));
+      tr.appendChild(frlCell(frlFmt(row.mean_difference, 4)));
+      tr.appendChild(frlCell(ci));
+      tr.appendChild(frlCell(row.n));
+      tr.appendChild(frlCell(row.verdict));
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function frlLoadCatalog() {
+    if (frl.catalog) return frl.catalog;
+    const c = await api('frontier/catalog');
+    frl.catalog = c;
+    const sel = $('frl-exp-select');
+    if (sel) {
+      sel.textContent = '';
+      (c.experiments || []).forEach((exp) => {
+        const opt = document.createElement('option');
+        opt.value = exp.experiment_id;
+        opt.textContent = `${exp.experiment_id} (${exp.kind})`;
+        sel.appendChild(opt);
+      });
+    }
+    const modBody = $('frl-modules-body');
+    if (modBody) {
+      modBody.textContent = '';
+      (c.modules || []).forEach((m) => {
+        const tr = document.createElement('tr');
+        tr.appendChild(frlCell(m.id));
+        tr.appendChild(frlCell(m.title));
+        tr.appendChild(frlCell(m.kind));
+        tr.appendChild(frlCell(m.observer ? 'yes' : 'no'));
+        tr.appendChild(frlCell(m.origin));
+        tr.appendChild(frlCell(m.source));
+        modBody.appendChild(tr);
+      });
+    }
+    return c;
+  }
+
+  async function frlRefresh() {
+    await frlLoadCatalog();
+    const [status, obs] = await Promise.all([api('frontier/status'), api('frontier/observers')]);
+    $('frl-status').textContent = `Observing ${status.observed_source} hub · live runtime frontier ${status.live && status.live.enabled ? 'enabled' : 'off (default)'} · ${(frl.catalog.experiments || []).length} experiments ready.`;
+    frlRenderObservers(obs);
+  }
+
+  async function frlWaitJob(jobId) {
+    const start = Date.now();
+    while (Date.now() - start < 900000) {
+      await new Promise((r) => setTimeout(r, 400));
+      const jobs = await api('jobs');
+      const job = (jobs.jobs || []).find((j) => j.id === jobId);
+      if (job) {
+        if (job.status === 'completed') return job.result;
+        if (job.status === 'failed') throw Error(job.error || 'Frontier job failed');
+        if (job.status === 'cancelled') throw Error('Frontier job cancelled');
+      }
+    }
+    throw Error('Frontier job timed out');
+  }
+
+  const navBtn = document.querySelector('nav button[data-tab="frontier"]');
+  if (navBtn) navBtn.addEventListener('click', () => action(frlRefresh));
+  $('frl-refresh').onclick = () => action(frlRefresh);
+  $('frl-step-run').onclick = () => action(async () => {
+    const steps = Math.max(1, Math.min(256, Number($('frl-step-count').value) || 16));
+    const r = await api('frontier/step', { steps });
+    $('frl-status').textContent = `Lab hub stepped ${r.stepped} times → observed_steps=${r.summary.observed_steps}.`;
+    frlRenderObservers(r);
+  });
+  $('frl-step-reset').onclick = () => action(async () => {
+    const r = await api('frontier/step', { steps: 1, reset: true });
+    $('frl-status').textContent = `Lab hub reset and stepped once → observed_steps=${r.summary.observed_steps}.`;
+    frlRenderObservers(r);
+  });
+  $('frl-exp-run').onclick = () => action(async () => {
+    await frlLoadCatalog();
+    const id = $('frl-exp-select').value || 'anytime_inference';
+    const seeds = Math.max(1, Math.min(3, Number($('frl-exp-seeds').value) || 2));
+    const quick = $('frl-exp-quick').checked;
+    const background = $('frl-exp-background').checked;
+    $('frl-exp-status').textContent = `Running ${id} (${seeds} seeds, quick=${quick})…`;
+    const resp = await api('frontier/experiment', { id, seeds, quick, background });
+    const result = background && resp && resp.id ? await frlWaitJob(resp.id) : resp;
+    if (result && Array.isArray(result.rows)) frl.rows.push(...result.rows);
+    if (result && Array.isArray(result.receipts)) frl.receipts.push(...result.receipts);
+    frlRenderResults();
+    show('frl-lab-out', result);
+    const first = result && Array.isArray(result.rows) && result.rows[0] ? result.rows[0] : null;
+    $('frl-exp-status').textContent = first
+      ? `${first.experiment_id}: verdict=${first.verdict} · digest=${String(first.digest || '').slice(0, 12)}`
+      : `Completed ${id}.`;
+  });
+  $('frl-export-json').onclick = () => {
+    if (!frl.receipts.length) {
+      $('frl-exp-status').textContent = 'No frontier receipts to export yet.';
+      return;
+    }
+    const blob = new Blob([JSON.stringify(frl.receipts, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'frontier_experiment_receipts.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+})();

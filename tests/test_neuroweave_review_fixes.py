@@ -130,12 +130,13 @@ def test_inert_ablation_is_flagged_not_reported_as_a_verdict():
     r = ex.run_experiment('associative_memory', seeds=(0, 1), heldout_seeds=(100,), steps=8, neurons=16,
                           heldout_steps=4)
     assert ex.verify_receipt(r)
-    # associative_memory / fast_weights are declared-only: their minus arms reproduce the candidate exactly
-    assert {'associative_memory', 'fast_weights'} <= set(r['inert_mechanisms'])
-    for m in ('associative_memory', 'fast_weights'):
-        assert r['ablation_verdicts'][m] == 'inert_in_this_configuration'
-        c = r['comparisons'][f'candidate_vs_minus_{m}']
-        assert c['inert'] is True and c['verdict'] == 'no_detectable_difference'
+    # In this 8-step configuration associative_memory is still below its activation horizon while
+    # fast_weights and memory_ecology are active: the inert guard must flag the inactive arm only.
+    assert 'associative_memory' in set(r['inert_mechanisms'])
+    assert r['ablation_verdicts']['associative_memory'] == 'inert_in_this_configuration'
+    c = r['comparisons']['candidate_vs_minus_associative_memory']
+    assert c['inert'] is True and c['verdict'] == 'no_detectable_difference'
+    assert 'fast_weights' not in r['inert_mechanisms']
     assert 'memory_ecology' not in r['inert_mechanisms']
 
 

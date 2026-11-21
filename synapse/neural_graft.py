@@ -57,7 +57,7 @@ class NeuralResidualGraft:
     proposals changed by a planner or final action governor.
     """
     def __init__(self, seed=7, hidden_dim=256, residual_scale=.25, capacity=4096,
-                 learning_rate=3e-4, gamma=.97, exploration_std=.55):
+                 learning_rate=3e-4, gamma=.97, exploration_std=.55, optimizer_kind='adam'):
         _integer(seed, 'seed', 0, 2**31-1)
         _integer(hidden_dim, 'hidden_dim', 32, 1024)
         _integer(capacity, 'capacity', 16, 65536)
@@ -65,13 +65,21 @@ class NeuralResidualGraft:
                 or not 0 < residual_scale <= .35 or not 0 < learning_rate <= .01
                 or not 0 <= gamma < 1 or not .05 <= exploration_std <= 2):
             raise ValueError('invalid neural graft hyperparameters')
+        if optimizer_kind not in ('adam', 'muon'):
+            raise ValueError("optimizer_kind must be 'adam' or 'muon'")
         self.settings = {'seed': seed, 'hidden_dim': hidden_dim, 'residual_scale': float(residual_scale),
                          'capacity': capacity, 'learning_rate': float(learning_rate),
                          'gamma': float(gamma), 'exploration_std': float(exploration_std)}
+        if optimizer_kind != 'adam':
+            self.settings['optimizer_kind'] = optimizer_kind
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(seed + 417)
             self.network = _ResidualNetwork(hidden_dim)
-        self.optimizer = torch.optim.Adam(self.network.parameters(), lr=learning_rate)
+        if optimizer_kind == 'muon':
+            from .frontier.muon import make_graft_optimizer
+            self.optimizer = make_graft_optimizer(self.network, kind='muon', lr=learning_rate)
+        else:
+            self.optimizer = torch.optim.Adam(self.network.parameters(), lr=learning_rate)
         self.rng = np.random.default_rng(seed + 913)
         self.replay = []
         self.pending = None
@@ -342,6 +350,8 @@ class NeuralResidualGraft:
             candidate = type(self)(**state['settings'])
             if candidate.settings['hidden_dim'] != self.settings['hidden_dim']:
                 raise ValueError('neural graft architecture mismatch')
+            if candidate.settings.get('optimizer_kind', 'adam') != self.settings.get('optimizer_kind', 'adam'):
+                raise ValueError('neural graft optimizer mismatch')
             candidate.network.load_state_dict(state['network'])
             candidate.optimizer.load_state_dict(state['optimizer'])
             for parameter, moments in candidate.optimizer.state.items():

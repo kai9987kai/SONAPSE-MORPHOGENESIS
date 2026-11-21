@@ -8,17 +8,27 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+<a href="#title" class="skip-link visually-hidden">Skip to main content</a>
 <aside>
   <a class="brand" href="/">S<span>◉</span>NAPSE</a>
   <div class="caption">INTEGRATED RESEARCH LAB</div>
-  <nav>
-    <button data-tab="overview" class="active">01 <span>Live workbench</span></button>
+  <nav aria-label="Primary">
+    <button data-tab="overview" class="active" aria-current="page">01 <span>Live workbench</span></button>
     <button data-tab="capabilities">02 <span>Capabilities</span></button>
     <button data-tab="patches">03 <span>Weight programs</span></button>
     <button data-tab="experiments">04 <span>Experiments & RSI</span></button>
     <button data-tab="checkpoints">05 <span>State archive</span></button>
     <button data-tab="neuroweave">06 <span>NEUROWEAVE Lab</span></button>
+    <button data-tab="frontier">07 <span>Frontier Lab</span></button>
   </nav>
+  <div class="theme-control">
+    <label for="theme-select" class="eyebrow">Theme</label>
+    <select id="theme-select" class="theme-select">
+      <option value="dark" selected>Dark</option>
+      <option value="light">Light</option>
+      <option value="system">System</option>
+    </select>
+  </div>
   <div class="sidebar-note">
     <i></i> LOCAL / CPU<br>
     <small>Synthetic connectome research.<br>Measured behavior, bounded claims.</small>
@@ -29,11 +39,11 @@
   <header>
     <div>
       <div class="eyebrow">CONNECTOME × WEIGHT SPACE × INHERITED SEARCH</div>
-      <h1 id="title">Live workbench</h1>
+      <h1 id="title" tabindex="-1">Live workbench</h1>
     </div>
     <div class="header-actions">
       <button id="btn-tandem-max" class="tandem-max-button" title="Enable every optional subsystem, use the available CPU budget, accelerate compatible offline fitting when a PyTorch device is available, fall back to CPU safely, and execute Sections 01–05. Live microphone capture still requires its Start button and browser permission.">⚡ Run Complete System in Tandem (Max Mode · Sections 1–5)</button>
-      <div id="connection">Connecting…</div>
+      <div id="connection" role="status" aria-live="polite">Connecting…</div>
     </div>
   </header>
   
@@ -45,7 +55,7 @@
         <h2>Complete System in Tandem · Max Mode Status (Sections 01–05)</h2>
         <span class="tag">ALL OPTIONAL SUBSYSTEMS ON · ACCELERATOR-AWARE FITTING · MAX CPU THREADS · 5-SECTION ORCHESTRATION</span>
       </div>
-      <span id="tandem-status-pill" class="status-pill good">Ready</span>
+      <span id="tandem-status-pill" class="status-pill good" role="status" aria-live="polite">Ready</span>
     </div>
     <div id="tandem-section-pills" class="tandem-pills">
       <span class="status-pill" data-sec="1">01 Live &amp; Omnibus</span>
@@ -61,8 +71,8 @@
   <!-- 01 LIVE WORKBENCH -->
   <section id="overview" class="tab active">
     <div class="toolbar">
-      <button id="run" class="primary">▶ Run</button>
-      <button id="pause">Ⅱ Pause</button>
+      <button id="run" class="primary" aria-label="Run simulation">▶ Run</button>
+      <button id="pause" aria-label="Pause simulation">Ⅱ Pause</button>
       <button id="step">Step +1</button>
       <button id="train">Train +32</button>
       <button id="export-simulation" class="primary" title="Capture the complete native checkpoint at the next safe simulation step boundary, then package an offline snapshot and replay viewer. The standalone HTML is read-only; live continuation requires the native Python/PyTorch runtime.">⇩ Export Simulation</button>
@@ -109,7 +119,7 @@
       </label>
       <button id="btn-omnibus-run" class="omnibus-button" title="Run the full 6,000-neuron Frontier Apex curriculum with all systems active">✦ Frontier Apex Omnibus</button>
       <button id="btn-tandem-max-toolbar" class="tandem-max-button" title="Enable every optional subsystem, use available PyTorch accelerators for compatible offline fitting, fall back to CPU safely, and execute Sections 1–5. Live microphone capture requires its Start button and browser permission.">⚡ Max Mode (Sections 1–5)</button>
-      <span class="muted" id="runstatus">Paused</span>
+      <span class="muted" id="runstatus" role="status" aria-live="polite">Paused</span>
     </div>
 
     <div id="metrics" class="metrics"></div>
@@ -201,11 +211,11 @@
         <p id="world-summary" class="canvas-caption"></p>
         <div class="teleop-bar">
           <span class="teleop-label">Direct Teleop:</span>
-          <button id="teleop-fwd" title="Thrust forward (W / Up)">▲ Thrust</button>
-          <button id="teleop-left" title="Steer left (A / Left)">◀ Turn L</button>
-          <button id="teleop-right" title="Steer right (D / Right)">▶ Turn R</button>
-          <button id="teleop-grip" title="Toggle gripper (Space)">✊ Grip</button>
-          <button id="teleop-arm" title="Reach arm forward (E)">🦾 Reach</button>
+          <button id="teleop-fwd" title="Thrust forward (W / Up)" aria-label="Thrust forward">▲ Thrust</button>
+          <button id="teleop-left" title="Steer left (A / Left)" aria-label="Turn L (steer left)">◀ Turn L</button>
+          <button id="teleop-right" title="Steer right (D / Right)" aria-label="Turn R (steer right)">▶ Turn R</button>
+          <button id="teleop-grip" title="Toggle gripper (Space)" aria-label="Grip (toggle gripper)">✊ Grip</button>
+          <button id="teleop-arm" title="Reach arm forward (E)" aria-label="Reach arm forward">🦾 Reach</button>
           <span class="teleop-kbd">Keys: W A S D / Arrow keys / Space</span>
         </div>
       </article>
@@ -718,7 +728,7 @@
           </div>
           <div style="display: flex; gap: 8px;">
             <button type="button" id="audio-toggle-btn" class="omnibus-button" style="padding: 4px 10px;">Enable Microphone</button>
-            <span id="audio-status-badge" class="tag metric-tag">Mic: Inactive (Permission Gated)</span>
+            <span id="audio-status-badge" class="tag metric-tag" role="status" aria-live="polite">Mic: Inactive (Permission Gated)</span>
           </div>
         </div>
         <div style="display: flex; gap: 16px; margin-top: 8px;">
@@ -1213,7 +1223,7 @@
     <article>
       <div class="panel-head"><div><h2>Live recursive improvement</h2><span class="tag">ISOLATED CANDIDATES · WORLD SCREEN</span></div><button id="rsi-live" class="primary">Run bounded RSI</button></div>
       <p class="muted">Compare two candidate weight programs over 24 steps per screen. The background job records evaluation evidence and applies an accepted candidate only if the live parent is unchanged. The run pauses while the candidate is prepared.</p>
-      <p id="rsi-status" role="status">No live RSI job selected.</p>
+      <p id="rsi-status" role="status" aria-live="polite">No live RSI job selected.</p>
       <pre id="rsi-receipt"></pre>
       <details><summary>Persistent reusable skill library</summary><button id="skills-refresh">Refresh skill library</button><pre id="skills-result"></pre></details>
     </article>
@@ -1294,7 +1304,7 @@
         <button id="nwl-step-run">Step lab engine</button>
         <label class="toggle-label"><input id="nwl-auto" type="checkbox"> Auto-refresh (2 s)</label>
       </div>
-      <p id="nwl-status" class="muted" role="status">Not loaded.</p>
+      <p id="nwl-status" class="muted" role="status" aria-live="polite">Not loaded.</p>
       <div class="nwl-subnav" role="tablist">
         <button data-nwpanel="neural" class="active">Neural</button>
         <button data-nwpanel="neuromod">Neuromodulation</button>
@@ -1441,8 +1451,60 @@
     </div>
   </section>
 
+  <!-- 07 FRONTIER LAB (additive; every control calls /api/frontier/*) -->
+  <section id="frontier" class="tab">
+    <article>
+      <div class="panel-head">
+        <div><h2>Frontier Pack Lab</h2><span class="tag">SYNTHETIC ABSTRACTION · OPT-IN · READ-ONLY OBSERVERS</span></div>
+        <div class="toolbar">
+          <button id="frl-refresh">Refresh</button>
+          <label class="nwl-inline" for="frl-step-count">Lab steps <input id="frl-step-count" type="number" min="1" max="256" value="16"></label>
+          <button id="frl-step-run" class="primary">Step lab observers</button>
+          <button id="frl-step-reset">Reset lab</button>
+        </div>
+      </div>
+      <p class="muted">Reads the live runtime's read-only <code>FrontierObserverHub</code> when started with <code>--frontier</code> or in Max Mode; otherwise exercises an isolated lab observer hub without touching the live agent.</p>
+      <p id="frl-status" class="muted" role="status" aria-live="polite">Open this tab or press Refresh to inspect the Frontier Pack.</p>
+      <div id="frl-observers-grid" class="nwl-kv"></div>
+    </article>
+
+    <article>
+      <div class="panel-head"><h2>Frontier experiments</h2><span class="tag">CAPACITY-MATCHED · PAIRED 95% CI · SEALED RECEIPTS</span></div>
+      <div class="toolbar">
+        <label class="nwl-inline" for="frl-exp-select">Experiment <select id="frl-exp-select"></select></label>
+        <label class="nwl-inline" for="frl-exp-seeds">Seeds <input id="frl-exp-seeds" type="number" min="1" max="3" value="2"></label>
+        <label class="toggle-label"><input id="frl-exp-quick" type="checkbox" checked> Quick</label>
+        <label class="toggle-label"><input id="frl-exp-background" type="checkbox" checked> Background job</label>
+        <button id="frl-exp-run" class="primary">Run experiment</button>
+        <button id="frl-export-json">Export receipts JSON</button>
+      </div>
+      <p id="frl-exp-status" class="muted" role="status" aria-live="polite">No frontier experiment run yet.</p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>experiment</th><th>kind</th><th>comparison</th><th>mean Δ</th><th>95% CI</th><th>n</th><th>verdict</th></tr>
+          </thead>
+          <tbody id="frl-results-body"></tbody>
+        </table>
+      </div>
+      <details><summary>Last frontier receipt</summary><pre id="frl-lab-out">—</pre></details>
+    </article>
+
+    <article>
+      <div class="panel-head"><h2>Registered module catalog</h2><span class="tag">ADDITIVE · DEFAULT-OFF</span></div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>module</th><th>title</th><th>kind</th><th>observer</th><th>origin</th><th>source</th></tr>
+          </thead>
+          <tbody id="frl-modules-body"></tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+
   <footer>
-    SYNAPSE / 0.2 <span>Local experimental workbench · no general intelligence or biological fidelity claim</span>
+    SYNAPSE / 0.3 <span>Local experimental workbench · no general intelligence or biological fidelity claim</span>
   </footer>
 </main>
 

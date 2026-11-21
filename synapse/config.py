@@ -8,6 +8,26 @@ ROOT = Path(os.environ.get('SYNAPSE_HOME', str(PACKAGE.parent))).resolve()
 VENDOR = PACKAGE / '_vendor'
 ARTIFACTS = ROOT / 'artifacts'
 
+def tidal_checkpoint_path() -> Path:
+    """Resolve the core in a source checkout, a configured home, or an installed wheel."""
+    source = ARTIFACTS / 'tidal_core.pt'
+    if source.is_file() or 'SYNAPSE_HOME' in os.environ:
+        return source
+
+    from importlib.metadata import PackageNotFoundError, distribution
+    relative = Path('share', 'synapse-connectome-lab', source.name)
+    target_install = PACKAGE.parent / relative
+    if target_install.is_file():
+        return target_install
+    try:
+        installed = distribution('synapse-connectome-lab')
+    except PackageNotFoundError:
+        return source
+    for entry in installed.files or ():
+        if entry.parts[-3:] == relative.parts:
+            return Path(installed.locate_file(entry))
+    return source
+
 @dataclass(frozen=True)
 class SynapseConfig:
     seed: int = 7
@@ -120,8 +140,14 @@ class SynapseConfig:
     # NEUROWEAVE (synapse/neuroweave): same additive contract as DSAG. None is
     # the default and is omitted from to_dict().
     neuroweave: object | None = None
+    # Frontier Pack (synapse/frontier): additive, default-off read-only
+    # observers and opt-in graft optimizer. Omitted from to_dict() when None.
+    frontier: object | None = None
 
     def __post_init__(self):
+        if self.frontier is not None:
+            from .frontier.bridge import coerce_frontier_spec
+            object.__setattr__(self, 'frontier', coerce_frontier_spec(self.frontier))
         if self.neuroweave is not None:
             from .neuroweave.spec import NeuroWeaveSpecV1
             if isinstance(self.neuroweave, dict):
@@ -297,6 +323,7 @@ class SynapseConfig:
     def max_tandem(cls, total_neurons: int = 9000, seed: int = 7, task: str = 'continental_biosphere', **kwargs) -> 'SynapseConfig':
         """Maximum configuration with every optional subsystem enabled."""
         from .dsag.config import DSAGSpecV1
+        from .frontier.spec import FrontierSpecV1
         from .neuroweave.spec import NeuroWeaveSpecV1
 
         cfg_dict = dict(
@@ -403,6 +430,8 @@ class SynapseConfig:
             # Bounded population: Max Mode stays within the machine budget.
             neuroweave=NeuroWeaveSpecV1.max_preset(
                 seed=seed, neurons=min(256, max(48, int(total_neurons) // 32))),
+            # Read-only frontier observers: strictly trajectory-neutral.
+            frontier=FrontierSpecV1.max_preset(seed=seed),
         )
         cfg_dict.update(kwargs)
         return cls(**cfg_dict)
@@ -424,6 +453,10 @@ class SynapseConfig:
             d.pop('neuroweave')
         else:
             d['neuroweave'] = self.neuroweave.to_dict()
+        if self.frontier is None:
+            d.pop('frontier')
+        else:
+            d['frontier'] = self.frontier.to_dict()
         return d
 
     def max_tandem_feature_audit(self):
@@ -453,6 +486,10 @@ class SynapseConfig:
             enabled.append('neuroweave_v1')
             enabled.extend(f'neuroweave_v1.{m}' for m in MECHANISM_IDS if m in neuroweave.mechanisms)
             disabled.extend(f'neuroweave_v1.{m}' for m in MECHANISM_IDS if m not in neuroweave.mechanisms)
+        from .frontier.bridge import frontier_audit_entries
+        fr_on, fr_off = frontier_audit_entries(self.frontier)
+        enabled.extend(fr_on)
+        disabled.extend(fr_off)
         return {
             'schema': 'max-tandem-feature-audit-v1',
             'enabled_count': len(enabled),
@@ -468,6 +505,7 @@ class SynapseConfig:
         normalized = {
             'dsag': None,
             'neuroweave': None,
+            'frontier': None,
             'experience_planning': False, 'surprise_memory': True, 'experience_horizon': 1,
             'experimental_cognition': False, 'continual_backprop': False,
             'fast_weight_memory': False, 'dormant_lifecycle': True,
@@ -527,6 +565,10 @@ class SynapseConfig:
                     return False
                 if not saved_nw_spec.enabled:
                     normalized['neuroweave'] = self.neuroweave
+        # Frontier observers follow the same additive rule when graft_optimizer stays default.
+        from .frontier.bridge import normalize_saved_frontier
+        if not normalize_saved_frontier(self.frontier, normalized):
+            return False
         try:
             restored = type(self)(**normalized)
         except (TypeError, ValueError):

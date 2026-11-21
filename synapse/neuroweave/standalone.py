@@ -112,8 +112,10 @@ _ENGINE_ONLY: dict[str, str] = {
     'predictive_replay': 'replay is a learning-time process',
     'representation_fusion': 'engine packet fusion of the 40-d drive is not run',
     'transmitter_inference': 'connectivity analysis only; not part of the forward pass',
-    'associative_memory': 'not consumed by the NumPy runtime either',
-    'fast_weights': 'not consumed by the NumPy runtime either',
+    'associative_memory': 'engine-level associative recall is not run: the episode store is engine state '
+                          '(NeuroWeaveEngine.export_state) that the package does not carry',
+    'fast_weights': 'engine-level fast-weight read is not run: the 8x8 matrix is engine state '
+                    '(NeuroWeaveEngine.export_state) that the package does not carry',
 }
 
 

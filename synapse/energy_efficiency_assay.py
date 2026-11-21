@@ -45,7 +45,7 @@ class EnergyEfficiencyAssay:
         self.num_steps = num_steps
         self.seed = seed
 
-    def run_assay(self, thresholds: Optional[List[float]] = None) -> EnergyEfficiencyAssayReport:
+    def run_assay(self, thresholds: list[float] | None = None) -> EnergyEfficiencyAssayReport:
         if thresholds is None:
             thresholds = [0.01, 0.05, 0.1, 0.2]
 

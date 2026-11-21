@@ -57,8 +57,8 @@ NEUROWEAVE versions are separate, independent implementations.
 
 | NEUROWEAVE 0.4.0 feature | Sonapse status | Where / notes |
 |---|---|---|
-| Associative trace memory | **Not ported as a runtime mechanism** | `associative_memory` is declared in the spec but no runtime code reads it. Its role is taken by `memory_ecology`. |
-| Universal fast weights (8×8) | **Not ported as a runtime mechanism** in NEUROWEAVE; **already present** in Sonapse | `fast_weights` is declared but not read by the runtime. Related pre-existing module: `synapse/fast_weight_memory.py`. |
+| Associative trace memory | **Adapted** (engine-level, since 2026-11-19; declared only before that) | `engine.py` `AssociativeTraceMemory` (`associative_memory`). A FIFO of at most 32 (external-drive key, unit output) episodes. Episodes are stored on learning steps whose reward exceeds 0.35, on every 12th step. Each step recalls the best cosine match; above 0.35 it adds `0.11·sim·state` per unit. Separate from `memory_ecology`. Not executed by the standalone page. Rules: README section 6. Tests: `tests/test_neuroweave_assoc_fastweights.py`. |
+| Universal fast weights (8×8) | **Adapted** in NEUROWEAVE (engine-level, since 2026-11-19; declared only before that); **already present** in Sonapse | `engine.py` `FastWeightMemory` (`fast_weights`). Write on learning steps with reward `R ≠ 0`: `M ← clip(0.999·M + 0.0012·\|R\|·R·v kᵀ, −1, 1)`. Read: each unit gets `0.03·(M k)[i mod 8]`. Not executed by the standalone page. Tests: `tests/test_neuroweave_assoc_fastweights.py`. Related pre-existing module (unchanged): `synapse/fast_weight_memory.py`. |
 | Hierarchical temporal memory (fast/mid/slow per unit) | **Adapted** | `cells.py` |
 | — | **Newly added** | `memory_ecology` (`memory.py`): provenance-tagged (sensory/predicted/external/experience/synthetic), FlyHash-indexed, interference tracking, confirm-to-promote; related pre-existing module: `synapse/multiscale_memory.py` |
 

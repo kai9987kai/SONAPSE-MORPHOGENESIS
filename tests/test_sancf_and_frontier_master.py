@@ -446,6 +446,11 @@ def test_supermix_adapters():
     act_safe, viol = teth.enforce_safety(torch.tensor([1.5, -1.2, 0.0, 0.2, -0.1]))
     assert bool(torch.all(torch.abs(act_safe) <= 1.0))
 
+    probe = GhostInTheMachineAdapter()
+    short = torch.arange(5, dtype=torch.float32)
+    padded = torch.cat((short, torch.zeros(59)))
+    assert probe.extract_probe_representation(short) == probe.extract_probe_representation(padded)
+
 
 # ---------------------------------------------------------------------------
 # 19. Benchmark Suite & Scorecard

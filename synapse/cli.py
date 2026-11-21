@@ -3,10 +3,12 @@ import argparse
 import json
 from dataclasses import replace
 from pathlib import Path
+from . import __version__
 from .config import SynapseConfig, ARTIFACTS
 
 def main(argv=None):
     parser=argparse.ArgumentParser(description='SYNAPSE integrated connectome research lab')
+    parser.add_argument('--version',action='version',version=f'synapse-connectome-lab {__version__}')
     parser.add_argument('--output',type=Path,default=ARTIFACTS)
     parser.add_argument('--seed',type=int,default=7)
     parser.add_argument('--frontier-all',action='store_true',help='activate all frontier cognitive, planning, self-modeling, and neuromorphic features')
@@ -18,6 +20,8 @@ def main(argv=None):
     parser.add_argument('--dsag-config',type=Path,help='load an explicit DSAGSpecV1 YAML/JSON configuration')
     parser.add_argument('--neuroweave',dest='neuroweave_enabled',action=argparse.BooleanOptionalAction,default=None,help='opt in to the NEUROWEAVE residual channel for run, train and serve (off by default)')
     parser.add_argument('--neuroweave-config',dest='neuroweave_config',type=Path,help='load an explicit NeuroWeaveSpecV1 JSON configuration (sets SynapseConfig.neuroweave)')
+    from .frontier.cli_commands import register_frontier_cli
+    register_frontier_cli(parser)
     parser.add_argument('--programmed-connectome',action='store_true',help='bind the verified 128-neuron MaleCNS sparse prior')
     parser.add_argument('--connectome-mode',choices=['proxy','prefer_authentic','strict_authentic'],help='connectome source mode')
     size=parser.add_mutually_exclusive_group()
@@ -49,6 +53,15 @@ def main(argv=None):
     nw_inspect=nw_sub.add_parser('inspect'); nw_inspect.add_argument('nw_file',type=Path)
     nw_seq=nw_sub.add_parser('sequence-search',help='supplementary budget-matched synthetic sequence-variant search (not protein modelling)'); nw_seq.add_argument('--quick',dest='nw_quick',action='store_true'); nw_seq.add_argument('--landscapes',dest='nw_landscapes',type=int); nw_seq.add_argument('--seeds-per-landscape',dest='nw_seq_seeds',type=int); nw_seq.add_argument('--budget',dest='nw_budget',type=int)
     nw_legacy=nw_sub.add_parser('import-legacy'); nw_legacy.add_argument('nw_file',type=Path); nw_legacy.add_argument('--out',dest='nw_out',type=Path)
+    fp=sub.add_parser('frontier',help='Frontier pack catalog, observers and experiments (opt-in; JSON to stdout)')
+    fp.add_argument('frontier_action',choices=('catalog','experiment','observe','laboratory'),nargs='?',default='catalog')
+    fp.add_argument('--id',dest='frontier_id',type=str,default='all',help='Experiment id to run (or "all")')
+    fp.add_argument('--quick',dest='frontier_quick',action='store_true',default=False,help='Run experiment(s) in fast quick mode')
+    fp.add_argument('--seeds',dest='frontier_seeds',type=str,default='0,1,2',help='Comma-separated integer seeds')
+    fp.add_argument('--modules',dest='frontier_sub_modules',type=str,default='all',help='Observer modules for observe/laboratory')
+    fp.add_argument('--steps',dest='frontier_steps',type=int,default=32,help='Synthetic observation steps for "frontier observe"')
+    fp.add_argument('--units',dest='frontier_units',type=int,default=32,help='Synthetic unit count for "frontier observe"')
+    fp.add_argument('--out',dest='frontier_out',type=Path,default=None,help='Optional path to write the JSON receipt')
     for name in ('run','train'):
         p=sub.add_parser(name); p.add_argument('--steps',type=int,default=100); p.add_argument('--save')
     p=sub.add_parser('serve'); p.add_argument('--port',type=int,default=8765); p.add_argument('--host',default='127.0.0.1')
@@ -151,6 +164,14 @@ def main(argv=None):
         if args.neuroweave_enabled is not None or args.neuroweave_config is not None:
             from .neuroweave.cli_commands import cli_neuroweave_spec
             config=replace(config,neuroweave=cli_neuroweave_spec(args.neuroweave_enabled,args.neuroweave_config,args.seed))
+        if (args.frontier_enabled is not None or args.frontier_config is not None
+                or args.frontier_modules is not None or args.frontier_graft_optimizer is not None):
+            from .frontier.cli_commands import cli_frontier_spec
+            frontier_spec=cli_frontier_spec(
+                args.frontier_enabled,args.frontier_config,args.seed,
+                modules=args.frontier_modules,graft_optimizer=args.frontier_graft_optimizer)
+            if frontier_spec is not None:
+                config=replace(config,frontier=frontier_spec)
         if args.command=='serve' and args.nodes is None and not getattr(args, 'frontier_all', False):
             import os
             config=replace(config,
@@ -236,6 +257,9 @@ def main(argv=None):
         elif args.command=='neuroweave':
             from .neuroweave.cli_commands import run_neuroweave_command
             result=run_neuroweave_command(args,config)
+        elif args.command=='frontier':
+            from .frontier.cli_commands import run_frontier_command
+            result=run_frontier_command(args)
         elif args.command=='connectome-inventory':
             from .connectome_assets import get_source_inventory
             result={'sources':get_source_inventory()}
@@ -636,7 +660,7 @@ def main(argv=None):
             result={**result,'measured':False,'evidence_kind':'illustrative',
                     'scope':'standalone synthetic inputs; no measured embodied performance; use planning-study or evidence for actual world trials'}
         print(json.dumps(result,indent=2,allow_nan=False,default=str))
-        return 1 if (args.command in ('verify','adaptation-verify','planning-verify') and not result.get('ok',False)) or (args.command=='neuroweave' and result.get('ok') is False) else 0
+        return 1 if (args.command in ('verify','adaptation-verify','planning-verify') and not result.get('ok',False)) or (args.command in ('neuroweave','frontier') and result.get('ok') is False) else 0
     except (ValueError,TypeError,KeyError,OSError,RuntimeError) as exc:
         parser.exit(2,f'Error: {exc}\n')
 
