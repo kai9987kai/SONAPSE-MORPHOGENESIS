@@ -22,6 +22,16 @@ into one step. Every coupling is causal and gated by its mechanism flag:
   forecasts, confirms forecasts when the outcome arrives and feeds verified
   recall into the drive; predictive replay (``predictive_replay``) replays the
   memory schedule into the predictors every ``spec.sleep_interval`` steps;
+* associative trace memory (``associative_memory``): a bounded FIFO of
+  (drive key, unit output) episodes, stored on learning steps whose reward
+  exceeds 0.35 on every 12th step and recalled by cosine similarity of this
+  step's drive key; a match above 0.35 adds ``0.11 * similarity * state`` to
+  the per-unit drive (:class:`AssociativeTraceMemory`);
+* universal fast weights (``fast_weights``): an 8x8 value/key matrix written on
+  learning steps with nonzero reward
+  (``M <- clip(0.999 M + 0.0012 |R| R outer(v, k), -1, 1)``) whose read
+  ``0.03 * (M k)[i mod 8]`` is added to the per-unit drive
+  (:class:`FastWeightMemory`);
 * region route gains for ``multi_region_routing`` are modulated by attention
   and gain controls;
 * structural plasticity / neurogenesis run inside the brain at
@@ -50,7 +60,8 @@ from .sensory import SensoryHub
 from .spec import (AFFECT_VARIABLES, DENDRITES, EVIDENCE_TIER, NEUROMODULATORS, REGIONS, SENSORY_CHANNEL_IDS,
                    SENSORY_DIM, SOMA_ROLES, TASK_INPUT_DIM, NeuroWeaveSpecV1)
 
-__all__ = ['NeuroWeaveEngine', 'ENGINE_SCHEMA', 'ACTION_DIM', 'DRIVE_DIM', 'ENGINE_FLAGS']
+__all__ = ['NeuroWeaveEngine', 'ENGINE_SCHEMA', 'ACTION_DIM', 'DRIVE_DIM', 'ENGINE_FLAGS', 'AssociativeTraceMemory',
+           'FastWeightMemory']
 
 ENGINE_SCHEMA = 'NeuroWeaveEngineStateV1'
 ACTION_DIM = 2                     # [thrust, turn]
@@ -64,7 +75,7 @@ ENGINE_FLAGS: tuple[str, ...] = (
     'receptor_heterogeneity', 'predictive_ensemble', 'hierarchical_prediction', 'uncertainty_gating',
     'counterfactual_prediction', 'efference_self_model', 'micro_collective', 'expert_routing', 'meta_plasticity',
     'specialist_graft', 'memory_ecology', 'predictive_replay', 'representation_fusion', 'multi_region_routing',
-    'transmitter_inference',
+    'transmitter_inference', 'associative_memory', 'fast_weights',
 )
 _PREDICTION_FLAGS = frozenset({'predictive_ensemble', 'hierarchical_prediction', 'uncertainty_gating',
                                'counterfactual_prediction', 'predictive_replay'})
@@ -113,6 +124,187 @@ def _rng_state(rng: np.random.Generator) -> dict:
     return rng.bit_generator.state
 
 
+# ---- associative trace memory and universal fast weights ------------------------------------------------
+# Constants of the NEUROWEAVE-LAB 0.4.0 ``memory`` / ``fastWeights`` switches as recorded by the sibling
+# SONAPSE-EVO port (memory/associative.py, memory/fast_weights.py, memory/stores.py ``cosine``); the
+# original JavaScript was not available to this build.
+ASSOC_KEY_DIM = 32
+ASSOC_CAPACITY = 32
+ASSOC_THRESHOLD = 0.35
+ASSOC_GAIN = 0.11
+ASSOC_REWARD_THRESHOLD = 0.35
+ASSOC_STORE_EVERY = 12
+ASSOC_COSINE_EPS = 1e-9            # cosine = a.b / (|a| |b| + eps), as in the reference port
+FAST_DIM = 8
+FAST_READ_GAIN = 0.03
+FAST_ETA = 0.0012
+FAST_DECAY = 0.999
+
+
+def _obs_key(src: np.ndarray, dim: int) -> np.ndarray:
+    """First ``dim`` values of the drive (zero-padded), clipped to [-1, 1]."""
+    return np.clip(_fit(src, dim), -1.0, 1.0)
+
+
+class AssociativeTraceMemory:
+    """Bounded episode store recalled by cosine similarity (``associative_memory``).
+
+    * :meth:`maybe_store` keeps ``(key, unit outputs)`` only when the step index is a multiple of
+      ``ASSOC_STORE_EVERY`` and the reward exceeds ``ASSOC_REWARD_THRESHOLD``; at most
+      ``ASSOC_CAPACITY`` episodes are kept (the oldest is dropped first).
+    * :meth:`recall` picks the episode whose key has the highest cosine similarity
+      ``k.q / (|k| |q| + ASSOC_COSINE_EPS)`` to this step's key ``q`` (the earliest one on ties). Above
+      ``ASSOC_THRESHOLD`` it returns the per-unit input ``ASSOC_GAIN * similarity * state`` (state
+      zero-padded / truncated to the current population); otherwise ``None``, so an empty store or a
+      weak match contributes exactly nothing.
+    * Keys and states are clipped to [-1, 1], so one recall adds at most ``ASSOC_GAIN`` per unit.
+    """
+
+    def __init__(self) -> None:
+        self.episodes: list[dict[str, Any]] = []
+        self.hits = 0
+        self.stores = 0
+
+    def recall(self, key: np.ndarray, n: int) -> tuple[np.ndarray | None, dict[str, Any]]:
+        info: dict[str, Any] = {'similarity': 0.0, 'episode': None, 'hit': False}
+        if not self.episodes:
+            return None, info
+        keys = np.stack([ep['key'] for ep in self.episodes])
+        sims = (keys @ key) / (np.linalg.norm(keys, axis=1) * float(np.linalg.norm(key)) + ASSOC_COSINE_EPS)
+        best = int(np.argmax(sims))
+        sim = float(sims[best])
+        info.update(similarity=sim, episode=int(self.episodes[best]['step']))
+        if not sim > ASSOC_THRESHOLD:
+            return None, info
+        self.hits += 1
+        info['hit'] = True
+        return ASSOC_GAIN * sim * _fit(self.episodes[best]['state'], n), info
+
+    def maybe_store(self, key: np.ndarray, state: np.ndarray, reward: float, step: int) -> bool:
+        if not (reward > ASSOC_REWARD_THRESHOLD and step % ASSOC_STORE_EVERY == 0):
+            return False
+        self.episodes.append({'key': np.array(key, dtype=np.float64),
+                              'state': np.clip(np.asarray(state, dtype=np.float64).ravel(), -1.0, 1.0),
+                              'reward': float(reward), 'step': int(step)})
+        if len(self.episodes) > ASSOC_CAPACITY:
+            del self.episodes[0]
+        self.stores += 1
+        return True
+
+    def summary(self) -> dict[str, Any]:
+        return {'episodes': len(self.episodes), 'capacity': ASSOC_CAPACITY, 'hits': int(self.hits),
+                'stores': int(self.stores),
+                'last_store_step': int(self.episodes[-1]['step']) if self.episodes else None}
+
+    def export_state(self) -> dict[str, Any]:
+        return {'episodes': [{'key': ep['key'].tolist(), 'state': ep['state'].tolist(), 'reward': float(ep['reward']),
+                              'step': int(ep['step'])} for ep in self.episodes],
+                'hits': int(self.hits), 'stores': int(self.stores)}
+
+    @classmethod
+    def from_state(cls, state: Any, *, max_units: int, before_step: int) -> 'AssociativeTraceMemory':
+        """Validated copy of an exported state (raises ``ValueError``; never partially built).
+
+        Besides shapes and bounds it checks the store invariants: every episode was stored on a step
+        that is a multiple of ``ASSOC_STORE_EVERY``, earlier than ``before_step`` (the engine step of
+        the state), in increasing order, with a reward above ``ASSOC_REWARD_THRESHOLD``; there is at
+        most one recall hit per step and at most one store per scheduled step before ``before_step``;
+        and, since episodes leave only through the FIFO, exactly ``min(stores, ASSOC_CAPACITY)`` remain."""
+        if not isinstance(state, Mapping) or set(state) != {'episodes', 'hits', 'stores'}:
+            raise ValueError('associative_memory state must have exactly episodes, hits and stores')
+        hits, stores = state['hits'], state['stores']
+        if type(hits) is not int or type(stores) is not int or hits < 0 or stores < 0:
+            raise ValueError('associative_memory hits/stores must be non-negative ints')
+        if hits > before_step or stores > (before_step + ASSOC_STORE_EVERY - 1) // ASSOC_STORE_EVERY:
+            raise ValueError(f'associative_memory hits/stores exceed what {before_step} engine steps allow')
+        eps = state['episodes']
+        if not isinstance(eps, (list, tuple)) or len(eps) != min(ASSOC_CAPACITY, stores):
+            raise ValueError(f'associative_memory must hold min(stores, {ASSOC_CAPACITY}) episodes')
+        out = cls()
+        last_step = -1
+        for ep in eps:
+            if not isinstance(ep, Mapping) or set(ep) != {'key', 'state', 'reward', 'step'}:
+                raise ValueError('associative_memory episode must have exactly key, state, reward and step')
+            key = _finite_vec('associative_memory key', ep['key'], max_len=ASSOC_KEY_DIM)
+            st = _finite_vec('associative_memory state', ep['state'], max_len=max_units)
+            if key.size != ASSOC_KEY_DIM or st.size == 0 or np.abs(key).max() > 1.0 or np.abs(st).max() > 1.0:
+                raise ValueError(f'associative_memory key must have {ASSOC_KEY_DIM} values and state 1..{max_units} '
+                                 'values, all in [-1, 1]')
+            reward = _finite_scalar('associative_memory reward', ep['reward'])
+            if not ASSOC_REWARD_THRESHOLD < reward <= 1.0:
+                raise ValueError(f'associative_memory reward must be in ({ASSOC_REWARD_THRESHOLD}, 1]')
+            step = ep['step']
+            if (type(step) is not int or step % ASSOC_STORE_EVERY or not last_step < step < before_step):
+                raise ValueError(f'associative_memory steps must be increasing multiples of {ASSOC_STORE_EVERY} '
+                                 f'below the engine step {before_step}')
+            last_step = step
+            out.episodes.append({'key': key, 'state': st, 'reward': reward, 'step': step})
+        out.hits, out.stores = hits, stores
+        return out
+
+
+class FastWeightMemory:
+    """Reward-gated 8x8 value/key association matrix (``fast_weights``).
+
+    * :meth:`read`: ``f = M k`` for this step's key ``k``; unit ``i`` receives
+      ``FAST_READ_GAIN * f[i mod 8]``. A zero matrix returns ``None`` (contributes exactly nothing).
+    * :meth:`write` (called on learning steps with reward ``R != 0``, ``R`` in [-1, 1]):
+      ``M <- clip(FAST_DECAY * M + FAST_ETA * |R| * R * outer(v, k), -1, 1)``, where the value ``v`` is
+      the first eight pooled readout features after the step (clipped to [-1, 1]).
+    * Entries of ``M`` and ``k`` lie in [-1, 1], so one read adds at most ``FAST_READ_GAIN * FAST_DIM``
+      (0.24) per unit.
+    """
+
+    def __init__(self) -> None:
+        self.matrix = np.zeros((FAST_DIM, FAST_DIM))
+        self.updates = 0
+
+    def read(self, key: np.ndarray, n: int) -> tuple[np.ndarray | None, np.ndarray]:
+        if not np.any(self.matrix):
+            return None, np.zeros(FAST_DIM)
+        f = self.matrix @ key
+        return FAST_READ_GAIN * f[np.arange(n) % FAST_DIM], f
+
+    def write(self, value: np.ndarray, key: np.ndarray, reward: float) -> float:
+        """Apply one write; returns the largest absolute change of any matrix entry."""
+        new = np.clip(FAST_DECAY * self.matrix + FAST_ETA * abs(reward) * reward * np.outer(value, key), -1.0, 1.0)
+        change = float(np.abs(new - self.matrix).max())
+        self.matrix = new
+        self.updates += 1
+        return change
+
+    def summary(self) -> dict[str, Any]:
+        return {'updates': int(self.updates), 'matrix_norm': float(np.linalg.norm(self.matrix)),
+                'matrix_max_abs': float(np.abs(self.matrix).max())}
+
+    def export_state(self) -> dict[str, Any]:
+        return {'matrix': self.matrix.tolist(), 'updates': int(self.updates)}
+
+    @classmethod
+    def from_state(cls, state: Any, *, max_updates: int | None = None) -> 'FastWeightMemory':
+        """Validated copy of an exported state (raises ``ValueError``; never partially built).
+
+        ``max_updates`` (the engine step of the state) bounds ``updates``: at most one write per step.
+        A non-zero matrix needs at least one recorded update (the matrix starts at zero)."""
+        if not isinstance(state, Mapping) or set(state) != {'matrix', 'updates'}:
+            raise ValueError('fast_weights state must have exactly matrix and updates')
+        updates = state['updates']
+        if type(updates) is not int or updates < 0 or (max_updates is not None and updates > max_updates):
+            raise ValueError('fast_weights updates must be a non-negative int, at most one per engine step')
+        try:
+            m = np.asarray(state['matrix'], dtype=np.float64)
+        except (TypeError, ValueError) as exc:
+            raise ValueError('fast_weights matrix must be numeric') from exc
+        if m.shape != (FAST_DIM, FAST_DIM) or not np.all(np.isfinite(m)) or np.abs(m).max() > 1.0:
+            raise ValueError(f'fast_weights matrix must be a finite {FAST_DIM}x{FAST_DIM} array in [-1, 1]')
+        if updates == 0 and np.any(m):
+            raise ValueError('fast_weights matrix is non-zero but no update was recorded')
+        out = cls()
+        out.matrix = m.copy()
+        out.updates = updates
+        return out
+
+
 class NeuroWeaveEngine:
     """One causal NEUROWEAVE system built from a :class:`NeuroWeaveSpecV1`."""
 
@@ -142,8 +334,14 @@ class NeuroWeaveEngine:
             self.micro.attach_specialist(self.graft)
         self.fusion = RepresentationFusion(DRIVE_DIM, kinds=('predictive', 'uncertainty'), mode='learned',
                                            seed=spec.seed)
+        # engine-level memories read into the per-unit drive; absent (None) unless their flag is enabled
+        self.associative = AssociativeTraceMemory() if 'associative_memory' in f else None
+        self.fast_weights = FastWeightMemory() if 'fast_weights' in f else None
         self.events = EventBus(EVENT_HISTORY)
         self.ecology = None
+        # Optional, removable extensions (duck-typed; see synapse.frontier.extension). None are attached by
+        # default, and with none attached every code path below is exactly the pre-extension path.
+        self.extensions: list[Any] = []
         self._rng = np.random.default_rng(spec.seed + ENGINE_OFFSET)
         self._reset_runtime()
 
@@ -376,6 +574,24 @@ class NeuroWeaveEngine:
         else:
             external = x_task
 
+        # 7b. associative recall and fast-weight read, keyed by this step's drive (before any extension)
+        unit_input = None
+        assoc_key = fast_key = None
+        assoc_info: dict[str, Any] = {}
+        if self.associative is not None or self.fast_weights is not None:
+            src = np.zeros(0) if external is None else np.asarray(external, dtype=np.float64).ravel()
+            if self.associative is not None:
+                assoc_key = _obs_key(src, ASSOC_KEY_DIM)
+                assoc_read, assoc_info = self.associative.recall(assoc_key, self.brain.n)
+                if assoc_read is not None:
+                    unit_input = assoc_read
+                    bus.publish('memory', {'operation': 'associative_recall', 'id': assoc_info['episode']}, step=step)
+            if self.fast_weights is not None:
+                fast_key = _obs_key(src, FAST_DIM)
+                fast_input, fast_read = self.fast_weights.read(fast_key, self.brain.n)
+                if fast_input is not None:
+                    unit_input = fast_input if unit_input is None else unit_input + fast_input
+
         # 8. brain step with the applied controls
         uncertainty = 0.0
         if 'uncertainty_gating' in f and pred_info['active']:
@@ -397,8 +613,16 @@ class NeuroWeaveEngine:
             unit_gain = np.ones(self.brain.n)         # neurons born after construction keep unit gain
             m = min(unit_gain.size, g.size)
             unit_gain[:m] = g[:m]
+        ext_ctx = None
+        if self.extensions:
+            ext_ctx = {'step': step, 'learn': learn, 'reward': float(eff_reward), 'raw_reward': reward,
+                       'task_input': None if x_task is None else x_task.copy(), 'sensory': value.copy(),
+                       'controls': controls, 'flags': f}
+            for ext in self.extensions:
+                external = self._checked_drive(ext, ext.transform_drive(external, ext_ctx), external)
         out = self.brain.step(external, reward=eff_reward, controls=brain_controls, learn=learn,
-                              uncertainty=uncertainty, route_gain=route_gain, unit_gain=unit_gain)
+                              uncertainty=uncertainty, route_gain=route_gain, unit_gain=unit_gain,
+                              **({} if unit_input is None else {'unit_input': unit_input}))
         if learn and route_gain is not None and eff_reward != 0.0:
             # an explicit route gain bypasses the brain's own route learning; keep it learning
             lrs = float(np.clip(controls['learning_rate_scale'], 0.0, 4.0))
@@ -409,6 +633,24 @@ class NeuroWeaveEngine:
         prob = self.readout_probability(temperature)
         bus.publish('state', {'activity_mean': float(out.mean()), 'activity_std': float(out.std()), 'n': int(out.size),
                               'spike_rate': float(np.mean(self.brain.cells.spike != 0))}, step=step)
+        for ext in self.extensions:
+            ext.after_step(out.copy(), ext_ctx)
+
+        # 8b. associative store and fast-weight write (learning steps only; raw reward clipped to [-1, 1])
+        assoc_stored = fast_updated = False
+        fast_change = 0.0
+        if learn and (self.associative is not None or self.fast_weights is not None):
+            r_mem = float(np.clip(reward, -1.0, 1.0))
+            if self.associative is not None:
+                assoc_stored = self.associative.maybe_store(assoc_key, out, r_mem, step)
+                if assoc_stored:
+                    bus.publish('memory', {'operation': 'associative_store', 'id': int(step)}, step=step)
+            if self.fast_weights is not None and r_mem != 0.0:
+                fast_value = np.clip(self.brain.readout_features()[:FAST_DIM], -1.0, 1.0)
+                fast_change = self.fast_weights.write(fast_value, fast_key, r_mem)
+                fast_updated = True
+                bus.publish('learning', {'kind': 'fast_weights', 'magnitude': fast_change,
+                                         'updates': int(self.fast_weights.updates)}, step=step)
 
         # 9. memory writes (SENSORY observation, PREDICTED forecast)
         if 'memory_ecology' in f and learn:
@@ -448,6 +690,18 @@ class NeuroWeaveEngine:
             'counterfactual': counterfactual, 'replayed': replayed, 'effective_reward': float(eff_reward),
             'events': int(bus.sequence), 'evidence_tier': EVIDENCE_TIER,
         }
+        if self.associative is not None:
+            result['associative_memory'] = {
+                'active': True, 'hit': bool(assoc_info.get('hit', False)),
+                'similarity': float(assoc_info.get('similarity', 0.0)), 'episode': assoc_info.get('episode'),
+                'stored': assoc_stored, 'episodes': len(self.associative.episodes),
+                'hits': int(self.associative.hits), 'stores': int(self.associative.stores)}
+        if self.fast_weights is not None:
+            result['fast_weights'] = {
+                'active': True, 'read_norm': float(np.linalg.norm(fast_read)), 'updated': fast_updated,
+                'max_change': fast_change, **self.fast_weights.summary()}
+        if self.extensions:
+            result['extensions'] = [str(ext.id) for ext in self.extensions]
         self.last = {k: v for k, v in result.items() if k != 'output'}
         return result
 
@@ -473,6 +727,43 @@ class NeuroWeaveEngine:
         if 'sleep_consolidation' in f:
             self.memory.downscale(float(np.clip(1.0 - 0.02 / max(cons, 0.25), 0.9, 1.0)))
         return replayed
+
+    # ------------------------------------------------------------------ extensions (optional, removable)
+    @staticmethod
+    def _checked_drive(ext: Any, new: Any, old: Any) -> Any:
+        """An extension may reshape *values* of the external drive, never its presence or shape."""
+        if old is None:
+            if new is not None:
+                raise ValueError(f'extension {ext.id!r} must return None when there is no external drive')
+            return None
+        arr = np.asarray(new, dtype=np.float64)
+        if arr.shape != np.asarray(old).shape or not np.all(np.isfinite(arr)):
+            raise ValueError(f'extension {ext.id!r} must return a finite drive with the same shape')
+        return arr
+
+    def attach_extension(self, extension: Any, *, bind: bool = True) -> None:
+        """Attach a duck-typed extension (``id``, ``bind``, ``transform_drive``, ``after_step``).
+
+        Extensions are not part of :meth:`export_state`; the caller owns their state. Attaching one
+        is the only way an extension can influence this engine, and :meth:`detach_extension`
+        removes that influence completely."""
+        ext_id = getattr(extension, 'id', None)
+        if not isinstance(ext_id, str) or not ext_id:
+            raise ValueError('extension must have a non-empty string id')
+        for name in ('bind', 'transform_drive', 'after_step'):
+            if not callable(getattr(extension, name, None)):
+                raise ValueError(f'extension {ext_id!r} is missing {name}()')
+        if any(e.id == ext_id for e in self.extensions):
+            raise ValueError(f'extension {ext_id!r} is already attached')
+        if bind:
+            extension.bind(self)
+        self.extensions.append(extension)
+
+    def detach_extension(self, extension_id: str) -> Any | None:
+        for i, ext in enumerate(self.extensions):
+            if ext.id == extension_id:
+                return self.extensions.pop(i)
+        return None
 
     # ------------------------------------------------------------------ specialist / ecology
     def set_specialist_coupling(self, coupling: float) -> None:
@@ -602,6 +893,10 @@ class NeuroWeaveEngine:
             'structural_changes': dict(ledger.counts_by_kind),
             'fusion_weights': dict(self.fusion.weights), 'counters': dict(self.counters),
         }
+        if self.associative is not None:
+            learning['associative_memory'] = self.associative.summary()
+        if self.fast_weights is not None:
+            learning['fast_weights'] = self.fast_weights.summary()
         out = {'schema': 'NeuroWeaveObservatoryV1', 'evidence_tier': EVIDENCE_TIER, 'step': self.step_count,
                'mechanisms': list(self.spec.mechanisms), 'neural': neural, 'neuromodulation': neuromodulation,
                'sensory': sensory, 'learning': learning, 'memory': self.memory.stats(),
@@ -666,7 +961,7 @@ class NeuroWeaveEngine:
 
     # ------------------------------------------------------------------ persistence
     def export_state(self) -> dict[str, Any]:
-        return {
+        state = {
             'schema': ENGINE_SCHEMA, 'schema_version': 1, 'evidence_tier': EVIDENCE_TIER,
             'spec': self.spec.to_dict(),
             'brain': self.brain.export_state(), 'neuromod': self.neuromod.export_state(),
@@ -687,6 +982,12 @@ class NeuroWeaveEngine:
                 'counters': dict(self.counters), 'rng': _rng_state(self._rng),
             },
         }
+        # present only when the flag is enabled, so states of engines without them are unchanged
+        if self.associative is not None:
+            state['associative_memory'] = self.associative.export_state()
+        if self.fast_weights is not None:
+            state['fast_weights'] = self.fast_weights.export_state()
+        return state
 
     def import_state(self, state: Mapping[str, Any]) -> None:
         """Rebuild every subsystem from ``state`` in a scratch engine, then swap (no partial mutation)."""
@@ -769,15 +1070,30 @@ class NeuroWeaveEngine:
                 raise ValueError('runtime.counters malformed')
             fresh.counters = {k: int(v) for k, v in counters.items()}
             fresh._rng.bit_generator.state = rt['rng']
+            # associative / fast-weight memories: a state saved before they existed (key absent or None)
+            # keeps the fresh initial state (empty store, zero matrix)
+            assoc_state, fast_state = state.get('associative_memory'), state.get('fast_weights')
+            if assoc_state is not None:
+                if fresh.associative is None:
+                    raise ValueError('state has an associative memory but the spec does not enable associative_memory')
+                fresh.associative = AssociativeTraceMemory.from_state(assoc_state, max_units=spec.max_neurons,
+                                                                      before_step=step)
+            if fast_state is not None:
+                if fresh.fast_weights is None:
+                    raise ValueError('state has fast weights but the spec does not enable fast_weights')
+                fresh.fast_weights = FastWeightMemory.from_state(fast_state, max_updates=step)
         except ValueError:
             raise
         except (TypeError, KeyError, AttributeError, IndexError, OverflowError) as exc:
             raise ValueError(f'malformed engine state: {type(exc).__name__}: {exc}') from exc
         keep_subscribers = self.events
+        keep_extensions = self.extensions
         self.__dict__.update(fresh.__dict__)
         # runtime subscribers are kept (EventBus.import_state semantics)
         keep_subscribers.import_state(state['events'])
         self.events = keep_subscribers
+        # attached extensions stay attached; their own state is owned and restored by the caller
+        self.extensions = keep_extensions
         self.last = {}
 
 

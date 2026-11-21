@@ -41,7 +41,7 @@ class VectorSymbolicBinder:
         return x_approx / norm
 
     @staticmethod
-    def bundle(vectors: List[torch.Tensor], weights: Optional[List[float]] = None) -> torch.Tensor:
+    def bundle(vectors: list[torch.Tensor], weights: list[float] | None = None) -> torch.Tensor:
         """Vector superposition / addition: s = sum w_i * v_i."""
         if not vectors:
             raise ValueError("Empty vector list for bundling.")

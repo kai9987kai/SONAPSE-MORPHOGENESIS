@@ -1,5 +1,64 @@
 # NEUROWEAVE changelog
 
+## [Unreleased] — associative trace memory and fast weights (2026-11-19)
+
+### Added
+
+- `associative_memory` and `fast_weights` are now implemented as engine-level
+  mechanisms. Before this change they were declared in the spec but not
+  consumed by the runtime.
+  - `engine.AssociativeTraceMemory`: a bounded FIFO of 32 episodes, recalled
+    by cosine similarity.
+  - `engine.FastWeightMemory`: a reward-gated 8×8 value/key matrix.
+  - Both reads feed a new optional per-unit input,
+    `NeuroWeaveBrain.step(unit_input=...)`.
+  - The rules, constants and their source are in README section 6.
+- The new state is exported under `export_state()['associative_memory']` and
+  `['fast_weights']` only when the flag is on. `import_state` validates both
+  before swapping, including the counts the rules imply (README section 6).
+  Older states without these keys still import, with fresh memories. This was
+  also checked with a real state exported by the pre-change package
+  (README section 12).
+- New tests: `tests/test_neuroweave_assoc_fastweights.py`, 25 tests.
+
+### Changed
+
+- With neither flag, engine outputs, states and observatories are unchanged.
+  A 2026-11-20 check against the committed NEUROWEAVE package (commit
+  `b9d8270`) found them bit-identical for three mechanism sets (README
+  section 12).
+- With either flag on, outputs change from the step after the first store or
+  write. Specs that enable them change behaviour, including the Max Mode preset
+  (every mechanism) and the `associative_memory` and `cross_modal_learning`
+  experiments.
+- In the 8-step `associative_memory` lab run (seeds 0 and 1, held-out seed 100,
+  4 held-out steps, 16 neurons), only `associative_memory` is still inert;
+  `fast_weights` now gets an ablation verdict. The expectation in
+  `tests/test_neuroweave_review_fixes.py::test_inert_ablation_is_flagged_not_reported_as_a_verdict`
+  that both are inert there therefore no longer holds. That test was not
+  edited in this change: it still expects both and fails until it is changed
+  to expect `associative_memory` alone (the new
+  `test_lab_associative_experiment_measures_fast_weights_and_flags_the_short_run_store_as_inert`
+  covers the new expectation).
+- `standalone.py`: the not-executed reasons for the two mechanisms now say
+  that their state is engine state that the package does not carry. The JS
+  page still runs neither.
+
+### Known limitations
+
+- No benefit is shown. Quick-mode receipts re-run on 2026-11-20 (settings in
+  README section 12) gave `no_detectable_difference` for `associative_memory`
+  and `cross_modal_learning`.
+- In runs of 12 or fewer training steps the lab never stores an episode, so
+  `associative_memory` is reported as `inert_in_this_configuration` there.
+  `fast_weights` is written on the first learning step with non-zero reward and
+  acts from the next step. At the reference constants its effect on outputs is
+  small in short runs, and with `q88_state` on Q8.8 rounding can absorb it
+  entirely (README section 12).
+- `experiments._budget` does not count the fast-weight matrix or the episode
+  store in `trainable_parameters`. Counted, the quick `associative_memory`
+  receipt's parameter ratio would be 258/194 instead of 194/194.
+
 ## [Unreleased] — NEUROWEAVE evolution v1 (2026-11-15)
 
 Baseline: git tag `sonapse-pre-neuroweave-baseline` (commit `6f2761b`). All
@@ -97,7 +156,7 @@ checkpoint namespace or test was removed or changed in behaviour.
 ### Known limitations
 
 - `associative_memory` and `fast_weights` are declared in the spec but not
-  consumed by the runtime.
+  consumed by the runtime. (Implemented on 2026-11-19; see the entry above.)
 - Every verdict so far for the 24 registered experiments (quick mode only) is
   `no_detectable_difference`; the full-size experiments have not been run.
   The supplementary sequence-variant search reports `worse` overall and

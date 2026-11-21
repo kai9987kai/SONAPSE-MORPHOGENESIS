@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import torch
 from torch import nn
-from .config import ARTIFACTS, PACKAGE, VENDOR
+from .config import ARTIFACTS, PACKAGE, VENDOR, tidal_checkpoint_path
 from .sources import activate, manifest
 
 activate()
@@ -281,7 +281,7 @@ def _handle_memory_nexus_search(payload: Dict[str, Any]) -> Dict[str, Any]:
 # 3. CORE & CONTROLLERS
 def _handle_core_scene(payload: Dict[str, Any]) -> Dict[str, Any]:
     from poseidon.core import load_checkpoint
-    tidal_path = ARTIFACTS / 'tidal_core.pt'
+    tidal_path = tidal_checkpoint_path()
     if not tidal_path.is_file():
         return {'status': 'unavailable', 'error': 'Tidal core artifact tidal_core.pt not found'}
     tidal, _ = load_checkpoint(tidal_path)
@@ -317,7 +317,7 @@ def _handle_core_scene(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 def _handle_core_tidal(payload: Dict[str, Any]) -> Dict[str, Any]:
     from poseidon.core import load_checkpoint
-    tidal_path = ARTIFACTS / 'tidal_core.pt'
+    tidal_path = tidal_checkpoint_path()
     if not tidal_path.is_file():
         return {'status': 'unavailable', 'error': 'Tidal core artifact tidal_core.pt not found'}
     tidal, receipt = load_checkpoint(tidal_path)

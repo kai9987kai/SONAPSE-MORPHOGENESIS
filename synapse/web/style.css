@@ -795,3 +795,245 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .verdict-worse { color: var(--rose); }
 .verdict-no_detectable_difference { color: var(--muted); }
 @media (max-width: 700px) { .nwl-bar { grid-template-columns: 100px 1fr 56px; } }
+
+/* ---------------------------------------------------------------------------
+   Accessibility helpers and theme layer (additive).
+   Dark stays the default: the theme rules below apply only when <html> carries
+   data-theme="light", or data-theme="system" while the OS prefers a light
+   scheme (app.js sets the attribute from the sidebar selector). Each override is
+   wrapped in :where() so it keeps the specificity of the rule it mirrors.
+   Canvases and the chat console stay dark because their drawing code and inline
+   colours assume a dark background. Light text colours meet WCAG 2.x contrast
+   >= 4.5:1 on every light surface defined here (tests/test_compat_manifest_tool.py).
+   --------------------------------------------------------------------------- */
+.visually-hidden:where(:not(:focus, :focus-within, :active)) {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+.skip-link:focus {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+  padding: 8px 14px;
+  border: 2px solid var(--teal);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+:where(a:any-link, summary, [tabindex="-1"]):focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+}
+.theme-control { margin-top: 18px; }
+.theme-select { width: 100%; margin: 4px 0 0; padding: 6px 8px; font-size: 12px; }
+@media (max-width: 700px) { .theme-control { margin-top: 4px; } }
+
+/* Light theme: explicit choice. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f7fb;
+  --panel: #ffffff;
+  --panel-hover: #eaf0f7;
+  --line: #c4d2e1;
+  --muted: #43576b;
+  --text: #102030;
+  --teal: #0b6e5b;
+  --amber: #8a4f00;
+  --rose: #a61e34;
+  --purple: #6b21a8;
+  --blue: #1d4ed8;
+}
+:where(:root[data-theme="light"]) .thrust-tag { background: rgba(138, 79, 0, 0.12); color: #6f3f00; }
+:where(:root[data-theme="light"]) .cognition-tag { background: rgba(11, 110, 91, 0.12); color: #0a5c4c; }
+:where(:root[data-theme="light"]) .planning-evidence { background: #edf3fa; }
+:where(:root[data-theme="light"]) .evidence-decision { background: rgba(138, 79, 0, 0.06); }
+:where(:root[data-theme="light"]) aside { background: #eef3f9; }
+:where(:root[data-theme="light"]) button { background: #e8eff7; border-color: #8fa3b8; }
+:where(:root[data-theme="light"]) button:hover { background: #dbe6f3; }
+:where(:root[data-theme="light"]) nav button { color: var(--muted); }
+:where(:root[data-theme="light"]) nav button:hover { background: rgba(11, 110, 91, 0.06); }
+:where(:root[data-theme="light"]) nav button.active { background: rgba(11, 110, 91, 0.1); }
+:where(:root[data-theme="light"]) .primary { color: #ffffff; }
+:where(:root[data-theme="light"]) .primary:hover { background: #08584a; border-color: #08584a; }
+:where(:root[data-theme="light"]) .metric { background: linear-gradient(125deg, #ffffff, #eef3f9); box-shadow: 0 2px 8px rgba(16, 32, 48, 0.08); }
+:where(:root[data-theme="light"]) .metric strong { color: var(--text); }
+:where(:root[data-theme="light"]) article { box-shadow: 0 2px 10px rgba(16, 32, 48, 0.06); }
+:where(:root[data-theme="light"]) .legend span:hover { background: rgba(16, 32, 48, 0.05); }
+:where(:root[data-theme="light"]) #dendritic-canvas, :where(:root[data-theme="light"]) #oscillatory-canvas, :where(:root[data-theme="light"]) #criticality-canvas, :where(:root[data-theme="light"]) #vsa-canvas, :where(:root[data-theme="light"]) #causal-entropy-canvas, :where(:root[data-theme="light"]) #neurowave-canvas { background: #081019; }
+:where(:root[data-theme="light"]) .view-toggle { background: #e3ebf4; }
+:where(:root[data-theme="light"]) .view-toggle button:hover { background: rgba(16, 32, 48, 0.06); }
+:where(:root[data-theme="light"]) .view-toggle button.active { color: #ffffff; }
+:where(:root[data-theme="light"]) .canvas-tooltip { color: #e6edf4; border-color: #5de0c1; }
+:where(:root[data-theme="light"]) .teleop-bar { background: #eef3f9; border-color: var(--line); }
+:where(:root[data-theme="light"]) .kv b { color: var(--text); }
+:where(:root[data-theme="light"]) input, :where(:root[data-theme="light"]) select, :where(:root[data-theme="light"]) textarea { background: #edf3fa; border-color: #8fa3b8; }
+:where(:root[data-theme="light"]) ::placeholder { color: var(--muted); opacity: 1; }
+:where(:root[data-theme="light"]) pre { background: #edf3fa; color: #1c3247; border-color: var(--line); }
+:where(:root[data-theme="light"]) .cap-item { background: #f4f7fb; border-color: var(--line); }
+:where(:root[data-theme="light"]) .cap-item:hover { background: #eaf0f7; }
+:where(:root[data-theme="light"]) .lineage-node { background: #eef6f4; border-color: #8fc3b8; }
+:where(:root[data-theme="light"]) #error { background: #fdecef; border-color: #e3a3ad; color: #8f1d2c; }
+:where(:root[data-theme="light"]) .vital-track { background: #dbe4ee; border-color: rgba(16, 32, 48, 0.12); }
+:where(:root[data-theme="light"]) .vital-track::-webkit-progress-bar { background: #dbe4ee; }
+:where(:root[data-theme="light"]) .vital-track::-webkit-progress-value { background: #0b6e5b; }
+:where(:root[data-theme="light"]) .vital-stamina::-webkit-progress-value { background: #8a4f00; }
+:where(:root[data-theme="light"]) .vital-health::-webkit-progress-value { background: #1e7a3c; }
+:where(:root[data-theme="light"]) .vital-threat::-webkit-progress-value { background: #a61e34; }
+:where(:root[data-theme="light"]) .vital-hunger::-webkit-progress-value { background: #6b21a8; }
+:where(:root[data-theme="light"]) .vital-track::-moz-progress-bar { background: #0b6e5b; }
+:where(:root[data-theme="light"]) .vital-stamina::-moz-progress-bar { background: #8a4f00; }
+:where(:root[data-theme="light"]) .vital-health::-moz-progress-bar { background: #1e7a3c; }
+:where(:root[data-theme="light"]) .vital-threat::-moz-progress-bar { background: #a61e34; }
+:where(:root[data-theme="light"]) .vital-hunger::-moz-progress-bar { background: #6b21a8; }
+:where(:root[data-theme="light"]) .training-panel { border-color: #8fc3b8; background: linear-gradient(115deg, #e6f4f1, #ffffff 58%); }
+:where(:root[data-theme="light"]) .training-metrics .kv b { color: var(--text); }
+:where(:root[data-theme="light"]) .status-pill { border-color: #8fa3b8; }
+:where(:root[data-theme="light"]) .training-evidence { border-color: var(--line); }
+:where(:root[data-theme="light"]) .source-record { background: #edf3fa; }
+:where(:root[data-theme="light"]) .source-record b { color: #0a5c4c; }
+:where(:root[data-theme="light"]) .omnibus-button { background: #f3eafc; color: #5b1a8e; }
+:where(:root[data-theme="light"]) .omnibus-tag { background: #f3eafc; color: #5b1a8e; }
+:where(:root[data-theme="light"]) .screen-button { color: #6f3f00; }
+:where(:root[data-theme="light"]) .tone-good { color: #0b6e5b; }
+:where(:root[data-theme="light"]) .tone-warn { color: #8a4f00; }
+:where(:root[data-theme="light"]) .tone-bad { color: #a61e34; }
+:where(:root[data-theme="light"]) .tone-muted { color: #43576b; }
+:where(:root[data-theme="light"]) .tone-ponder { color: #8c1f6e; background: #fbe7f5; }
+:where(:root[data-theme="light"]) .tone-purple { color: #6b21a8; }
+:where(:root[data-theme="light"]) .source-color-0 { color: #0b6e5b; }
+:where(:root[data-theme="light"]) .source-color-1 { color: #8a4f00; }
+:where(:root[data-theme="light"]) .source-color-2 { color: #6b21a8; }
+:where(:root[data-theme="light"]) .source-color-3 { color: #1d4ed8; }
+:where(:root[data-theme="light"]) .source-color-4 { color: #a61e34; }
+:where(:root[data-theme="light"]) .source-color-5 { color: #2f6b1f; }
+:where(:root[data-theme="light"]) .source-color-6 { color: #9d2a6b; }
+:where(:root[data-theme="light"]) .source-color-7 { color: #0e6577; }
+:where(:root[data-theme="light"]) .node-inspector { background: #edf3fa; color: #1c3247; }
+:where(:root[data-theme="light"]) .world-key { color: #43576b; }
+:where(:root[data-theme="light"]) .key-agent::before, :where(:root[data-theme="light"]) .key-trail::before { color: #0b6e5b; }
+:where(:root[data-theme="light"]) .key-target::before, :where(:root[data-theme="light"]) .key-goal::before { color: #1d4ed8; }
+:where(:root[data-theme="light"]) .key-food::before { color: #8a4f00; }
+:where(:root[data-theme="light"]) .key-hazard::before { color: #a61e34; }
+:where(:root[data-theme="light"]) .key-button::before, :where(:root[data-theme="light"]) .key-sentinel::before { color: #7a5c00; }
+:where(:root[data-theme="light"]) .key-tripwire::before { color: #a3166e; }
+:where(:root[data-theme="light"]) .key-gate::before { color: #6b21a8; }
+:where(:root[data-theme="light"]) .key-terrain::before, :where(:root[data-theme="light"]) .key-object::before { color: #4a6074; }
+:where(:root[data-theme="light"]) .tandem-banner { border-color: var(--teal); background: linear-gradient(120deg, #e8f5f1, #f1ebf9); }
+:where(:root[data-theme="light"]) #filter-reset { background: rgba(11, 110, 91, 0.1); border-color: rgba(11, 110, 91, 0.45); color: #0a5c4c; }
+:where(:root[data-theme="light"]) .nwl-subnav button.active { background: #dbe6f3; }
+:where(:root[data-theme="light"]) .nwl-track { background: #d6e2ef; }
+:where(:root[data-theme="light"]) #chat-stream { background: #0d1722 !important; color: #e6edf4; --text: #e6edf4; --muted: #8b9daf; }
+:where(:root[data-theme="light"]) #chat-input { background: #0b141e !important; }
+:where(:root[data-theme="light"]) #chat-input::placeholder { color: #8b9daf; }
+
+/* System theme: follows the OS only while "System" is selected. */
+:root[data-theme="system"] { color-scheme: light dark; }
+@media (prefers-color-scheme: light) {
+  :root[data-theme="system"] {
+    color-scheme: light;
+    --bg: #f4f7fb;
+    --panel: #ffffff;
+    --panel-hover: #eaf0f7;
+    --line: #c4d2e1;
+    --muted: #43576b;
+    --text: #102030;
+    --teal: #0b6e5b;
+    --amber: #8a4f00;
+    --rose: #a61e34;
+    --purple: #6b21a8;
+    --blue: #1d4ed8;
+  }
+  :where(:root[data-theme="system"]) .thrust-tag { background: rgba(138, 79, 0, 0.12); color: #6f3f00; }
+  :where(:root[data-theme="system"]) .cognition-tag { background: rgba(11, 110, 91, 0.12); color: #0a5c4c; }
+  :where(:root[data-theme="system"]) .planning-evidence { background: #edf3fa; }
+  :where(:root[data-theme="system"]) .evidence-decision { background: rgba(138, 79, 0, 0.06); }
+  :where(:root[data-theme="system"]) aside { background: #eef3f9; }
+  :where(:root[data-theme="system"]) button { background: #e8eff7; border-color: #8fa3b8; }
+  :where(:root[data-theme="system"]) button:hover { background: #dbe6f3; }
+  :where(:root[data-theme="system"]) nav button { color: var(--muted); }
+  :where(:root[data-theme="system"]) nav button:hover { background: rgba(11, 110, 91, 0.06); }
+  :where(:root[data-theme="system"]) nav button.active { background: rgba(11, 110, 91, 0.1); }
+  :where(:root[data-theme="system"]) .primary { color: #ffffff; }
+  :where(:root[data-theme="system"]) .primary:hover { background: #08584a; border-color: #08584a; }
+  :where(:root[data-theme="system"]) .metric { background: linear-gradient(125deg, #ffffff, #eef3f9); box-shadow: 0 2px 8px rgba(16, 32, 48, 0.08); }
+  :where(:root[data-theme="system"]) .metric strong { color: var(--text); }
+  :where(:root[data-theme="system"]) article { box-shadow: 0 2px 10px rgba(16, 32, 48, 0.06); }
+  :where(:root[data-theme="system"]) .legend span:hover { background: rgba(16, 32, 48, 0.05); }
+  :where(:root[data-theme="system"]) #dendritic-canvas, :where(:root[data-theme="system"]) #oscillatory-canvas, :where(:root[data-theme="system"]) #criticality-canvas, :where(:root[data-theme="system"]) #vsa-canvas, :where(:root[data-theme="system"]) #causal-entropy-canvas, :where(:root[data-theme="system"]) #neurowave-canvas { background: #081019; }
+  :where(:root[data-theme="system"]) .view-toggle { background: #e3ebf4; }
+  :where(:root[data-theme="system"]) .view-toggle button:hover { background: rgba(16, 32, 48, 0.06); }
+  :where(:root[data-theme="system"]) .view-toggle button.active { color: #ffffff; }
+  :where(:root[data-theme="system"]) .canvas-tooltip { color: #e6edf4; border-color: #5de0c1; }
+  :where(:root[data-theme="system"]) .teleop-bar { background: #eef3f9; border-color: var(--line); }
+  :where(:root[data-theme="system"]) .kv b { color: var(--text); }
+  :where(:root[data-theme="system"]) input, :where(:root[data-theme="system"]) select, :where(:root[data-theme="system"]) textarea { background: #edf3fa; border-color: #8fa3b8; }
+  :where(:root[data-theme="system"]) ::placeholder { color: var(--muted); opacity: 1; }
+  :where(:root[data-theme="system"]) pre { background: #edf3fa; color: #1c3247; border-color: var(--line); }
+  :where(:root[data-theme="system"]) .cap-item { background: #f4f7fb; border-color: var(--line); }
+  :where(:root[data-theme="system"]) .cap-item:hover { background: #eaf0f7; }
+  :where(:root[data-theme="system"]) .lineage-node { background: #eef6f4; border-color: #8fc3b8; }
+  :where(:root[data-theme="system"]) #error { background: #fdecef; border-color: #e3a3ad; color: #8f1d2c; }
+  :where(:root[data-theme="system"]) .vital-track { background: #dbe4ee; border-color: rgba(16, 32, 48, 0.12); }
+  :where(:root[data-theme="system"]) .vital-track::-webkit-progress-bar { background: #dbe4ee; }
+  :where(:root[data-theme="system"]) .vital-track::-webkit-progress-value { background: #0b6e5b; }
+  :where(:root[data-theme="system"]) .vital-stamina::-webkit-progress-value { background: #8a4f00; }
+  :where(:root[data-theme="system"]) .vital-health::-webkit-progress-value { background: #1e7a3c; }
+  :where(:root[data-theme="system"]) .vital-threat::-webkit-progress-value { background: #a61e34; }
+  :where(:root[data-theme="system"]) .vital-hunger::-webkit-progress-value { background: #6b21a8; }
+  :where(:root[data-theme="system"]) .vital-track::-moz-progress-bar { background: #0b6e5b; }
+  :where(:root[data-theme="system"]) .vital-stamina::-moz-progress-bar { background: #8a4f00; }
+  :where(:root[data-theme="system"]) .vital-health::-moz-progress-bar { background: #1e7a3c; }
+  :where(:root[data-theme="system"]) .vital-threat::-moz-progress-bar { background: #a61e34; }
+  :where(:root[data-theme="system"]) .vital-hunger::-moz-progress-bar { background: #6b21a8; }
+  :where(:root[data-theme="system"]) .training-panel { border-color: #8fc3b8; background: linear-gradient(115deg, #e6f4f1, #ffffff 58%); }
+  :where(:root[data-theme="system"]) .training-metrics .kv b { color: var(--text); }
+  :where(:root[data-theme="system"]) .status-pill { border-color: #8fa3b8; }
+  :where(:root[data-theme="system"]) .training-evidence { border-color: var(--line); }
+  :where(:root[data-theme="system"]) .source-record { background: #edf3fa; }
+  :where(:root[data-theme="system"]) .source-record b { color: #0a5c4c; }
+  :where(:root[data-theme="system"]) .omnibus-button { background: #f3eafc; color: #5b1a8e; }
+  :where(:root[data-theme="system"]) .omnibus-tag { background: #f3eafc; color: #5b1a8e; }
+  :where(:root[data-theme="system"]) .screen-button { color: #6f3f00; }
+  :where(:root[data-theme="system"]) .tone-good { color: #0b6e5b; }
+  :where(:root[data-theme="system"]) .tone-warn { color: #8a4f00; }
+  :where(:root[data-theme="system"]) .tone-bad { color: #a61e34; }
+  :where(:root[data-theme="system"]) .tone-muted { color: #43576b; }
+  :where(:root[data-theme="system"]) .tone-ponder { color: #8c1f6e; background: #fbe7f5; }
+  :where(:root[data-theme="system"]) .tone-purple { color: #6b21a8; }
+  :where(:root[data-theme="system"]) .source-color-0 { color: #0b6e5b; }
+  :where(:root[data-theme="system"]) .source-color-1 { color: #8a4f00; }
+  :where(:root[data-theme="system"]) .source-color-2 { color: #6b21a8; }
+  :where(:root[data-theme="system"]) .source-color-3 { color: #1d4ed8; }
+  :where(:root[data-theme="system"]) .source-color-4 { color: #a61e34; }
+  :where(:root[data-theme="system"]) .source-color-5 { color: #2f6b1f; }
+  :where(:root[data-theme="system"]) .source-color-6 { color: #9d2a6b; }
+  :where(:root[data-theme="system"]) .source-color-7 { color: #0e6577; }
+  :where(:root[data-theme="system"]) .node-inspector { background: #edf3fa; color: #1c3247; }
+  :where(:root[data-theme="system"]) .world-key { color: #43576b; }
+  :where(:root[data-theme="system"]) .key-agent::before, :where(:root[data-theme="system"]) .key-trail::before { color: #0b6e5b; }
+  :where(:root[data-theme="system"]) .key-target::before, :where(:root[data-theme="system"]) .key-goal::before { color: #1d4ed8; }
+  :where(:root[data-theme="system"]) .key-food::before { color: #8a4f00; }
+  :where(:root[data-theme="system"]) .key-hazard::before { color: #a61e34; }
+  :where(:root[data-theme="system"]) .key-button::before, :where(:root[data-theme="system"]) .key-sentinel::before { color: #7a5c00; }
+  :where(:root[data-theme="system"]) .key-tripwire::before { color: #a3166e; }
+  :where(:root[data-theme="system"]) .key-gate::before { color: #6b21a8; }
+  :where(:root[data-theme="system"]) .key-terrain::before, :where(:root[data-theme="system"]) .key-object::before { color: #4a6074; }
+  :where(:root[data-theme="system"]) .tandem-banner { border-color: var(--teal); background: linear-gradient(120deg, #e8f5f1, #f1ebf9); }
+  :where(:root[data-theme="system"]) #filter-reset { background: rgba(11, 110, 91, 0.1); border-color: rgba(11, 110, 91, 0.45); color: #0a5c4c; }
+  :where(:root[data-theme="system"]) .nwl-subnav button.active { background: #dbe6f3; }
+  :where(:root[data-theme="system"]) .nwl-track { background: #d6e2ef; }
+  :where(:root[data-theme="system"]) #chat-stream { background: #0d1722 !important; color: #e6edf4; --text: #e6edf4; --muted: #8b9daf; }
+  :where(:root[data-theme="system"]) #chat-input { background: #0b141e !important; }
+  :where(:root[data-theme="system"]) #chat-input::placeholder { color: #8b9daf; }
+}
+/* End of theme layer. */

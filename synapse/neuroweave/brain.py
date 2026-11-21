@@ -189,7 +189,7 @@ class NeuroWeaveBrain:
     # ------------------------------------------------------------------ dynamics
     def step(self, external: Any = None, *, reward: float = 0.0, controls: Mapping[str, Any] | None = None,
              learn: bool = True, uncertainty: float = 0.0, route_gain: Any = None,
-             unit_gain: Any = None) -> np.ndarray:
+             unit_gain: Any = None, unit_input: Any = None) -> np.ndarray:
         started = time.perf_counter()
         reward = float(reward)
         uncertainty = float(uncertainty)
@@ -205,6 +205,14 @@ class NeuroWeaveBrain:
             if ug.size != n or not np.all(np.isfinite(ug)):
                 raise ValueError(f'unit_gain must be a finite vector of length {n}')
             ug = np.clip(ug, 0.0, 4.0)
+        ui = None
+        if unit_input is not None:
+            # optional per-unit additive feed-forward input (the engine's associative-recall and
+            # fast-weight reads); None leaves the update exactly as before
+            ui = np.asarray(unit_input, dtype=np.float64).ravel()
+            if ui.size != n or not np.all(np.isfinite(ui)):
+                raise ValueError(f'unit_input must be a finite vector of length {n}')
+            ui = np.clip(ui, -10.0, 10.0)
         prev = self.cells.output.copy()
         ext = self.project_input(external)
         gate = float(np.clip(1.0 / (1.0 + 2.2 * max(0.0, uncertainty)), 0.58, 1.0)) if 'uncertainty_gating' in flags else 1.0
@@ -218,6 +226,8 @@ class NeuroWeaveBrain:
         if 'context_attention' in flags:
             drive.apical = drive.apical + 0.3 * self.context_attention(prev)
         drive.external = ext if ug is None else ext * ug
+        if ui is not None:
+            drive.external = drive.external + ui        # added after any per-unit gain
         sparse_k = max(1, int(round(n * self.spec.sparsity)))
         out = self.cells.step(drive, flags, controls, sparse_k=sparse_k)
         self.synapses.push(out)

@@ -766,6 +766,7 @@ def run_tandem_max_orchestration(workbench, data: Optional[Dict[str, Any]] = Non
     neuroweave_experiments = _bounded_mode_int(data, 'neuroweave_experiments', 0, 0, 1)
     neuroweave_lesion = _bounded_mode_int(data, 'neuroweave_lesion', 0, 0, 1)
     neuroweave_agent_steps = _bounded_mode_int(data, 'neuroweave_agent_steps', 4, 0, 64)
+    frontier_experiments = _bounded_mode_int(data, 'frontier_experiments', 0, 0, 1)
     default_tasks = ['forage', 'maze', 'push', 'delayed_match', 'ecosystem', 'continental_biosphere']
     omnibus_tasks = data.get('omnibus_tasks') or default_tasks
     six_arm_tasks = data.get('six_arm_tasks', ['forage', 'push', 'ecosystem'])
@@ -1050,6 +1051,21 @@ def run_tandem_max_orchestration(workbench, data: Optional[Dict[str, Any]] = Non
                   {'section': '06 · NEUROWEAVE Laboratory', 'skipped': 'neuroweave not configured'})
 
     # -------------------------------------------------------------------
+    # SECTION 07 (additive, read-only): Frontier Pack laboratory
+    # -------------------------------------------------------------------
+    if getattr(max_cfg, 'frontier', None) is not None:
+        from .frontier.runtime import run_frontier_laboratory
+        section_07 = run_frontier_laboratory(
+            max_cfg.frontier,
+            hub=getattr(runtime.agent, 'frontier_hub', None),
+            experiments=bool(frontier_experiments),
+            quick=True,
+            seeds=(0, 1),
+        )
+    else:
+        section_07 = {'section': '07 · Frontier Pack Laboratory', 'skipped': 'frontier not configured'}
+
+    # -------------------------------------------------------------------
     # SECTION 05: Exact Mid-Episode Checkpoint & Cryptographic Digest
     # -------------------------------------------------------------------
     with workbench.lock:
@@ -1100,6 +1116,7 @@ def run_tandem_max_orchestration(workbench, data: Optional[Dict[str, Any]] = Non
         'section_05': section_05,
         # Additive: sections_completed keeps its historical five entries.
         'section_06': section_06,
+        'section_07': section_07,
         'state': final_state,
     }
     workbench.last_tandem_receipt = receipt

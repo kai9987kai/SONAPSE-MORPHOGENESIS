@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: "Sonapse-LAB / SYNAPSE: a CPU-first connectome research workbench"
+message: "If you use Sonapse-LAB or SYNAPSE in your research, please cite it using the metadata below."
+type: software
+authors:
+  - given-names: Kai
+    family-names: Piper
+    alias: kai9987kai
+abstract: >-
+  Integrated connectome, weight-programming and bounded recursive-self-improvement
+  research workbench with opt-in NEUROWEAVE and Frontier extensions, sealed experiment
+  receipts and additive compatibility manifests. Synthetic research software; no claim
+  of biological fidelity or general intelligence.
+license: Apache-2.0
+version: 0.3.0
+date-released: "2026-11-19"
+repository-code: "https://github.com/kai9987kai/Sonapse-LAB"
+url: "https://huggingface.co/Kai9987kai/Sonapse-LAB"
+keywords:
+  - computational-neuroscience
+  - connectomics
+  - neuromorphic-computing
+  - reinforcement-learning
+  - spiking-neural-networks
+  - reproducibility

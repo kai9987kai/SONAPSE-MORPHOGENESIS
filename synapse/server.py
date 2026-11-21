@@ -364,13 +364,24 @@ class Workbench:
             from .neuroweave.workbench_api import NeuroWeaveWorkbenchAPI
             api=self._neuroweave_api=NeuroWeaveWorkbenchAPI(self)
         return api
+    def frontier_api(self):
+        """Lazily built Frontier Pack API (``/api/frontier/*``); never touches Sonapse defaults."""
+        with self.lock:
+            if getattr(self, '_frontier_api', None) is None:
+                from .frontier.workbench_api import FrontierWorkbenchAPI
+                self._frontier_api = FrontierWorkbenchAPI(self)
+            return self._frontier_api
     # NEUROWEAVE Lab routes: GET /api/neuroweave/catalog, '/api/neuroweave/status', '/api/neuroweave/observatory',
     # '/api/neuroweave/ledger', '/api/neuroweave/ecology'; POST '/api/neuroweave/configure', '/api/neuroweave/step',
     # '/api/neuroweave/experiment', '/api/neuroweave/topology', '/api/neuroweave/lesion', '/api/neuroweave/sensory',
     # '/api/neuroweave/export', '/api/neuroweave/inspect', '/api/neuroweave/sequence-search'.
+    # Frontier Pack routes: GET '/api/frontier/catalog', '/api/frontier/status', '/api/frontier/observers',
+    # '/api/frontier/observers/lab'; POST '/api/frontier/configure', '/api/frontier/step', '/api/frontier/experiment'.
     def get(self,path):
         if path.startswith('/api/neuroweave/'):
             return self.neuroweave_api().get(path)
+        if path.startswith('/api/frontier/'):
+            return self.frontier_api().get(path)
         receipt_prefix='/api/planning-study/receipt/'
         if path.startswith(receipt_prefix):
             name=safe_name(path[len(receipt_prefix):])
@@ -640,6 +651,8 @@ class Workbench:
     def post(self,path,data):
         if path.startswith('/api/neuroweave/'):
             return self.neuroweave_api().post(path,data)
+        if path.startswith('/api/frontier/'):
+            return self.frontier_api().post(path,data)
         if path=='/api/export': return self.start_portable_export()
         if path=='/api/training/pretrain': return self.start_enhancement('pretrain',data)
         if path=='/api/rsi/live': return self.start_enhancement('rsi',data)
@@ -928,6 +941,8 @@ class Workbench:
                         cfg['dsag']=self.runtime.config.dsag
                     if 'neuroweave' not in cfg:
                         cfg['neuroweave']=getattr(self.runtime.config,'neuroweave',None)
+                    if 'frontier' not in cfg:
+                        cfg['frontier']=getattr(self.runtime.config,'frontier',None)
                     from .runtime import LabRuntime
                     self.runtime=LabRuntime(SynapseConfig(**cfg),output_root=self.root)
                     if hasattr(self, 'sim_worker') and self.sim_worker is not None:

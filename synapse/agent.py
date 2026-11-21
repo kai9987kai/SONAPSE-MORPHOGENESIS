@@ -8,7 +8,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from . import sources
-from .config import ARTIFACTS
+from .config import tidal_checkpoint_path
 from graftbrain.brain import GraftedBrain
 from graftbrain.connectomes import make_proxy
 from graftbrain.graft import build
@@ -74,7 +74,7 @@ class IntegratedAgent:
             # A small seeded projection gives camera input a measurable causal path.
             visual_generator=torch.Generator(device='cpu').manual_seed(config.seed+1907)
             nn.init.normal_(self.vis_to_sensory.weight,std=0.02,generator=visual_generator)
-            self.tidal,self.receipt=load_checkpoint(ARTIFACTS/'tidal_core.pt')
+            self.tidal,self.receipt=load_checkpoint(tidal_checkpoint_path())
             h=self.tidal.config.hidden_size
             self.encoder=nn.Linear(155+16+2,len(self.brain.sensory_idx))
             self.donor_to_graph=nn.Linear(h+6,len(self.brain.sensory_idx),bias=False)
@@ -177,8 +177,12 @@ class IntegratedAgent:
         self.preparation_updates=0; self.bridge_updates=0; self.episodic=[]; self.tool_memory=[]
         self._camera_consumed_any=False
         self.neural_graft=None
+        self.frontier_hub=None
         self.programmed_prior_status={'enabled':False}
         self._setup_neural_graft()
+        if getattr(self.config, 'frontier', None) is not None:
+            from .frontier.bridge import attach_frontier_to_agent
+            attach_frontier_to_agent(self)
         self.reset_episode()
 
     def _setup_frontier_extensions(self):
@@ -504,12 +508,19 @@ class IntegratedAgent:
                 self.auditory_encoder = AuditorySpikeEncoder(seed=self.config.seed)
                 self.chat_gateway = ConversationalChatGateway(embed_dim=64, seed=self.config.seed)
 
+    def _frontier_graft_optimizer(self):
+        spec = getattr(self.config, 'frontier', None)
+        if spec is not None and getattr(spec, 'enabled', False):
+            return getattr(spec, 'graft_optimizer', 'adam')
+        return 'adam'
+
     def _setup_neural_graft(self):
         if not self.config.neural_graft:
             return
         from .neural_graft import NeuralResidualGraft
         if self.neural_graft is None:
-            self.neural_graft=NeuralResidualGraft(seed=self.config.seed)
+            self.neural_graft=NeuralResidualGraft(seed=self.config.seed,
+                                                  optimizer_kind=self._frontier_graft_optimizer())
             self.modules['neural_graft']=self.neural_graft.network
         if self.config.programmed_connectome and self.neural_graft.connectome is None:
             try:
@@ -964,6 +975,9 @@ class IntegratedAgent:
         if getattr(self, 'neuroweave_channel', None) is not None:
             # No wall-clock: exact-replay receipts compare telemetry byte-for-byte.
             self.last_telemetry['neuroweave'] = self.neuroweave_channel.get_telemetry_dict(include_timing=False)
+        if getattr(self, 'frontier_hub', None) is not None and self.frontier_hub.enabled:
+            from .frontier.bridge import step_agent_frontier
+            step_agent_frontier(self)
         if getattr(self, 'dpo_engine', None) is not None:
             self.last_telemetry['verifiable_dpo']={'enabled':True,'pairs':len(self.dpo_engine.preference_buffer),'last_margin':getattr(self.dpo_engine,'last_margin',0.0)}
         if getattr(self, 'sancf_fabric', None) is not None:
@@ -1495,6 +1509,8 @@ class IntegratedAgent:
                     channels = fabric_state.get('channels')
                     if isinstance(channels, dict):
                         channels.pop('neuroweave', None)
+        if getattr(self, 'frontier_hub', None) is not None and self.frontier_hub.enabled:
+            state['frontier_v1'] = self.frontier_hub.export_state()
         state['neurowave_x2']=self.neurowave_x2.export_state() if getattr(self,'neurowave_x2',None) is not None else None
         state['overflow_mini_brain']=self.overflow_mini_brain.state_dict() if getattr(self,'overflow_mini_brain',None) is not None else None
         state['selective_ssm']=self.selective_ssm.state_dict() if getattr(self,'selective_ssm',None) is not None else None
@@ -1639,7 +1655,8 @@ class IntegratedAgent:
                 self.modules['neural_graft']=self.neural_graft.network
             else:
                 from .neural_graft import NeuralResidualGraft
-                self.neural_graft=NeuralResidualGraft(seed=self.config.seed)
+                self.neural_graft=NeuralResidualGraft(seed=self.config.seed,
+                                                      optimizer_kind=self._frontier_graft_optimizer())
                 self.modules['neural_graft']=self.neural_graft.network
         if getattr(self,'dendritic_ltc',None) is not None and state.get('dendritic_ltc') is not None:
             self.dendritic_ltc.import_state(state['dendritic_ltc'])
@@ -1695,6 +1712,9 @@ class IntegratedAgent:
         if state.get('neuroweave_v1') is not None:
             # Presence/config agreement was checked before any module was touched.
             self.neuroweave_channel.import_state(state['neuroweave_v1'])
+        if state.get('frontier_v1') is not None or getattr(self, 'frontier_hub', None) is not None:
+            from .frontier.bridge import import_agent_frontier
+            import_agent_frontier(self, state)
         if getattr(self,'neurowave_x2',None) is not None and state.get('neurowave_x2') is not None:
             self.neurowave_x2.import_state(state['neurowave_x2'])
         if getattr(self,'overflow_mini_brain',None) is not None and state.get('overflow_mini_brain') is not None:

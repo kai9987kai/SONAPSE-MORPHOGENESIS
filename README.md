@@ -389,6 +389,23 @@ The runtime provides toggleable research implementations of recent frontier tech
 
 All options are configurable in `SynapseConfig`, controllable via the web workbench HUD and settings, and fully preserved across mid-episode state checkpoints.
 
+## Frontier Pack
+
+Sonapse 0.3.0 includes 18 experimental modules covering neural dynamics, memory,
+connectivity, sparse learning, experiment design and model interchange. List the
+modules and experiments, then run the Hodgkin–Huxley cable reference check:
+
+```bash
+python -m synapse.cli frontier catalog
+python -m synapse.cli frontier experiment --id hh_cable --quick
+```
+
+Ordinary agent runs leave the pack disabled. Max Mode enables read-only observers.
+The workbench also has an isolated lab for stepping observers and running experiments.
+Each experiment produces a receipt with its checks or comparisons and a digest.
+The results describe synthetic models. See the [module catalog](docs/frontier/README.md)
+for individual controls, results and limitations.
+
 ## Upstream Lineage & Research Grounding
 
 SYNAPSE unifies innovations from:
@@ -411,7 +428,7 @@ It is **off by default**:
 All results are `synthetic_abstraction`: not biological validation, not emotions, not FPGA hardware.
 
 What it includes:
-- 45 mechanisms (two are declared only)
+- 45 mechanisms, all consumed by the runtime. `associative_memory` and `fast_weights` became engine-level mechanisms on 2026-11-19 ([rules](docs/neuroweave/README.md#6-learning-mechanisms), `tests/test_neuroweave_assoc_fastweights.py`); the standalone page does not execute them, and no benefit has been shown.
 - 16 sensory channels with scalar-only privacy rules
 - 24 experiments with sealed receipts
 - package, standalone HTML and FPGA-mapping exports
