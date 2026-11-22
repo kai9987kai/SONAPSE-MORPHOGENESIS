@@ -103,6 +103,16 @@ _T975 = (12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262, 2.228, 
 
 # ====================================================================== JSON / digest helpers
 def _jsonable(obj: Any) -> Any:
+    # Common telemetry leaves already have their final JSON representation.
+    if type(obj) in (int, bool, str) or obj is None:
+        return obj
+    if type(obj) is float:
+        return obj if math.isfinite(obj) else None
+    if type(obj) is np.ndarray and obj.ndim and (
+        obj.dtype.kind in 'biu' or
+        (obj.dtype.type in (np.float16, np.float32, np.float64) and np.isfinite(obj).all())
+    ):
+        return obj.tolist()
     if isinstance(obj, Mapping):
         return {str(k): _jsonable(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
@@ -330,6 +340,33 @@ def _state_digest(engine: NeuroWeaveEngine) -> str:
 
 
 def _count_numbers(obj: Any) -> int:
+    t = type(obj)
+    if t is float or t is int:
+        return 1
+    if t is list or t is tuple:
+        total = 0
+        for v in obj:
+            tv = type(v)
+            if tv is float or tv is int:
+                total += 1
+            elif tv is list or tv is tuple or tv is dict:
+                total += _count_numbers(v)
+            elif tv is not str and tv is not bool and v is not None:
+                total += _count_numbers(v)
+        return total
+    if t is dict:
+        total = 0
+        for v in obj.values():
+            tv = type(v)
+            if tv is float or tv is int:
+                total += 1
+            elif tv is list or tv is tuple or tv is dict:
+                total += _count_numbers(v)
+            elif tv is not str and tv is not bool and v is not None:
+                total += _count_numbers(v)
+        return total
+    if t is str or t is bool or obj is None:
+        return 0
     if isinstance(obj, Mapping):
         return sum(_count_numbers(v) for v in obj.values())
     if isinstance(obj, (list, tuple)):

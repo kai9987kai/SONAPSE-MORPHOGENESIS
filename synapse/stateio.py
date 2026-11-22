@@ -82,9 +82,15 @@ def digest(value):
         if isinstance(v,torch.Tensor):
             t=v.detach().cpu().contiguous()
             h.update(f'tensor:{t.dtype}:{list(t.shape)}:'.encode())
-            h.update(t.reshape(-1).view(torch.uint8).numpy().tobytes()); return
+            raw_np = t.reshape(-1).view(torch.uint8).numpy()
+            h.update(memoryview(raw_np) if raw_np.size else b''); return
         if isinstance(v,np.ndarray):
-            h.update(f'array:{v.dtype.str}:{list(v.shape)}:'.encode()); h.update(v.tobytes()); return
+            h.update(f'array:{v.dtype.str}:{list(v.shape)}:'.encode())
+            if v.flags.c_contiguous and v.ndim > 0:
+                h.update(memoryview(v).cast('B'))
+            else:
+                h.update(v.tobytes())
+            return
         if isinstance(v,np.generic): put(v.item()); return
         if isinstance(v,dict):
             h.update(b'dict{')

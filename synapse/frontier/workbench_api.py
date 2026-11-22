@@ -244,6 +244,15 @@ class FrontierWorkbenchAPI:
             hub = self.lab()
             return _jsonable({'source': 'lab', 'summary': hub.summary()})
 
+    def synthesis(self, source: str = 'auto') -> dict[str, Any]:
+        """Read-only cross-scale synthesis across the live or lab Frontier observer hub."""
+        from .synthesis import synthesize_frontier_observers
+        obs = self.observers(source)
+        return _jsonable({
+            'source': obs['source'],
+            'synthesis': synthesize_frontier_observers(obs['summary']),
+        })
+
     def configure(self, data: Mapping[str, Any]) -> dict[str, Any]:
         payload = dict(data)
         n_units = _int(payload.pop('n_units', 64), 'n_units', 8, MAX_LAB_UNITS)
@@ -268,7 +277,14 @@ class FrontierWorkbenchAPI:
             for _ in range(steps):
                 vec = np.tanh(self._lab_rng.standard_normal(hub.n_units))
                 hub.observe(vec)
-            return _jsonable({'source': 'lab', 'stepped': steps, 'summary': hub.summary()})
+            summary = hub.summary()
+            from .synthesis import synthesize_frontier_observers
+            return _jsonable({
+                'source': 'lab',
+                'stepped': steps,
+                'summary': summary,
+                'synthesis': synthesize_frontier_observers(summary),
+            })
 
     def _run(self, kind: str, fn: Any, background: bool, params: dict[str, Any]) -> dict[str, Any]:
         if not background:
@@ -370,6 +386,10 @@ class FrontierWorkbenchAPI:
             return self.observers('auto')
         if path == '/api/frontier/observers/lab':
             return self.observers('lab')
+        if path == '/api/frontier/synthesis':
+            return self.synthesis('auto')
+        if path == '/api/frontier/synthesis/lab':
+            return self.synthesis('lab')
         raise KeyError('unknown frontier endpoint')
 
     def post(self, path: str, data: Mapping[str, Any]) -> dict[str, Any]:

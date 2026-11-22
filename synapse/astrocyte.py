@@ -9,7 +9,6 @@ the Bienenstock-Cooper-Munro (BCM) modification threshold and gate synaptic gain
 from __future__ import annotations
 import math
 from dataclasses import dataclass, field
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -83,18 +82,17 @@ class AstrocyteNetwork(nn.Module):
                 continue
             regional_activity = neural_rates[start:end]
             mean_rate = float(regional_activity.mean().item())
-            rate_var = float(regional_activity.var().item()) if len(regional_activity) > 1 else 0.0
 
             # 1. Intracellular calcium wave equation: dCa/dt = -decay * Ca + gain * mean_rate
             ca = float(self.calcium_levels[i].item())
             new_ca = ca * self.decay + self.calcium_gain * mean_rate
-            new_ca = float(np.clip(new_ca, 0.01, 2.5))
+            new_ca = min(max(new_ca, 0.01), 2.5)
             self.calcium_levels[i] = new_ca
 
             # 2. Gliotransmitter release: sigmoidal response to calcium wave
             # At resting levels, gain is 1.0; at high calcium, adenosine inhibits runaway activity
             gliotransmission = float(2.0 / (1.0 + math.exp(0.8 * (new_ca - 0.4))))
-            gliotransmission = float(np.clip(gliotransmission, 0.2, 1.8))
+            gliotransmission = min(max(gliotransmission, 0.2), 1.8)
 
             # 3. Sliding BCM modification threshold: theta_M = <y^2> * tau
             bcm = float(self.bcm_thresholds[i].item())

@@ -73,8 +73,70 @@ def _check_type(tag: str, v: Any) -> bool:
     raise ValueError(f'unknown type tag {tag!r}')  # pragma: no cover - registry is static
 
 
-def json_safe(value: Any, path: str = 'payload', depth: int = 0) -> Any:
-    """Return a deep copy of ``value`` if it is JSON-safe, else raise ValueError."""
+def _json_safe_fast(value: Any, depth: int) -> Any:
+    """Fast recursive JSON-safety copy; raises ValueError on invalid values."""
+    if depth > MAX_DEPTH:
+        raise ValueError('nesting too deep')
+    t = type(value)
+    if value is None or t is bool or t is str or t is int:
+        return value
+    if t is float:
+        if not math.isfinite(value):
+            raise ValueError('non-finite float')
+        return value
+    if t is list or t is tuple:
+        next_depth = depth + 1
+        out_list = []
+        append = out_list.append
+        for v in value:
+            tv = type(v)
+            if v is None or tv is bool or tv is str or tv is int:
+                append(v)
+            elif tv is float:
+                if not math.isfinite(v):
+                    raise ValueError('non-finite float')
+                append(v)
+            else:
+                append(_json_safe_fast(v, next_depth))
+        return out_list
+    if t is dict:
+        next_depth = depth + 1
+        out_dict = {}
+        for k, v in value.items():
+            if type(k) is not str and not isinstance(k, str):
+                raise ValueError('dict keys must be str')
+            tv = type(v)
+            if v is None or tv is bool or tv is str or tv is int:
+                out_dict[k] = v
+            elif tv is float:
+                if not math.isfinite(v):
+                    raise ValueError('non-finite float')
+                out_dict[k] = v
+            else:
+                out_dict[k] = _json_safe_fast(v, next_depth)
+        return out_dict
+    if isinstance(value, (bool, str)):
+        return value
+    if isinstance(value, int):
+        return int(value)
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError('non-finite float')
+        return float(value)
+    if isinstance(value, (list, tuple)):
+        return [_json_safe_fast(v, depth + 1) for v in value]
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            if not isinstance(k, str):
+                raise ValueError('dict keys must be str')
+            out[k] = _json_safe_fast(v, depth + 1)
+        return out
+    raise ValueError(f'{t.__name__} is not JSON-safe')
+
+
+def _json_safe_with_path(value: Any, path: str, depth: int) -> Any:
+    """Error-reporting variant that preserves exact diagnostic path strings."""
     if depth > MAX_DEPTH:
         raise ValueError(f'{path}: nesting too deep')
     if value is None or isinstance(value, (bool, str)):
@@ -86,24 +148,26 @@ def json_safe(value: Any, path: str = 'payload', depth: int = 0) -> Any:
             raise ValueError(f'{path}: non-finite float')
         return float(value)
     if isinstance(value, (list, tuple)):
-        return [json_safe(v, f'{path}[{i}]', depth + 1) for i, v in enumerate(value)]
+        return [_json_safe_with_path(v, f'{path}[{i}]', depth + 1) for i, v in enumerate(value)]
     if isinstance(value, dict):
         out = {}
         for k, v in value.items():
             if not isinstance(k, str):
                 raise ValueError(f'{path}: dict keys must be str')
-            out[k] = json_safe(v, f'{path}.{k}', depth + 1)
+            out[k] = _json_safe_with_path(v, f'{path}.{k}', depth + 1)
         return out
     raise ValueError(f'{path}: {type(value).__name__} is not JSON-safe')
 
 
-def validate_payload(topic: str, payload: Mapping[str, Any]) -> None:
-    """Check a payload against ``INTERFACES[topic]`` (extra keys allowed if JSON-safe)."""
-    if topic not in INTERFACES:
-        raise ValueError(f'unknown topic {topic!r}')
-    if not isinstance(payload, dict):
-        raise ValueError('payload must be a dict')
-    json_safe(payload)
+def json_safe(value: Any, path: str = 'payload', depth: int = 0) -> Any:
+    """Return a deep copy of ``value`` if it is JSON-safe, else raise ValueError."""
+    try:
+        return _json_safe_fast(value, depth)
+    except ValueError:
+        return _json_safe_with_path(value, path, depth)
+
+
+def _validate_payload_schema(topic: str, payload: dict[str, Any]) -> None:
     spec = INTERFACES[topic]
     for key, tag in spec['required'].items():
         if key not in payload:
@@ -113,6 +177,27 @@ def validate_payload(topic: str, payload: Mapping[str, Any]) -> None:
     for key, tag in spec['optional'].items():
         if key in payload and not _check_type(tag, payload[key]):
             raise ValueError(f'{topic}.{key} must be {tag}')
+
+
+def validate_payload(topic: str, payload: Mapping[str, Any]) -> None:
+    """Check a payload against ``INTERFACES[topic]`` (extra keys allowed if JSON-safe)."""
+    if topic not in INTERFACES:
+        raise ValueError(f'unknown topic {topic!r}')
+    if not isinstance(payload, dict):
+        raise ValueError('payload must be a dict')
+    json_safe(payload)
+    _validate_payload_schema(topic, payload)
+
+
+def _clone_json(value: Any) -> Any:
+    t = type(value)
+    if value is None or t is bool or t is str or t is int or t is float:
+        return value
+    if t is list:
+        return [_clone_json(v) for v in value]
+    if t is dict:
+        return {k: _clone_json(v) for k, v in value.items()}
+    return copy.deepcopy(value)
 
 
 @dataclass(frozen=True)
@@ -140,9 +225,29 @@ class Envelope:
             raise ValueError('payload must be a dict')
         object.__setattr__(self, 'payload', json_safe(self.payload))
 
+    @classmethod
+    def _from_validated(cls, topic: str, step: int, source: str, payload: dict[str, Any], sequence: int) -> 'Envelope':
+        if topic not in TOPICS:
+            raise ValueError(f'unknown topic {topic!r}')
+        if isinstance(step, bool) or not isinstance(step, int) or step < 0:
+            raise ValueError('step must be a non-negative int')
+        if isinstance(sequence, bool) or not isinstance(sequence, int) or sequence < 0:
+            raise ValueError('sequence must be a non-negative int')
+        if not isinstance(source, str) or not source:
+            raise ValueError('source must be a non-empty string')
+        obj = object.__new__(cls)
+        object.__setattr__(obj, 'topic', topic)
+        object.__setattr__(obj, 'step', step)
+        object.__setattr__(obj, 'source', source)
+        object.__setattr__(obj, 'payload', payload)
+        object.__setattr__(obj, 'sequence', sequence)
+        object.__setattr__(obj, 'schema', EVENT_SCHEMA)
+        object.__setattr__(obj, 'version', EVENT_VERSION)
+        return obj
+
     def to_dict(self) -> dict[str, Any]:
         return {'schema': self.schema, 'version': self.version, 'topic': self.topic, 'step': self.step,
-                'source': self.source, 'payload': copy.deepcopy(self.payload), 'sequence': self.sequence}
+                'source': self.source, 'payload': _clone_json(self.payload), 'sequence': self.sequence}
 
     @classmethod
     def from_dict(cls, d: Mapping[str, Any]) -> 'Envelope':
@@ -192,25 +297,30 @@ class EventBus:
             raise ValueError(f'unknown topic {topic!r}')
         if not isinstance(payload, Mapping):
             raise ValueError('payload must be a mapping')
+        raw_payload = payload if type(payload) is dict else dict(payload)
+        safe_payload = json_safe(raw_payload)
         if (self.strict if strict is None else strict):
-            validate_payload(topic, dict(payload))
-        env = Envelope(topic=topic, step=step, source=source, payload=dict(payload), sequence=self.sequence)
+            if topic not in INTERFACES:
+                raise ValueError(f'unknown topic {topic!r}')
+            _validate_payload_schema(topic, safe_payload)
+        env = Envelope._from_validated(topic=topic, step=step, source=source, payload=safe_payload, sequence=self.sequence)
         self.sequence += 1
         self._history[topic].append(env)
         self.published[topic] += 1
-        for token, (t, cb) in list(self._subs.items()):
-            if t != topic and t != WILDCARD:
-                continue
-            try:
-                # Each subscriber gets its own deep copy of the payload so a subscriber
-                # mutating it cannot corrupt history or what later subscribers see.
-                cb(Envelope(topic=env.topic, step=env.step, source=env.source, payload=env.payload,
-                            sequence=env.sequence))
-                self.delivered[topic] += 1
-            except Exception as exc:  # noqa: BLE001 - isolation is the point
-                self.errors[topic] += 1
-                self.error_log.append({'token': token, 'topic': topic, 'sequence': env.sequence,
-                                       'error': f'{type(exc).__name__}: {exc}'[:500]})
+        if self._subs:
+            for token, (t, cb) in list(self._subs.items()):
+                if t != topic and t != WILDCARD:
+                    continue
+                try:
+                    # Each subscriber gets its own deep copy of the payload so a subscriber
+                    # mutating it cannot corrupt history or what later subscribers see.
+                    cb(Envelope._from_validated(topic=env.topic, step=env.step, source=env.source,
+                                                payload=_clone_json(env.payload), sequence=env.sequence))
+                    self.delivered[topic] += 1
+                except Exception as exc:  # noqa: BLE001 - isolation is the point
+                    self.errors[topic] += 1
+                    self.error_log.append({'token': token, 'topic': topic, 'sequence': env.sequence,
+                                           'error': f'{type(exc).__name__}: {exc}'[:500]})
         return env
 
     def history(self, topic: str, limit: int | None = None) -> list[Envelope]:

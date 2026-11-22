@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from synapse.experience import (AdaptiveResidualCalibrator, ExperienceWorldModel,
-                                encode_experience_state)
+                                encode_experience_state, encode_sensory_batch)
 from synapse.stateio import digest
 
 
@@ -169,3 +169,19 @@ def test_restore_rejects_impossible_counts_atomically(key, value):
     with pytest.raises(ValueError):
         model.import_state(invalid)
     assert digest(model.export_state()) == before
+
+
+def test_batched_replay_targets_preserve_ray_order_and_unclipped_inputs():
+    rng = np.random.default_rng(21)
+    observations = rng.uniform(-9, 9, (17, 310))[:, ::2]
+    expected = []
+    for row in observations:
+        depth = row[:33]
+        signals = (depth, depth * row[66:99], depth * row[33:66])
+        sectors = [part.mean() for signal in signals for part in np.split(signal, 3)]
+        cues = [row[136], row[137], row[149] - row[150], row[151] - row[152], row[154]]
+        expected.append(np.clip(sectors + cues, -2, 2))
+    np.testing.assert_array_equal(encode_sensory_batch(observations), expected)
+    for invalid in (observations[:, :-1], np.full((1, 155), np.nan), np.full((1, 155), 1e7)):
+        with pytest.raises(ValueError):
+            encode_sensory_batch(invalid)

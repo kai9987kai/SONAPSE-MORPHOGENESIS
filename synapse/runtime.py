@@ -4,6 +4,7 @@ from copy import copy, deepcopy
 from collections import deque
 from dataclasses import replace
 import re
+import time
 import numpy as np
 import torch
 from .config import ROOT
@@ -11,8 +12,23 @@ from .agent import IntegratedAgent
 from .stateio import save_state_snapshot,load_state
 from .complex_world import ComplexWorld, ALL_TASKS as TASKS
 from .actions import ACTION_NAMES, govern_action, validate_action
+from .perf_lab import StepPerfTracker, active_subsystem_list
+
+
+def _clone_plain(value):
+    """Fast isolated clone for JSON-primitive nested telemetry dicts/lists."""
+    t = type(value)
+    if value is None or t is int or t is float or t is bool or t is str:
+        return value
+    if t is list:
+        return [_clone_plain(v) for v in value]
+    if t is dict:
+        return {k: _clone_plain(v) for k, v in value.items()}
+    return deepcopy(value)
 
 class LabRuntime:
+    _supports_skip_snapshot = True
+
     @staticmethod
     def _make_world(task, seed):
         if task == 'world4d_tesseract_bypass':
@@ -30,6 +46,7 @@ class LabRuntime:
         from .reusable_skills import ReusableSkillLibrary
         self.skill_library=ReusableSkillLibrary(seed=config.seed)
         self._init_monitors()
+        self.perf_tracker=StepPerfTracker(window=128)
         self.obs=self.world.observe(); self.total_steps=0; self.recent=[]; self.last={}; self.last_action=np.zeros(5,np.float32)
 
     def _init_monitors(self):
@@ -96,16 +113,19 @@ class LabRuntime:
             self.uncertainty_updates=int(unc.get('updates',0))
             self.uncertainty_last_loss=deepcopy(unc.get('last_loss'))
 
-    def step(self,steps=1,learn=False,camera=None,action=None):
+    def step(self,steps=1,learn=False,camera=None,action=None,include_snapshot=True):
         if type(steps) is not int or not 1<=steps<=10000: raise ValueError('steps must be integer 1..10000')
         if type(learn) is not bool: raise ValueError('learn must be boolean')
         manual = None if action is None else validate_action(action)
         for _ in range(steps):
+            t_step0=time.perf_counter()
             previous_observation=self.obs.copy()
             # Manual actions still observe the current state through the actor;
             # the actual motor command is then bound before any outcome arrives.
+            t_act0=time.perf_counter()
             out=self.agent.act(self.obs,camera=camera,learn=learn,
                                planner_mode='off' if manual is not None else None)
+            act_ms=(time.perf_counter()-t_act0)*1000.0
             self.last=out['telemetry']
             proposed = out['action'] if manual is None else manual
             act=govern_action(proposed,self.agent.homeostasis.get_max_allowed_thrust())
@@ -118,6 +138,7 @@ class LabRuntime:
                              action_coordinates=list(ACTION_NAMES))
             features=np.asarray(out['features'],dtype=np.float32)
             pooled=features[:32]
+            t_unc0=time.perf_counter()
             if learn and self._prev_uncertainty_transition is not None:
                 prev_z,prev_act,prev_rew=self._prev_uncertainty_transition
                 with torch.random.fork_rng(devices=[]):
@@ -127,7 +148,10 @@ class LabRuntime:
                 self.uncertainty_updates+=1
             with torch.no_grad():
                 unc_est=self.uncertainty_decomposer.evaluate_uncertainty(pooled,act)
+            unc_ms=(time.perf_counter()-t_unc0)*1000.0
+            t_world0=time.perf_counter()
             self.obs,reward,done,info=self.world.step(act)
+            world_ms=(time.perf_counter()-t_world0)*1000.0
             # Optional passive observers (e.g. the sleep-replay episode recorder).
             # Absent/empty by default, so legacy stepping is unchanged. Taps
             # may only observe; any failure is isolated from the control loop.
@@ -144,6 +168,7 @@ class LabRuntime:
                     consumed_food=float(reward) > 0.3,
                     in_friction_zone=info.get('in_friction_zone', False)
                 )
+            t_learn0=time.perf_counter()
             if learn:
                 self.plasticity_monitor.record_activity(features,step=self.total_steps+1)
                 plast_report=self.plasticity_monitor.evaluate_plasticity().to_dict()
@@ -163,6 +188,7 @@ class LabRuntime:
                 # Query outcomes cannot be learned accidentally by a later call.
                 self.agent.pending_transition=None
                 plast_report=self.plasticity_monitor.history[-1].to_dict() if self.plasticity_monitor.history else self.plasticity_monitor.evaluate_plasticity().to_dict()
+            learn_ms=(time.perf_counter()-t_learn0)*1000.0
             self.last['plasticity_monitor']=plast_report
             self.last['uncertainty']={
                 **unc_est.to_dict(),
@@ -176,12 +202,22 @@ class LabRuntime:
             recent_row={'step':self.total_steps,'reward':float(reward),'done':bool(done)}
             if done and 'outcome' in info:
                 recent_row['outcome']=info['outcome']
-            self.recent=(self.recent+[recent_row])[-128:]
+            self.recent.append(recent_row)
+            if len(self.recent) > 128:
+                del self.recent[:-128]
             if done:
                 self.agent.reset_episode()
                 self.obs=self.world.reset()
                 self._prev_uncertainty_transition=None
-        return self.snapshot()
+            self.perf_tracker.record(
+                (time.perf_counter()-t_step0)*1000.0, act_ms, unc_ms, world_ms, learn_ms
+            )
+        return self.snapshot() if include_snapshot else None
+    def perf_telemetry(self):
+        return self.perf_tracker.summary(
+            neurons=int(self.agent.brain.n),
+            active_subsystems=active_subsystem_list(self.config),
+        )
     def uncertainty_status(self):
         unc=deepcopy(self.last.get('uncertainty')) if isinstance(self.last,dict) and 'uncertainty' in self.last else {
             'epistemic':0.0,'aleatoric':0.0,'ood_score':0.0,'composite_penalty':0.0,'confidence':1.0,
@@ -208,22 +244,52 @@ class LabRuntime:
             'event_driven':deepcopy(self.last.get('event_driven',{'enabled':bool(self.config.event_driven_backend)})),
         }
     def snapshot(self):
+        t_snap0=time.perf_counter()
         b=self.agent.brain; g=self.agent.graph; r=b.r.detach().numpy()
-        indices=np.linspace(0,g.n-1,min(8000,g.n)).astype(int)
-        edge_indices=np.linspace(0,len(g.base_pre)-1,min(3200,len(g.base_pre))).astype(int)
+        n_base=len(g.base_pre)
+        snap_key=(g.n,n_base)
+        cached_snap=getattr(self,'_snap_index_cache',None)
+        if cached_snap is None or cached_snap[0]!=snap_key:
+            indices=np.linspace(0,g.n-1,min(8000,g.n)).astype(int)
+            edge_indices=np.linspace(0,n_base-1,min(3200,n_base)).astype(int) if n_base else np.empty(0,dtype=int)
+            visible=np.zeros(g.n,dtype=bool)
+            visible[indices]=True
+            indices_list=indices.tolist()
+            origin_list=g.origin[indices].tolist()
+            role_list=[str(role) for role in g.role[indices].tolist()]
+            base_edges=[list(edge) for edge in zip(
+                g.base_pre[edge_indices].tolist(),
+                g.base_post[edge_indices].tolist(),
+                g.base_w[edge_indices].tolist(),
+            )] if edge_indices.size else []
+            cached_snap=(snap_key,indices,indices_list,origin_list,role_list,visible,base_edges)
+            self._snap_index_cache=cached_snap
+        _,indices,indices_list,origin_list,role_list,visible,base_edges=cached_snap
+        cfg_dict=getattr(self,'_cached_config_dict',None)
+        if cfg_dict is None or getattr(self,'_cached_config_obj',None) is not self.config:
+            cfg_dict=self.config.to_dict()
+            self._cached_config_obj=self.config
+            self._cached_config_dict=cfg_dict
         mode=('memory' if self.config.surprise_memory else 'model') if self.config.experience_planning else 'off'
         experience={'model':self.agent.experience_model.summary(),
                     'task_aware_model':self.agent.task_aware_model.summary(),
                     'memory':self.agent.surprise_memory.summary(),'mode':mode,
-                    'planner':deepcopy(self.last.get('experience_planner',{}))}
-        result={'config':self.config.to_dict(),'steps':self.total_steps,'world':self.world.snapshot(),'action':self.last_action.tolist(),'telemetry':deepcopy(self.last),'recent':deepcopy(self.recent),'experience':experience,'graph':{'nodes':[{'id':int(i),'origin':int(g.origin[i]),'role':str(g.role[i]),'activity':float(r[i])} for i in indices],'edges':[[int(g.base_pre[i]),int(g.base_post[i]),float(g.base_w[i])] for i in edge_indices],'neurons':g.n,'graft_edges':len(g.graft_pre)},'status':{'bridge_training':'experimental supervised preparation' if self.agent.bridge_updates else 'untrained','readout':self.config.readout,'camera_live':bool(self.last.get('camera_consumed',False)),'experience_planning':self.config.experience_planning}}
+                    'planner':_clone_plain(self.last.get('experience_planner',{}))}
+        nodes = [
+            {'id': i, 'origin': origin, 'role': role, 'activity': activity}
+            for i, origin, role, activity in zip(indices_list, origin_list, role_list, r[indices].tolist())
+        ]
+        edges = [edge[:] for edge in base_edges]
+        result={'config':_clone_plain(cfg_dict),'steps':self.total_steps,'world':self.world.snapshot(),'action':self.last_action.tolist(),'telemetry':_clone_plain(self.last),'recent':[dict(row) for row in self.recent],'experience':experience,'graph':{'nodes':nodes,'edges':edges,'neurons':g.n,'graft_edges':len(g.graft_pre)},'status':{'bridge_training':'experimental supervised preparation' if self.agent.bridge_updates else 'untrained','readout':self.config.readout,'camera_live':bool(self.last.get('camera_consumed',False)),'experience_planning':self.config.experience_planning}}
         from .compute import compute_summary
         result['compute']={**compute_summary(),'threads':self.config.compute_threads}
-        result['training']={'graft':self.agent.neural_graft.summary() if self.agent.neural_graft is not None else {'enabled':False},'programmed_prior':deepcopy(self.agent.programmed_prior_status)}
-        result['graph']['sources']=deepcopy(self.agent.source_provenance)
-        indices_set=set(indices.tolist())
-        graft_rows=[i for i,(pre,post) in enumerate(zip(g.graft_pre,g.graft_post)) if pre in indices_set and post in indices_set and bool(self.agent.plasticity.active_mask[i])]
-        result['graph']['graft_links']=[[int(g.graft_pre[i]),int(g.graft_post[i]),float(b.graft_w[i].detach())] for i in graft_rows[:2400]]
+        result['training']={'graft':self.agent.neural_graft.summary() if self.agent.neural_graft is not None else {'enabled':False},'programmed_prior':_clone_plain(self.agent.programmed_prior_status)}
+        result['graph']['sources']=_clone_plain(self.agent.source_provenance)
+        active = self.agent.plasticity.active_mask.detach().cpu().numpy()
+        rows = np.flatnonzero(visible[g.graft_pre] & visible[g.graft_post] & active.astype(bool, copy=False))[:2400]
+        weights = b.graft_w.detach().cpu().numpy()[rows].tolist()
+        result['graph']['graft_links'] = [list(link) for link in zip(
+            g.graft_pre[rows].tolist(), g.graft_post[rows].tolist(), weights)]
         if not hasattr(self, '_cached_observatory_struct') or self._cached_observatory_struct is None:
             try:
                 from .observatory import NeuralObservatory
@@ -234,6 +300,7 @@ class LabRuntime:
         result['graph']['lod_clusters'] = self._cached_observatory_struct.get('lod_clusters', [])
         result['graph']['streamlines'] = self._cached_observatory_struct.get('streamlines', [])
         result['graph']['layout_scope']='schematic source/role layout; coordinates are not measured anatomy'
+        self.perf_tracker.record_snapshot((time.perf_counter()-t_snap0)*1000.0)
         return result
     def _path(self,name):
         if not isinstance(name,str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}',name): raise ValueError('checkpoint name must use 1..64 letters digits underscores or hyphens')
@@ -351,11 +418,16 @@ class LabRuntime:
                       'uncertainty_last_loss'):
             setattr(self,field,getattr(candidate_monitors,field))
         self._cached_observatory_struct=None
+        self._snap_index_cache=None
+        self._cached_config_dict=None
         self.obs=obs.copy(); self.total_steps=steps
         self.recent=deepcopy(recent); self.last=deepcopy(last); self.last_action=last_action.copy()
         return self.snapshot()
     def reset(self,task=None,seed=None):
         self._cached_observatory_struct = None
+        self._snap_index_cache = None
+        self._cached_config_dict = None
+        self.perf_tracker.reset()
         cfg=replace(self.config,task=task or self.config.task,seed=self.config.seed if seed is None else seed)
         if seed is not None:
             self.config=cfg; self.agent=IntegratedAgent(cfg)

@@ -523,6 +523,23 @@ def test_each_consumed_mechanism_changes_output(flag):
     assert np.all(np.isfinite(out))
 
 
+def test_tiled_transmission_preserves_per_tile_rounding_across_chunks():
+    brain = NeuroWeaveBrain(NeuroWeaveSpecV1(neurons=1024, max_neurons=1024, fan_in=24, max_synapses=32768))
+    table = brain.synapses
+    assert table.size > 8192
+    activity = np.random.default_rng(42).uniform(-1, 1, table.n)
+    tile = 7
+    drive = table.transmit(activity, {'tiled_execution'}, tile_size=tile)
+    expected = np.zeros((4, table.n))
+    bins = table.compartment * table.n + table.dst
+    for start in range(0, table.size, tile):
+        sl = slice(start, start + tile)
+        expected += np.bincount(bins[sl], weights=table.last_signal[sl],
+                                minlength=expected.size).reshape(expected.shape)
+    np.testing.assert_array_equal([drive.proximal, drive.distal, drive.apical, drive.basal], expected)
+    assert table.profile['tiles_last'] == (table.size + tile - 1) // tile
+
+
 def test_meta_plasticity_and_tiled_execution():
     _, a = _run_brain(('reward_plasticity',))
     _, b = _run_brain(('reward_plasticity', 'meta_plasticity'))

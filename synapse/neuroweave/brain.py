@@ -68,6 +68,8 @@ class NeuroWeaveBrain:
         self._hash_cache: dict[int, np.ndarray] = {}
         self._fp_version = -1
         self._fp_weight: np.ndarray | None = None
+        self._region_counts_n = -1
+        self._region_counts: np.ndarray | None = None
         self.measured: dict[str, float] = {'wallclock_ms_last': 0.0, 'wallclock_ms_total': 0.0,
                                            'edge_traversals_last': 0, 'edge_traversals_total': 0, 'tiles_last': 0,
                                            'steps': 0}
@@ -136,7 +138,7 @@ class NeuroWeaveBrain:
         if x.size:
             idx = np.arange(n)
             polarity = np.where(idx % 2 == 0, 1.0, -0.75)
-            kinds = np.array([_KIND_INPUT_GAIN.get(self.regions[r][1], 0.5) for r in self.cells.region])
+            kinds = np.array([_KIND_INPUT_GAIN.get(kind, 0.5) for _, kind in self.regions])[self.cells.region]
             ext = kinds * (polarity * x[idx % x.size] + self._projection(x.size)[:n] @ x)
         if 'flyhash_projection' in self.flags:
             code = self.flyhash_code(x)
@@ -332,7 +334,7 @@ class NeuroWeaveBrain:
         new_ids = self.cells.grow(k_eff, r, signs)
         syn.add_neurons([r] * k_eff, signs)
         rank = KIND_RANK.get(self.regions[r][1], -1)
-        kinds = np.array([KIND_RANK.get(self.regions[x][1], -1) for x in self.cells.region])
+        kinds = np.array([KIND_RANK.get(kind, -1) for _, kind in self.regions])[self.cells.region]
         same = np.flatnonzero(self.cells.region == r)
         upstream = np.flatnonzero((kinds >= 0) & (kinds < rank)) if rank > 0 else np.zeros(0, np.int64)
         downstream = np.flatnonzero(kinds > rank) if rank >= 0 else np.zeros(0, np.int64)
@@ -420,15 +422,24 @@ class NeuroWeaveBrain:
     def readout_features(self) -> np.ndarray:
         c = self.cells
         a = c.output
-        m = float(a.mean())
-        pool = [m, float(np.abs(a).mean()), float(a.std()), float(np.tanh(c.fast).mean()),
-                float(np.tanh(c.slow).mean()), float(np.tanh(c.context).mean()), float(c.trace.mean()),
-                float(np.mean(np.abs(a) > 0.1))]
+        abs_a = np.abs(a)
         nr = len(self.regions)
-        cnt = np.maximum(1, np.bincount(c.region, minlength=nr)[:nr])
-        reg_mean = np.bincount(c.region, weights=a, minlength=nr)[:nr] / cnt
-        reg_abs = np.bincount(c.region, weights=np.abs(a), minlength=nr)[:nr] / cnt
-        return np.concatenate([np.array(pool), reg_mean, reg_abs])
+        out = np.empty(8 + 2 * nr, dtype=np.float64)
+        out[0] = float(a.mean())
+        out[1] = float(abs_a.mean())
+        out[2] = float(a.std())
+        out[3] = float(np.tanh(c.fast).mean())
+        out[4] = float(np.tanh(c.slow).mean())
+        out[5] = float(np.tanh(c.context).mean())
+        out[6] = float(c.trace.mean())
+        out[7] = float((abs_a > 0.1).mean())
+        if self._region_counts_n != c.n or self._region_counts is None:
+            self._region_counts = np.maximum(1, np.bincount(c.region, minlength=nr)[:nr]).astype(np.float64)
+            self._region_counts_n = c.n
+        inv_cnt = 1.0 / self._region_counts
+        out[8:8 + nr] = np.bincount(c.region, weights=a, minlength=nr)[:nr] * inv_cnt
+        out[8 + nr:] = np.bincount(c.region, weights=abs_a, minlength=nr)[:nr] * inv_cnt
+        return out
 
     def predict(self, features: np.ndarray | None = None) -> float:
         x = self.readout_features() if features is None else np.asarray(features, dtype=np.float64)
@@ -506,6 +517,8 @@ class NeuroWeaveBrain:
         self._hash_cache = {}
         self._fp_weight = None
         self._fp_version = -1
+        self._region_counts = None
+        self._region_counts_n = -1
 
     def _validate_state(self, state: Mapping[str, Any]) -> tuple:
         if not isinstance(state, Mapping) or state.get('schema') != BRAIN_SCHEMA:

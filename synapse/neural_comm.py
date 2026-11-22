@@ -61,12 +61,19 @@ class MessageEncoder(nn.Module):
             if isinstance(m, nn.Linear):
                 nn.init.orthogonal_(m.weight, gain=0.5)
                 nn.init.zeros_(m.bias)
+        self._index_cache: Dict[Tuple[Any, ...], torch.Tensor] = {}
 
     def pool_region(self, r: torch.Tensor, indices: Tuple[int, ...]) -> torch.Tensor:
         """Aggregate source population activations into a fixed K=pool_dim summary vector."""
         if len(indices) == 0 or r.numel() == 0:
             return torch.zeros(self.pool_dim, dtype=r.dtype, device=r.device)
-        idx_t = torch.as_tensor(indices, dtype=torch.long, device=r.device)
+        cache_key = (indices, r.device)
+        idx_t = self._index_cache.get(cache_key)
+        if idx_t is None:
+            idx_t = torch.as_tensor(indices, dtype=torch.long, device=r.device)
+            if len(self._index_cache) >= 256:
+                self._index_cache.clear()
+            self._index_cache[cache_key] = idx_t
         sub = r.index_select(0, idx_t)
         if sub.numel() == 0:
             return torch.zeros(self.pool_dim, dtype=r.dtype, device=r.device)
@@ -77,9 +84,10 @@ class MessageEncoder(nn.Module):
 
     def forward(self, pooled_src: torch.Tensor, src_region: int, dst_region: int) -> torch.Tensor:
         max_idx = self.region_emb.num_embeddings - 1
-        s_idx = torch.tensor(min(max(0, src_region), max_idx), dtype=torch.long, device=pooled_src.device)
-        d_idx = torch.tensor(min(max(0, dst_region), max_idx), dtype=torch.long, device=pooled_src.device)
-        inp = torch.cat([pooled_src, self.region_emb(s_idx), self.region_emb(d_idx)], dim=0)
+        s_i = min(max(0, src_region), max_idx)
+        d_i = min(max(0, dst_region), max_idx)
+        w = self.region_emb.weight
+        inp = torch.cat([pooled_src, w[s_i], w[d_i]], dim=0)
         return torch.tanh(self.net(inp))
 
 
@@ -106,8 +114,8 @@ class MessageDecoder(nn.Module):
         if target_count <= 0:
             return torch.zeros(0, dtype=message.dtype, device=message.device)
         max_idx = self.region_emb.num_embeddings - 1
-        d_idx = torch.tensor(min(max(0, dst_region), max_idx), dtype=torch.long, device=message.device)
-        raw = torch.tanh(self.net(torch.cat([message, self.region_emb(d_idx)], dim=0)))
+        d_i = min(max(0, dst_region), max_idx)
+        raw = torch.tanh(self.net(torch.cat([message, self.region_emb.weight[d_i]], dim=0)))
         if target_count <= self.max_targets:
             return raw[:target_count]
         return F.interpolate(raw.reshape(1, 1, -1), size=target_count, mode="linear", align_corners=False).reshape(target_count)
@@ -510,13 +518,20 @@ class NeuralCommFabric(nn.Module):
             msgs_recomp = self._step_messages_recomputed
             comp_ops = self._step_compute_ops
 
-        # 1. Pool all active source/target regions and score routes
+        # 1. Pool all active source/target regions (cached per unique index tuple) and score routes
+        pooled_cache: Dict[Tuple[int, ...], torch.Tensor] = {}
         route_candidates: List[Tuple[float, torch.Tensor, float, RoutePopulationSpec, torch.Tensor]] = []
         for spec_route in self.topology.routes:
             if not self.topology.allow_self_routes and spec_route.source_region == spec_route.target_region:
                 continue
-            p_src = self.encoder.pool_region(safe_r, spec_route.source_indices)
-            p_dst = self.encoder.pool_region(safe_r, spec_route.target_indices)
+            p_src = pooled_cache.get(spec_route.source_indices)
+            if p_src is None:
+                p_src = self.encoder.pool_region(safe_r, spec_route.source_indices)
+                pooled_cache[spec_route.source_indices] = p_src
+            p_dst = pooled_cache.get(spec_route.target_indices)
+            if p_dst is None:
+                p_dst = self.encoder.pool_region(safe_r, spec_route.target_indices)
+                pooled_cache[spec_route.target_indices] = p_dst
             gate_val, coh_gain = self.router.score_route(
                 p_src,
                 p_dst,

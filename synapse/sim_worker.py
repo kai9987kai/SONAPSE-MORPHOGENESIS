@@ -126,7 +126,10 @@ class SimWorker:
 
                 t0 = time.perf_counter()
                 try:
-                    self.runtime.step(steps=batch, learn=self.learn, action=self.action_vec)
+                    if getattr(self.runtime, "_supports_skip_snapshot", False):
+                        self.runtime.step(steps=batch, learn=self.learn, action=self.action_vec, include_snapshot=False)
+                    else:
+                        self.runtime.step(steps=batch, learn=self.learn, action=self.action_vec)
                 except Exception:
                     # In case of runtime error, exit loop gracefully
                     break

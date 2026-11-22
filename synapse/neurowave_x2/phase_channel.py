@@ -157,7 +157,7 @@ class WaveChannel(nn.Module):
         """
         coeffs = torch.tanh(self.mode_encoder(message))
         src_phase = self.phase_adapter.get_phase(src_region, band=band)
-        c_tuple = tuple(float(c.item()) for c in coeffs)
+        c_tuple = tuple(coeffs.tolist())
         p_tuple = (float(src_phase),)
         return c_tuple, p_tuple
 

@@ -18,6 +18,7 @@ results.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, replace
+from functools import cached_property
 import hashlib
 import json
 from typing import Any, Mapping
@@ -184,7 +185,7 @@ class FrontierSpecV1:
             payload['modules'] = tuple(payload['modules'])
         return cls(**payload)
 
-    @property
+    @cached_property
     def spec_digest(self) -> str:
         return hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True).encode('utf-8')).hexdigest()
 

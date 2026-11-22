@@ -95,9 +95,9 @@ class PlasticityMonitor:
         # Center data
         X_centered = X - np.mean(X, axis=0, keepdims=True)
 
-        # Singular Value Decomposition
+        # Singular Value Decomposition (singular values only — U and Vt are unused)
         try:
-            _, S, _ = np.linalg.svd(X_centered, full_matrices=False)
+            S = np.linalg.svd(X_centered, compute_uv=False)
         except np.linalg.LinAlgError:
             S = np.ones(min(N, D), dtype=np.float32)
 

@@ -144,7 +144,15 @@ class LatentDynamicsEnsemble(nn.Module):
             aleatoric_var: [batch_size] (mean predicted heteroscedastic variance)
         """
         with torch.no_grad():
-            _, all_r_mu, all_r_log_var = self.forward_all(z, a)
+            inp = torch.cat([z, a], dim=-1)
+            r_mu_list = []
+            r_log_var_list = []
+            for rew_head in self.reward_heads:
+                mu, log_var = rew_head(inp)
+                r_mu_list.append(mu)
+                r_log_var_list.append(log_var)
+            all_r_mu = torch.stack(r_mu_list, dim=0)
+            all_r_log_var = torch.stack(r_log_var_list, dim=0)
             # all_r_mu: [M, B, 1]
             mean_r = all_r_mu.mean(dim=0).squeeze(-1)  # [B]
             # Epistemic variance across ensemble predictions: Var_m(r_m)
@@ -182,15 +190,22 @@ class OutDistributionDetector:
 
     def _fit(self):
         data = np.stack(self.storage, axis=0)  # [N, D]
-        self.mean = np.mean(data, axis=0)
-        cov = np.cov(data, rowvar=False)
+        mean = np.mean(data, axis=0)
+        self.mean = mean
+        centered = data.astype(np.float64, copy=False) - mean.astype(np.float64, copy=False)
+        denom = max(1, len(data) - 1)
+        cov = (centered.T @ centered) / denom
         # Add small regularizer to ensure positive definiteness
-        cov_reg = cov + np.eye(self.latent_dim) * 1e-4
+        cov.flat[::self.latent_dim + 1] += 1e-4
         try:
-            self.inv_cov = np.linalg.pinv(cov_reg)
+            self.inv_cov = np.linalg.inv(cov)
             self._fitted = True
         except np.linalg.LinAlgError:
-            self._fitted = False
+            try:
+                self.inv_cov = np.linalg.pinv(cov)
+                self._fitted = True
+            except np.linalg.LinAlgError:
+                self._fitted = False
 
     def compute_ood_score(self, z: np.ndarray) -> float:
         """Compute Mahalanobis distance from empirical latent support."""
@@ -230,7 +245,7 @@ class TripartiteUncertaintyDecomposer:
             ensemble_size=ensemble_size,
             seed=seed
         )
-        self.optimizer = torch.optim.Adam(self.ensemble.parameters(), lr=1e-3)
+        self.optimizer = torch.optim.Adam(self.ensemble.parameters(), lr=1e-3, foreach=True)
         self.ood_detector = OutDistributionDetector(latent_dim=state_dim, seed=seed)
         self.calibration_scale: float = 1.0
 
@@ -249,32 +264,25 @@ class TripartiteUncertaintyDecomposer:
 
         self.ood_detector.update_support(z_batch)
 
-        self.optimizer.zero_grad()
+        self.optimizer.zero_grad(set_to_none=True)
         all_z_next, all_r_mu, all_r_log_var = self.ensemble.forward_all(z_t, act_t)
 
-        total_loss = torch.tensor(0.0)
-        nll_losses = []
-        trans_losses = []
-
-        for m in range(self.ensemble_size):
-            # Transition MSE
-            loss_trans = F.mse_loss(all_z_next[m], next_z_t)
-            # Gaussian NLL for reward
-            loss_nll = AleatoricUncertaintyHead.gaussian_nll_loss(
-                all_r_mu[m], all_r_log_var[m], rew_t
-            )
-            member_loss = loss_trans + 1.0 * loss_nll
-            total_loss = total_loss + member_loss
-            nll_losses.append(float(loss_nll.item()))
-            trans_losses.append(float(loss_trans.item()))
+        # Vectorized per-member transition MSE and heteroscedastic Gaussian NLL
+        trans_losses = ((all_z_next - next_z_t.unsqueeze(0)) ** 2).mean(dim=(1, 2))
+        nll_losses = (
+            0.5 * torch.exp(-all_r_log_var) * ((rew_t.unsqueeze(0) - all_r_mu) ** 2)
+            + 0.5 * all_r_log_var
+            + 0.5 * math.log(2.0 * math.pi)
+        ).mean(dim=(1, 2))
+        total_loss = (trans_losses + nll_losses).sum()
 
         total_loss.backward()
         self.optimizer.step()
 
         return {
             'loss_total': float(total_loss.item()),
-            'loss_nll_mean': float(np.mean(nll_losses)),
-            'loss_trans_mean': float(np.mean(trans_losses))
+            'loss_nll_mean': float(nll_losses.detach().mean().item()),
+            'loss_trans_mean': float(trans_losses.detach().mean().item()),
         }
 
     def evaluate_uncertainty(

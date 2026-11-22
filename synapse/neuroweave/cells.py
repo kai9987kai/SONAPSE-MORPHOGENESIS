@@ -305,8 +305,13 @@ class CellPopulation:
         for name in STATE_FIELDS:
             lo, hi = _BOUNDS[name]
             arr = getattr(self, name)
-            np.clip(np.nan_to_num(arr, nan=0.0, posinf=hi, neginf=lo), lo, hi, out=arr)
-            setattr(self, name, arr)
+            if arr.size == 0:
+                continue
+            # IEEE-754 fast check: NaN makes both comparisons False, +/-inf and
+            # out-of-range values fail lo <= min or max <= hi.
+            if not (lo <= arr.min() and arr.max() <= hi):
+                np.nan_to_num(arr, copy=False, nan=0.0, posinf=hi, neginf=lo)
+                np.clip(arr, lo, hi, out=arr)
 
     # ------------------------------------------------------------------ persistence
     def export_state(self) -> dict[str, Any]:

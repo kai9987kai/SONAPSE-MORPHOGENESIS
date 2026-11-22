@@ -57,16 +57,30 @@ class ConnectomeNeurogenesisEngine:
 
         # Running rate covariance accumulator [N, N]
         self.rate_mean = np.zeros(num_neurons, dtype=np.float32)
-        self.rate_cov = np.zeros((num_neurons, num_neurons), dtype=np.float32)
+        self._rate_cov = np.zeros((num_neurons, num_neurons), dtype=np.float32)
+        self._cov_upper_bound = 0.0
+        self._row_upper_bound = np.zeros(num_neurons, dtype=np.float32)
+        self._bounds_valid = True
         self.stats = NeurogenesisStats()
         self.activity_steps = 0
+
+    @property
+    def rate_cov(self) -> np.ndarray:
+        # External callers may mutate the returned array in place (e.g. direct tests).
+        self._bounds_valid = False
+        return self._rate_cov
+
+    @rate_cov.setter
+    def rate_cov(self, value: np.ndarray) -> None:
+        self._rate_cov = value
+        self._bounds_valid = False
 
     def record_activity(self, rates: np.ndarray | torch.Tensor) -> None:
         """Accumulates neural firing rate covariance across microsteps."""
         if isinstance(rates, torch.Tensor):
-            r = rates.detach().cpu().numpy().flatten()
+            r = rates.detach().cpu().numpy().reshape(-1)
         else:
-            r = np.asarray(rates, dtype=np.float32).flatten()
+            r = np.asarray(rates, dtype=np.float32).reshape(-1)
 
         n = min(len(r), self.num_neurons)
         r = r[:n]
@@ -74,24 +88,85 @@ class ConnectomeNeurogenesisEngine:
         # Online mean and covariance update (Welford-style decay)
         delta = r - self.rate_mean[:n]
         self.rate_mean[:n] += 0.05 * delta
-        # Keep the same dense covariance state and update rule, but bound the
-        # rank-one temporary. At N=9,000, np.outer(delta, delta) alone is
-        # 309 MiB; the original expression also materialized multiple dense
-        # intermediates on every learned step.
-        block_rows = max(1, min(
-            self._COVARIANCE_MAX_BLOCK_ROWS,
-            self._COVARIANCE_TEMP_BYTES // max(1, n * np.dtype(np.float32).itemsize),
-            n,
-        ))
-        coefficient = 1.0 - self.covariance_decay
-        for start in range(0, n, block_rows):
-            stop = min(n, start + block_rows)
-            covariance_block = self.rate_cov[start:stop, :n]
-            np.multiply(covariance_block, self.covariance_decay, out=covariance_block)
-            covariance_delta = delta[start:stop, None] * delta[None, :]
-            covariance_delta *= coefficient
-            np.add(covariance_block, covariance_delta, out=covariance_block)
+        decay = float(self.covariance_decay)
+        coefficient = 1.0 - decay
+        # Zero-temporary fused SIMD rank-one update via PyTorch addr_ when backed by
+        # float32 contiguous storage; falls back to bounded-block NumPy otherwise.
+        if (
+            n > 0
+            and self._rate_cov.dtype == np.float32
+            and self._rate_cov.flags['C_CONTIGUOUS']
+        ):
+            delta_f32 = np.ascontiguousarray(delta, dtype=np.float32)
+            delta_t = torch.from_numpy(delta_f32)
+            torch.from_numpy(self._rate_cov[:n, :n]).addr_(
+                delta_t, delta_t, beta=decay, alpha=coefficient
+            )
+        else:
+            delta_f32 = np.asarray(delta, dtype=np.float32)
+            scaled_delta = delta_f32 * np.float32(coefficient)
+            block_rows = max(1, min(
+                self._COVARIANCE_MAX_BLOCK_ROWS,
+                self._COVARIANCE_TEMP_BYTES // max(1, n * np.dtype(np.float32).itemsize),
+                n,
+            ))
+            for start in range(0, n, block_rows):
+                stop = min(n, start + block_rows)
+                covariance_block = self._rate_cov[start:stop, :n]
+                np.multiply(covariance_block, decay, out=covariance_block)
+                covariance_delta = scaled_delta[start:stop, None] * delta_f32[None, :]
+                np.add(covariance_block, covariance_delta, out=covariance_block)
+
+        if self._bounds_valid and n > 0:
+            d_min = float(delta_f32.min())
+            d_max = float(delta_f32.max())
+            max_abs = max(-d_min, d_max)
+            max_outer = max(
+                d_max * d_max if d_max > 0.0 else 0.0,
+                d_min * d_min if d_min < 0.0 else 0.0,
+            )
+            self._cov_upper_bound = decay * self._cov_upper_bound + coefficient * max_outer
+            if len(self._row_upper_bound) < n:
+                self._bounds_valid = False
+            else:
+                rb = self._row_upper_bound[:n]
+                rb *= np.float32(decay)
+                rb += np.abs(delta_f32) * np.float32(coefficient * max_abs)
         self.activity_steps += 1
+
+    @staticmethod
+    def _ranked_candidates_rows(
+        cov_mat: np.ndarray,
+        n: int,
+        active_rows: np.ndarray,
+        threshold: float = 0.01,
+        head: int = 256,
+    ):
+        """Yield off-diagonal flat indices >= threshold scanning only ``active_rows``."""
+        if active_rows.size == 0:
+            return
+        sub = cov_mat[active_rows]
+        local_rows, cols = np.nonzero(sub >= threshold)
+        if local_rows.size == 0:
+            return
+        rows = active_rows[local_rows]
+        off_diag = rows != cols
+        rows = rows[off_diag]
+        cols = cols[off_diag]
+        if rows.size == 0:
+            return
+        cand = rows.astype(np.int64) * n + cols.astype(np.int64)
+        vals = sub[local_rows[off_diag], cols]
+        if cand.size <= head:
+            for k in np.argsort(vals)[::-1]:
+                yield int(cand[k])
+            return
+        part = np.argpartition(vals, cand.size - head)
+        top, rest = part[cand.size - head:], part[:cand.size - head]
+        for k in top[np.argsort(vals[top])[::-1]]:
+            yield int(cand[k])
+        for k in rest[np.argsort(vals[rest])[::-1]]:
+            yield int(cand[k])
 
     @staticmethod
     def _ranked_candidates(cov_mat: np.ndarray, n: int, threshold: float = 0.01, head: int = 256):
@@ -169,75 +244,108 @@ class ConnectomeNeurogenesisEngine:
         growth_drive = float(np.clip(dopamine * 0.7 + astrocyte_calcium * 0.3 - threat * 0.8, 0.0, 2.0))
 
         if growth_drive > 0.4 and self.activity_steps > 10:
-            # Find candidate pairs with high positive rate covariance
-            existing_pairs = set(zip(pre.tolist(), post.tolist()))
-            n = min(self.num_neurons, self.rate_cov.shape[0])
+            n = min(self.num_neurons, self._rate_cov.shape[0])
+            # Exact upper-bound skip: if the proven maximum entry is < 0.01,
+            # no candidate pair can qualify and we avoid scanning N^2 entries.
+            if not (self._bounds_valid and self._cov_upper_bound < 0.01):
+                cov_mat = self._rate_cov[:n, :n]
+                use_row_filter = (
+                    self._bounds_valid
+                    and len(self._row_upper_bound) >= n
+                    and '_ranked_candidates' not in self.__dict__
+                )
+                if use_row_filter:
+                    active_rows = np.flatnonzero(self._row_upper_bound[:n] >= 0.01)
+                    flat_indices = self._ranked_candidates_rows(cov_mat, n, active_rows, threshold=0.01)
+                else:
+                    flat_indices = self._ranked_candidates(cov_mat, n, threshold=0.01)
 
-            # Covariance view (no N x N copy). Self-loops are excluded inside
-            # _ranked_candidates, matching the legacy fill_diagonal(-1.0).
-            cov_mat = self.rate_cov[:n, :n]
+                existing_pairs = None
+                all_compatible = None
+                origin_groups = None
+                has_origin = hasattr(graph, 'origin')
+                origins = graph.origin if has_origin else None
+                base_w_arr = None
+                base_pre_arr = None
+                sprouted = 0
 
-            # Visit candidate pairs in descending covariance order. Legacy code
-            # fully argsorted all N^2 entries (~12 s at N=9000) and then stopped
-            # at the first value < 0.01; only entries >= 0.01 can be visited,
-            # so ranking just those gives the same visit sequence (up to the
-            # order of exactly-tied values) far more cheaply.
-            flat_indices = self._ranked_candidates(cov_mat, n, threshold=0.01)
-            sprouted = 0
+                for idx in flat_indices:
+                    if sprouted >= self.max_new_synapses:
+                        break
+                    p_i, p_j = divmod(int(idx), n)
+                    cov_val = cov_mat[p_i, p_j]
+                    if cov_val < 0.01:
+                        break
 
-            for idx in flat_indices:
-                if sprouted >= self.max_new_synapses:
-                    break
-                p_i, p_j = divmod(int(idx), n)
-                cov_val = cov_mat[p_i, p_j]
-                if cov_val < 0.01:
-                    break
+                    if existing_pairs is None:
+                        existing_pairs = set(zip(pre.tolist(), post.tolist()))
+                        if hasattr(agent, 'plasticity'):
+                            active_np = agent.plasticity.active_mask.detach().cpu().numpy().astype(bool, copy=False)
+                            all_compatible = np.flatnonzero(active_np)
+                        else:
+                            all_compatible = np.arange(n_edges)
+                        if has_origin:
+                            origin_groups = {}
+                            if all_compatible.size:
+                                pre_o = origins[pre[all_compatible]]
+                                post_o = origins[post[all_compatible]]
+                                for slot_idx, o_pre, o_post in zip(
+                                    all_compatible.tolist(), pre_o.tolist(), post_o.tolist()
+                                ):
+                                    origin_groups.setdefault((o_pre, o_post), []).append(slot_idx)
+                                origin_groups = {
+                                    k: np.asarray(v, dtype=np.int64) for k, v in origin_groups.items()
+                                }
 
-                # If connection already exists in graft, strengthen it
-                if (p_i, p_j) in existing_pairs:
-                    continue
+                    # If connection already exists in graft, strengthen it
+                    if (p_i, p_j) in existing_pairs:
+                        continue
 
-                # Sprout new synaptic coupling within existing graft weight slots
-                # (Find least used edge or weakest slot to repurpose)
-                compatible=np.arange(n_edges)
-                if hasattr(agent,'plasticity'):
-                    # Birth telemetry represents an executing edge. Replacing an
-                    # active weak slot preserves the fixed directional budget.
-                    compatible=compatible[agent.plasticity.active_mask.detach().cpu().numpy()]
-                if hasattr(graph,'origin'):
-                    compatible=compatible[(graph.origin[pre[compatible]]==graph.origin[p_i])
-                                          & (graph.origin[post[compatible]]==graph.origin[p_j])]
-                if not len(compatible):
-                    continue
-                weakest_idx = int(compatible[np.argmin(np.abs(g_w[compatible]))])
-                if np.abs(g_w[weakest_idx]) < self.prune_threshold * 1.5:
-                    old_sign=float(np.sign(g_w[weakest_idx])) or 1.0
-                    pre[weakest_idx] = p_i
-                    post[weakest_idx] = p_j
-                    source_signs=np.sign(np.asarray(graph.base_w)[np.asarray(graph.base_pre)==p_i]) if hasattr(graph,'base_w') else np.array([])
-                    source_signs=source_signs[source_signs!=0]
-                    sign=float(source_signs[0]) if len(source_signs) and np.all(source_signs==source_signs[0]) else old_sign
-                    g_w[weakest_idx] = sign * (0.05 + 0.03 * growth_drive)
-                    changed_slots.append(weakest_idx)
-                    existing_pairs.add((p_i, p_j))
-                    sprouted += 1
+                    # Sprout new synaptic coupling within existing graft weight slots
+                    if has_origin:
+                        compatible = origin_groups.get((int(origins[p_i]), int(origins[p_j])))
+                        if compatible is None or not len(compatible):
+                            continue
+                    else:
+                        compatible = all_compatible
+                        if not len(compatible):
+                            continue
+                    weakest_idx = int(compatible[np.argmin(np.abs(g_w[compatible]))])
+                    if np.abs(g_w[weakest_idx]) < self.prune_threshold * 1.5:
+                        old_sign = float(np.sign(g_w[weakest_idx])) or 1.0
+                        pre[weakest_idx] = p_i
+                        post[weakest_idx] = p_j
+                        if hasattr(graph, 'base_w'):
+                            if base_w_arr is None:
+                                base_w_arr = np.asarray(graph.base_w)
+                                base_pre_arr = np.asarray(graph.base_pre)
+                            source_signs = np.sign(base_w_arr[base_pre_arr == p_i])
+                        else:
+                            source_signs = np.array([])
+                        source_signs = source_signs[source_signs != 0]
+                        sign = float(source_signs[0]) if len(source_signs) and np.all(source_signs == source_signs[0]) else old_sign
+                        g_w[weakest_idx] = sign * (0.05 + 0.03 * growth_drive)
+                        changed_slots.append(weakest_idx)
+                        existing_pairs.add((p_i, p_j))
+                        sprouted += 1
 
-            if sprouted > 0:
-                self.stats.synapses_born += sprouted
-                self.stats.synaptogenesis_events += 1
-                event_record['sprouted'] = sprouted
+                if sprouted > 0:
+                    self.stats.synapses_born += sprouted
+                    self.stats.synaptogenesis_events += 1
+                    event_record['sprouted'] = sprouted
 
         # Apply updated weights and topology back to brain
-        if changed_slots and hasattr(agent,'rewire_graft_slots'):
-            agent.rewire_graft_slots(pre,post,g_w,changed_slots)
-        else:
+        if changed_slots and hasattr(agent, 'rewire_graft_slots'):
+            agent.rewire_graft_slots(pre, post, g_w, changed_slots)
+        elif pruned_count > 0 or changed_slots:
             with torch.no_grad():
-                brain.graft_w.copy_(torch.tensor(g_w, dtype=torch.float32))
-                if hasattr(brain,'graft_pre'):
-                    brain.graft_pre.copy_(torch.as_tensor(pre))
-                    brain.graft_post.copy_(torch.as_tensor(post))
-                graph.graft_pre = pre
-                graph.graft_post = post
+                brain.graft_w.copy_(torch.as_tensor(g_w, dtype=torch.float32))
+                if changed_slots:
+                    if hasattr(brain, 'graft_pre'):
+                        brain.graft_pre.copy_(torch.as_tensor(pre))
+                        brain.graft_post.copy_(torch.as_tensor(post))
+                    graph.graft_pre = pre
+                    graph.graft_post = post
 
         # Update stats
         self.stats.active_synapses = int(np.sum(np.abs(g_w) >= self.prune_threshold))
@@ -251,7 +359,7 @@ class ConnectomeNeurogenesisEngine:
     def export_state(self) -> Dict[str, Any]:
         return {
             'rate_mean': self.rate_mean.copy(),
-            'rate_cov': self.rate_cov.copy(),
+            'rate_cov': self._rate_cov.copy(),
             'activity_steps': self.activity_steps,
             'rng': self.rng.bit_generator.state,
             'stats': asdict(self.stats),
@@ -261,7 +369,9 @@ class ConnectomeNeurogenesisEngine:
         if 'rate_mean' in d:
             self.rate_mean = np.array(d['rate_mean'], dtype=np.float32)
         if 'rate_cov' in d:
-            self.rate_cov = np.array(d['rate_cov'], dtype=np.float32)
+            self._rate_cov = np.array(d['rate_cov'], dtype=np.float32)
+            self._row_upper_bound = np.zeros(self._rate_cov.shape[0], dtype=np.float32)
+            self._bounds_valid = False
         self.activity_steps = d.get('activity_steps', 0)
         if 'rng' in d:
             self.rng.bit_generator.state = d['rng']

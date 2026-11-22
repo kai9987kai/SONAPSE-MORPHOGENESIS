@@ -135,7 +135,7 @@ def register_frontier_cli(parser: Any, subparsers: Any = None) -> None:
                         help='Opt-in optimizer for the live neural-graft fit (adam or muon)')
     if subparsers is not None:
         fp = subparsers.add_parser('frontier', help='Frontier pack catalog, observers and experiments')
-        fp.add_argument('frontier_action', choices=('catalog', 'experiment', 'observe', 'laboratory'),
+        fp.add_argument('frontier_action', choices=('catalog', 'experiment', 'observe', 'synthesis', 'laboratory'),
                         nargs='?', default='catalog')
         fp.add_argument('--id', dest='frontier_id', type=str, default='all',
                         help='Experiment id to run (or "all")')
@@ -190,7 +190,7 @@ def run_frontier_command(args: Any) -> dict[str, Any]:
             else:
                 receipt = run_frontier_experiment(exp_id, quick=quick, seeds=seeds, include_unregistered=True)
                 res = {'ok': True, 'action': 'experiment', 'receipt': receipt}
-        elif action == 'observe':
+        elif action in ('observe', 'synthesis'):
             steps = int(getattr(args, 'frontier_steps', 32))
             units = int(getattr(args, 'frontier_units', 32))
             if not 1 <= steps <= MAX_CLI_OBSERVE_STEPS:
@@ -205,7 +205,12 @@ def run_frontier_command(args: Any) -> dict[str, Any]:
             rng = np.random.default_rng(seed + _SYNTH_STREAM_OFFSET)
             for _ in range(steps):
                 hub.observe(np.tanh(rng.standard_normal(units)))
-            res = {'ok': True, 'action': 'observe', 'summary': hub.summary()}
+            summary = hub.summary()
+            if action == 'synthesis':
+                from .synthesis import synthesize_frontier_observers
+                res = {'ok': True, 'action': 'synthesis', 'synthesis': synthesize_frontier_observers(summary), 'summary': summary}
+            else:
+                res = {'ok': True, 'action': 'observe', 'summary': summary}
         elif action == 'laboratory':
             quick = bool(getattr(args, 'frontier_quick', True))
             seeds = parse_seeds(getattr(args, 'frontier_seeds', '0,1'), default=(0, 1))

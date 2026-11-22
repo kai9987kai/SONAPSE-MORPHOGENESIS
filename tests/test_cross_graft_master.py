@@ -41,6 +41,19 @@ def test_columnwise_presynaptic_dales_law():
     assert compliance == 100.0
 
 
+def test_dale_compliance_counts_only_active_columns_and_tracks_edits():
+    graft = CrossConnectomeGraft(node_dim=8)
+    with torch.no_grad():
+        graft.provenance_mask.zero_()
+        assert graft.verify_dales_law() == 100.0
+        graft.provenance_mask[:2, :2] = 1.0
+        graft.dale_signs[0, 0].neg_()
+        assert graft.verify_dales_law() == 50.0
+        _, telemetry = graft(torch.ones(8))
+        assert telemetry.dales_law_compliance_pct == 50.0
+        assert graft.verify_dales_law(tol=100.0) == 100.0
+
+
 def test_zero_gain_identity_bit_for_bit():
     """Verify that gamma=0.0 produces strictly zero current bit-for-bit."""
     graft_zero = CrossConnectomeGraft(node_dim=64, gamma=0.0, seed=42)

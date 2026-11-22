@@ -181,8 +181,10 @@ class SynapseTable:
         output = np.asarray(output, dtype=np.float64)
         if output.shape != (self.n,):
             raise ValueError('output length mismatch')
-        self.hist = np.roll(self.hist, 1, axis=0)
-        self.hist[0] = output
+        history = np.empty_like(self.hist)
+        history[1:] = self.hist[:-1]
+        history[0] = output
+        self.hist = history
         self.hist_count = min(MAX_DELAY, self.hist_count + 1)
 
     def effective_delay(self, flags: Iterable[str]) -> np.ndarray:
@@ -241,17 +243,29 @@ class SynapseTable:
         n = self.n
         comp = self.compartment
         e = self.size
-        acc = np.zeros((4, n))
         if 'tiled_execution' in flags and tile_size:
+            acc = np.zeros((4, n))
             tile = max(1, int(tile_size))
-            tiles = 0
-            for base in range(0, e, tile):
-                sl = slice(base, min(e, base + tile))
-                idx = comp[sl] * n + dst[sl]
-                acc += np.bincount(idx, weights=signal[sl], minlength=4 * n).reshape(4, n)
-                tiles += 1
+            tiles = (e + tile - 1) // tile
+            # Sum each tile separately before adding it to the drive. For many
+            # small tiles, group their occupied bins in bounded chunks instead
+            # of allocating a dense four-compartment vector per tile.
+            if tiles >= 16 and tile <= 64:
+                chunk = tile * (8192 // tile)
+                for start in range(0, e, chunk):
+                    stop = min(start + chunk, e)
+                    bins = comp[start:stop] * n + dst[start:stop]
+                    keys = (np.arange(stop - start) // tile) * (4 * n) + bins
+                    occupied, inverse = np.unique(keys, return_inverse=True)
+                    sums = np.bincount(inverse, weights=signal[start:stop])
+                    np.add.at(acc.ravel(), occupied % (4 * n), sums)
+            else:
+                for base in range(0, e, tile):
+                    sl = slice(base, min(e, base + tile))
+                    idx = comp[sl] * n + dst[sl]
+                    acc += np.bincount(idx, weights=signal[sl], minlength=4 * n).reshape(4, n)
         else:
-            acc += np.bincount(comp * n + dst, weights=signal, minlength=4 * n).reshape(4, n)
+            acc = np.bincount(comp * n + dst, weights=signal, minlength=4 * n).astype(np.float64, copy=False).reshape(4, n)
             tiles = 1 if e else 0
         self.profile['edge_traversals_last'] = e
         self.profile['edge_traversals_total'] += e

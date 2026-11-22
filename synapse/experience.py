@@ -29,6 +29,26 @@ def _finite_scalar(value):
     return array.ndim == 0 and array.dtype.kind in 'iuf' and bool(np.isfinite(array))
 
 
+def _sensory_summary(obs):
+    """Fourteen observable signals for one validated observation or a batch."""
+    depth = obs[..., :33]
+    rays = np.stack((depth, depth * obs[..., 66:99], depth * obs[..., 33:66]), axis=-2)
+    sectors = rays.reshape((*obs.shape[:-1], 9, 11)).mean(axis=-1)
+    cues = np.stack((obs[..., 136], obs[..., 137], obs[..., 149] - obs[..., 150],
+                    obs[..., 151] - obs[..., 152], obs[..., 154]), axis=-1)
+    return np.concatenate((sectors, cues), axis=-1)
+
+
+def encode_sensory_batch(observations):
+    """Encode replay targets from the original, unclipped observations."""
+    obs = np.asarray(observations, dtype=np.float64)
+    if obs.ndim != 2 or obs.shape[1] != 155 or not np.isfinite(obs).all():
+        raise ValueError('observations must be a finite batch of 155-element vectors')
+    if np.max(np.abs(obs), initial=0) > 1e6:
+        raise ValueError('observation exceeds numeric bound')
+    return np.clip(_sensory_summary(obs), -2, 2)
+
+
 def encode_experience_state(obs, features=None):
     """Summarize visible rays, motion, cues and actual graph/donor activity.
 
@@ -37,14 +57,8 @@ def encode_experience_state(obs, features=None):
     """
     obs = _vector(obs, 155, 'observation')
     features = np.zeros(64) if features is None else _vector(features, 64, 'features')
-    depth = obs[:33]
-    red, green, _ = obs[33:132].reshape(3, 33)
-    summary = [float(part.mean()) for signal in (depth, depth * green, depth * red)
-               for part in np.array_split(signal, 3)]
-    summary.extend([obs[136], obs[137], obs[149] - obs[150],
-                    obs[151] - obs[152], obs[154],
-                    features[:32].mean(), features[32:48].mean()])
-    return np.clip(np.asarray(summary, dtype=np.float64), -2, 2)
+    summary = np.concatenate((_sensory_summary(obs), [features[:32].mean(), features[32:48].mean()]))
+    return np.clip(summary, -2, 2)
 
 
 def task_aware_fallback_reason(obs, task_id):
@@ -389,8 +403,9 @@ class ExperienceWorldModel:
     def predict(self, state, actions):
         """Pure read; returns one reward/delta/coverage per candidate action."""
         phi = self._features(state, actions)
-        predictions = np.einsum('nf,efk->enk', phi, self.weights, optimize=True)
-        leverage = np.einsum('nf,efg,ng->en', phi, self.covariance, phi, optimize=True)
+        predictions = np.matmul(phi[None, :, :], self.weights)
+        cov_phi = np.matmul(phi[None, :, :], self.covariance)
+        leverage = np.sum(cov_phi * phi[None, :, :], axis=-1)
         mean = predictions.mean(axis=0)
         delta = np.zeros((len(phi), self.state_dim))
         delta[:, :self.predicted_dim] = mean[:, :-1]
@@ -415,8 +430,8 @@ class ExperienceWorldModel:
             phi = np.stack([self._features(member_state, actions) for member_state in states])
         else:
             raise ValueError('state must have shape [state_dim] or [ensemble_size, state_dim]')
-        predictions = np.einsum('enf,efk->enk', phi, self.weights, optimize=True)
-        leverage = np.einsum('enf,efg,eng->en', phi, self.covariance, phi, optimize=True)
+        predictions = np.matmul(phi, self.weights)
+        leverage = np.sum(np.matmul(phi, self.covariance) * phi, axis=-1)
         delta = np.zeros((self.ensemble_size, len(actions), self.state_dim))
         delta[:, :, :self.predicted_dim] = predictions[:, :, :-1]
         return {'reward': predictions[:, :, -1].copy(), 'delta': delta,
@@ -434,11 +449,15 @@ class ExperienceWorldModel:
         if type(done) not in (bool, np.bool_):
             raise ValueError('done must be boolean')
         phi = self._features(state, action)[0]
-        prediction = self.predict(state, action)
-        error = float(reward - prediction['reward'][0])
+        # Compute member predictions once and reuse them for both prequential error
+        # evaluation and per-member RLS residuals, avoiding redundant feature
+        # assembly and unused covariance leverage projections.
+        member_predictions = np.matmul(phi, self.weights)
+        mean_prediction = member_predictions.mean(axis=0)
+        error = float(reward - mean_prediction[-1])
         baseline_error = float(reward - self.reward_mean)
         delta = (next_state - state)[:self.predicted_dim]
-        delta_error = float(np.mean((delta - prediction['delta'][0, :self.predicted_dim]) ** 2))
+        delta_error = float(np.mean((delta - mean_prediction[:-1]) ** 2))
         delta_baseline_error = float(np.mean(delta ** 2))
         # Normalize both executed-transition residuals by scales known before
         # this outcome. The max is a joint score: either target can miss.
@@ -459,7 +478,7 @@ class ExperienceWorldModel:
                 projected = covariance @ phi
                 denominator = self.forgetting / count + phi @ projected
                 gain = projected / denominator
-                residual = target - phi @ self.weights[member]
+                residual = target - member_predictions[member]
                 self.weights[member] += np.outer(gain, residual)
                 covariance = (covariance - np.outer(gain, projected)) / self.forgetting
                 self.member_updates[member] += 1
@@ -530,8 +549,11 @@ class ExperienceWorldModel:
         score[0] = reward[0] - self.uncertainty_penalty * uncertainty[0]
         phi = self._features(state, actions)
         difference = phi - phi[0]
-        advantage_coverage = np.sqrt(np.maximum(np.einsum(
-            'nf,efg,ng->en', difference, self.covariance, difference, optimize=True).mean(axis=0), 0))
+        advantage_leverage = np.sum(
+            np.matmul(difference[None, :, :], self.covariance) * difference[None, :, :],
+            axis=-1,
+        )
+        advantage_coverage = np.sqrt(np.maximum(advantage_leverage.mean(axis=0), 0))
         # Penalize uncertainty of the *change* rather than assuming cancellation
         # of two uncertain reward predictions. The multiplier is an engineering
         # margin, not a calibrated two-sigma bound.

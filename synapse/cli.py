@@ -54,7 +54,7 @@ def main(argv=None):
     nw_seq=nw_sub.add_parser('sequence-search',help='supplementary budget-matched synthetic sequence-variant search (not protein modelling)'); nw_seq.add_argument('--quick',dest='nw_quick',action='store_true'); nw_seq.add_argument('--landscapes',dest='nw_landscapes',type=int); nw_seq.add_argument('--seeds-per-landscape',dest='nw_seq_seeds',type=int); nw_seq.add_argument('--budget',dest='nw_budget',type=int)
     nw_legacy=nw_sub.add_parser('import-legacy'); nw_legacy.add_argument('nw_file',type=Path); nw_legacy.add_argument('--out',dest='nw_out',type=Path)
     fp=sub.add_parser('frontier',help='Frontier pack catalog, observers and experiments (opt-in; JSON to stdout)')
-    fp.add_argument('frontier_action',choices=('catalog','experiment','observe','laboratory'),nargs='?',default='catalog')
+    fp.add_argument('frontier_action',choices=('catalog','experiment','observe','synthesis','laboratory'),nargs='?',default='catalog')
     fp.add_argument('--id',dest='frontier_id',type=str,default='all',help='Experiment id to run (or "all")')
     fp.add_argument('--quick',dest='frontier_quick',action='store_true',default=False,help='Run experiment(s) in fast quick mode')
     fp.add_argument('--seeds',dest='frontier_seeds',type=str,default='0,1,2',help='Comma-separated integer seeds')
@@ -140,6 +140,11 @@ def main(argv=None):
     p.add_argument('--study-nodes',type=int,default=16)
     p.add_argument('--horizons',type=int,nargs='+',default=[1,3])
     p=sub.add_parser('planning-verify'); p.add_argument('path',type=Path)
+    p=sub.add_parser('perf-lab'); p.add_argument('--mode',choices=['scaling','pareto','both'],default='scaling')
+    p.add_argument('--neurons',type=int,nargs='+',default=[48,192,600])
+    p.add_argument('--steps',type=int,default=12)
+    p.add_argument('--learn',action='store_true',default=False)
+    p.add_argument('--arms',nargs='+',default=None)
     args=parser.parse_args(argv)
     try:
         total=args.total_neurons if args.total_neurons is not None else (9000 if args.nodes is None else None)
@@ -260,6 +265,32 @@ def main(argv=None):
         elif args.command=='frontier':
             from .frontier.cli_commands import run_frontier_command
             result=run_frontier_command(args)
+        elif args.command=='perf-lab':
+            from .perf_lab import run_scaling_profile, run_subsystem_pareto_sweep
+            threads = config.compute_threads
+            if args.mode == 'scaling':
+                result = run_scaling_profile(
+                    neuron_counts=args.neurons, steps=args.steps, learn=bool(args.learn),
+                    seed=args.seed, task=args.task, compute_threads=threads,
+                )
+            elif args.mode == 'pareto':
+                result = run_subsystem_pareto_sweep(
+                    nodes_per_source=16 if args.nodes is None else args.nodes,
+                    steps=args.steps, learn=bool(args.learn), seed=args.seed,
+                    task=args.task, compute_threads=threads, arms=args.arms,
+                )
+            else:
+                result = {
+                    'scaling': run_scaling_profile(
+                        neuron_counts=args.neurons, steps=args.steps, learn=bool(args.learn),
+                        seed=args.seed, task=args.task, compute_threads=threads,
+                    ),
+                    'pareto': run_subsystem_pareto_sweep(
+                        nodes_per_source=16 if args.nodes is None else args.nodes,
+                        steps=args.steps, learn=bool(args.learn), seed=args.seed,
+                        task=args.task, compute_threads=threads, arms=args.arms,
+                    ),
+                }
         elif args.command=='connectome-inventory':
             from .connectome_assets import get_source_inventory
             result={'sources':get_source_inventory()}

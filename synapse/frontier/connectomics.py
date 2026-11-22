@@ -513,9 +513,31 @@ def effective_connectivity(X: Any, *, ridge: float = 1e-2, null_draws: int = 99,
     return out
 
 
+def _average_ranks(values: np.ndarray) -> np.ndarray:
+    """1-based average ranks with tie averaging (matches scipy.stats.rankdata)."""
+    n = values.size
+    ranks = np.empty(n, dtype=np.float64)
+    if n == 0:
+        return ranks
+    order = np.argsort(values, kind='mergesort')
+    sorted_v = values[order]
+    change = np.empty(n + 1, dtype=bool)
+    change[0] = True
+    change[1:n] = sorted_v[1:] != sorted_v[:-1]
+    change[n] = True
+    bounds = np.flatnonzero(change)
+    if bounds.size == n + 1:
+        ranks[order] = np.arange(1.0, n + 1.0, dtype=np.float64)
+        return ranks
+    avg_sorted = np.empty(n, dtype=np.float64)
+    for start, stop in zip(bounds[:-1], bounds[1:]):
+        avg_sorted[start:stop] = 0.5 * (start + stop + 1)
+    ranks[order] = avg_sorted
+    return ranks
+
+
 def auroc(scores: Any, labels: Any) -> float | None:
     """Area under the ROC curve via the Mann-Whitney statistic (average ranks for ties); ``None`` if a class is empty."""
-    from scipy.stats import rankdata
     s = np.asarray(scores, dtype=np.float64).ravel()
     y = np.asarray(labels).ravel().astype(bool)
     if s.shape != y.shape or not np.all(np.isfinite(s)):
@@ -523,7 +545,7 @@ def auroc(scores: Any, labels: Any) -> float | None:
     pos, neg = int(y.sum()), int((~y).sum())
     if pos == 0 or neg == 0:
         return None
-    r = rankdata(s)
+    r = _average_ranks(s)
     return float((r[y].sum() - pos * (pos + 1) / 2.0) / (pos * neg))
 
 

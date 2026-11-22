@@ -844,14 +844,29 @@ class ComplexWorld(BaseWorld):
 
     def _get_elevation_grid(self, resolution: int = 11) -> List[List[float]]:
         half = float(getattr(self, "arena_half", HALF))
+        hills = self.elevation_hills
+        cache_key = (
+            int(resolution),
+            half,
+            tuple((h["x"], h["y"], h["height"], h.get("sigma", 1.5)) for h in hills),
+        )
+        cached = getattr(self, "_elevation_grid_cache", None)
+        if cached is not None and cached[0] == cache_key:
+            return [row[:] for row in cached[1]]
         coords = np.linspace(-half, half, resolution)
-        grid = []
-        for y in coords:
-            row = []
-            for x in coords:
-                row.append(round(self.get_elevation(float(x), float(y)), 3))
-            grid.append(row)
-        return grid
+        if not hills:
+            grid = [[0.0] * resolution for _ in range(resolution)]
+        else:
+            gx, gy = np.meshgrid(coords, coords)
+            z = np.zeros_like(gx, dtype=np.float64)
+            for hill in hills:
+                dx = gx - float(hill["x"])
+                dy = gy - float(hill["y"])
+                sigma = float(hill.get("sigma", 1.5))
+                z += float(hill["height"]) * np.exp(-(dx * dx + dy * dy) / (2.0 * sigma * sigma))
+            grid = np.round(z, 3).tolist()
+        self._elevation_grid_cache = (cache_key, grid)
+        return [row[:] for row in grid]
 
     def _sample_wind_streamlines(self, count: int = 16) -> List[Dict[str, Any]]:
         half = float(getattr(self, "arena_half", HALF))
@@ -1294,11 +1309,17 @@ class ComplexWorld(BaseWorld):
             math.sin(a["th"]),
             math.cos(a["th"]),
         ]
-        if self.task in BASE_TASKS:
-            onehot = np.eye(len(BASE_TASKS))[BASE_TASKS.index(self.task)]
+        onehot_cache = getattr(self, "_onehot_cache", None)
+        if onehot_cache is None or onehot_cache[0] != self.task:
+            if self.task in BASE_TASKS:
+                idx = BASE_TASKS.index(self.task)
+            else:
+                idx = (BASE_TASKS.index("forage") + COMPLEX_TASKS.index(self.task)) % len(BASE_TASKS)
+            onehot = np.zeros(len(BASE_TASKS), dtype=np.float64)
+            onehot[idx] = 1.0
+            self._onehot_cache = (self.task, onehot)
         else:
-            idx = (BASE_TASKS.index("forage") + COMPLEX_TASKS.index(self.task)) % len(BASE_TASKS)
-            onehot = np.eye(len(BASE_TASKS))[idx]
+            onehot = onehot_cache[1]
 
         ret = self.retina()
         if hasattr(self, "ambient_light") and self.ambient_light != 1.0:

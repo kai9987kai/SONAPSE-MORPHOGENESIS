@@ -217,32 +217,38 @@ class NeuroWaveX2Fabric(nn.Module):
         total_step_flops = 0.0
         generated_packets: List[NeuralPacket] = []
 
-        # 2. Encode and transmit packets along active routes
+        # 2. Encode and transmit packets along active routes (cache per-source encoding)
+        encoded_by_src: Dict[int, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]]] = {}
+        topo_ver = self.topology_ctrl.topology_version
+        basis_ver = self.hybrid_basis.basis_version
         for src, dst in routes:
-            # Source slice
-            src_start = src * self.neurons_per_region
-            src_end = min(src_start + self.neurons_per_region, r.shape[0])
-            r_src = r[src_start:src_end]
-            if r_src.numel() == 0:
+            cached_src = encoded_by_src.get(src)
+            if cached_src is None and src not in encoded_by_src:
+                src_start = src * self.neurons_per_region
+                src_end = min(src_start + self.neurons_per_region, r.shape[0])
+                r_src = r[src_start:src_end]
+                if r_src.numel() == 0:
+                    encoded_by_src[src] = None
+                    continue
+
+                pooled_src = F.adaptive_avg_pool1d(r_src.reshape(1, 1, -1), self.pool_dim).reshape(self.pool_dim)
+                message = self.encoder(pooled_src)
+
+                # Determine payload and phase metadata based on protocol
+                if spec.uses_spectral:
+                    c_tuple, p_tuple = self.wave_channel.encode_wave_packet_payload(
+                        message, src_region=src, band="theta"
+                    )
+                    cached_src = (c_tuple, p_tuple if spec.uses_phase else ())
+                elif spec.uses_phase:
+                    p_val = self.wave_channel.phase_adapter.get_phase(src, band="theta")
+                    cached_src = (tuple(message.tolist()), (p_val,))
+                else:
+                    cached_src = (tuple(message.tolist()), ())
+                encoded_by_src[src] = cached_src
+            if cached_src is None:
                 continue
-
-            pooled_src = F.adaptive_avg_pool1d(r_src.reshape(1, 1, -1), self.pool_dim).reshape(self.pool_dim)
-            message = self.encoder(pooled_src)
-
-            # Determine payload and phase metadata based on protocol
-            if spec.uses_spectral:
-                c_tuple, p_tuple = self.wave_channel.encode_wave_packet_payload(
-                    message, src_region=src, band="theta"
-                )
-                payload = c_tuple
-                phase_meta = p_tuple if spec.uses_phase else ()
-            elif spec.uses_phase:
-                p_val = self.wave_channel.phase_adapter.get_phase(src, band="theta")
-                payload = tuple(float(m.item()) for m in message)
-                phase_meta = (p_val,)
-            else:
-                payload = tuple(float(m.item()) for m in message)
-                phase_meta = ()
+            payload, phase_meta = cached_src
 
             if advance:
                 self.sequence_counter += 1
@@ -255,11 +261,11 @@ class NeuroWaveX2Fabric(nn.Module):
                 receiver_region=dst,
                 emission_step=self.step_count,
                 sequence_id=seq_id,
-                topology_version=self.topology_ctrl.topology_version,
+                topology_version=topo_ver,
                 protocol_id=sel_proto,
                 payload=payload,
                 precision_bits=self.config.precision_bits,
-                basis_version=self.hybrid_basis.basis_version,
+                basis_version=basis_ver,
                 phase_metadata=phase_meta,
             )
             total_step_wire_bits += pkt.total_wire_bits
@@ -279,9 +285,12 @@ class NeuroWaveX2Fabric(nn.Module):
         # 4. Decode packets into destination neural targets
         residual_full = torch.zeros(self.total_neurons, dtype=r.dtype, device=r.device)
         basis_t = self.hybrid_basis.get_effective_basis()
+        pkts_by_dst: Dict[int, List[NeuralPacket]] = {}
+        for p in filtered_pkts:
+            pkts_by_dst.setdefault(p.receiver_region, []).append(p)
 
         for dst in range(self.num_regions):
-            dst_pkts = [p for p in filtered_pkts if p.receiver_region == dst]
+            dst_pkts = pkts_by_dst.get(dst)
             if not dst_pkts:
                 continue
 

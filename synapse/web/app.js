@@ -5940,30 +5940,37 @@ graphCanvas.addEventListener('pointerup', () => {
   if (!graphDidDrag && hoveredNode) { selectedNodeId = selectedNodeId === hoveredNode.id ? null : hoveredNode.id; graph(); }
 });
 graphCanvas.addEventListener('pointercancel', () => { graphDragging = false; });
+let graphHoverRaf = null;
 graphCanvas.addEventListener('pointermove', event => {
   const rect = graphCanvas.getBoundingClientRect(), mx = event.clientX - rect.left, my = event.clientY - rect.top;
+  let needsRedraw = false;
   if (graphDragging) {
     const dx = event.clientX - graphLastMouse.x, dy = event.clientY - graphLastMouse.y;
     if (Math.abs(dx) + Math.abs(dy) > 1) graphDidDrag = true;
-    if (graphMode === '3d') { graphRotY += dx * .01; graphRotX = Math.max(-1.4, Math.min(1.4, graphRotX + dy * .01)); }
+    if (graphMode === '3d') { graphRotY += dx * .01; graphRotX = Math.max(-1.4, Math.min(1.4, graphRotX + dy * .01)); needsRedraw = true; }
     graphLastMouse = { x: event.clientX, y: event.clientY };
   }
+  const prevHoverId = hoveredNode ? hoveredNode.id : null;
   let closest = null, distance = 14;
   nodeScreenPositions.forEach(point => {
     const d = Math.hypot(point.x - mx, point.y - my);
     if (d < distance) { closest = point.node; distance = d; }
   });
   hoveredNode = closest;
+  const nextHoverId = closest ? closest.id : null;
+  if (nextHoverId !== prevHoverId) needsRedraw = true;
   const tooltip = $('graph-tooltip');
   tooltip.classList.toggle('visible', !!closest && !graphDragging);
   if (closest) tooltip.textContent = `#${closest.id} · ${graphSources()[closest.origin]?.id || 'unknown'} · ${closest.role} · activity ${Number(closest.activity || 0).toFixed(4)}`;
-  graph();
+  if (needsRedraw && graphHoverRaf === null) {
+    graphHoverRaf = requestAnimationFrame(() => { graphHoverRaf = null; graph(); });
+  }
 });
 graphCanvas.addEventListener('pointerleave', () => { hoveredNode = null; $('graph-tooltip').classList.remove('visible'); graph(); });
 graphCanvas.addEventListener('wheel', event => { event.preventDefault(); graphZoom = Math.max(.5, Math.min(2.5, graphZoom * (event.deltaY > 0 ? .92 : 1.08))); graph(); }, { passive: false });
 let lastOrbitTime = 0;
 function orbitFrame(time) {
-  if (graphAutoRotate && graphMode === '3d' && !graphDragging && $('overview').classList.contains('active') && time - lastOrbitTime > 40) {
+  if (!document.hidden && graphAutoRotate && graphMode === '3d' && !graphDragging && $('overview').classList.contains('active') && time - lastOrbitTime > 40) {
     graphRotY += .006; graph(); lastOrbitTime = time;
   }
   requestAnimationFrame(orbitFrame);
@@ -7819,11 +7826,90 @@ if ($('neuroweave')) {
     return c;
   }
 
+  function frlRenderSynthesis(synPayload) {
+    const syn = synPayload && synPayload.synthesis ? synPayload.synthesis : synPayload;
+    const regimeEl = $('frl-synthesis-regime');
+    const reasonEl = $('frl-synthesis-reason');
+    const gridEl = $('frl-synthesis-grid');
+    const advEl = $('frl-synthesis-advisories');
+    if (!syn || !gridEl) return;
+    if (regimeEl) regimeEl.textContent = `Regime: ${syn.regime || '—'} (${syn.active_scales || 0}/3 scales)`;
+    if (reasonEl) reasonEl.textContent = syn.regime_reason || '';
+    gridEl.textContent = '';
+    const idx = syn.indices || {};
+    const fields = [
+      ['integration', idx.multiscale_integration_index],
+      ['coding_fidelity', idx.coding_fidelity],
+      ['global_synchrony', idx.global_synchrony],
+      ['phase_R_mean', idx.phase_coherence_R_mean],
+      ['metastability', idx.metastability_index],
+      ['fc_modularity', idx.fc_modularity],
+      ['ce_z', idx.causal_emergence_z],
+    ];
+    fields.forEach(([label, value]) => {
+      const card = document.createElement('div');
+      const strong = document.createElement('strong');
+      strong.textContent = label;
+      card.appendChild(strong);
+      const valDiv = document.createElement('div');
+      valDiv.className = 'muted';
+      valDiv.textContent = frlFmt(value, 4);
+      card.appendChild(valDiv);
+      gridEl.appendChild(card);
+    });
+    if (advEl) {
+      const msgs = (syn.advisories || []).map((a) => `[${a.scale}/${a.level}] ${a.message}`);
+      advEl.textContent = msgs.join(' · ');
+    }
+  }
+
+  function perfRenderLive(perf) {
+    const host = $('perf-live-grid');
+    if (!host || !perf) return;
+    host.textContent = '';
+    const total = perf.total_ms || {};
+    const stages = perf.stage_mean_ms || {};
+    const items = [
+      ['neurons', perf.neurons],
+      ['recorded_steps', perf.recorded_steps],
+      ['mean_ms/step', total.mean],
+      ['p95_ms/step', total.p95],
+      ['steps/sec', perf.measured_steps_per_sec],
+      ['neuron-steps/sec', perf.measured_neuron_steps_per_sec],
+      ['bottleneck', perf.bottleneck_stage],
+      ['stages (act/unc/world/learn)', `${frlFmt(stages.act, 2)} / ${frlFmt(stages.uncertainty, 2)} / ${frlFmt(stages.world, 2)} / ${frlFmt(stages.learn, 2)} ms`],
+    ];
+    items.forEach(([k, v]) => {
+      const card = document.createElement('div');
+      const s = document.createElement('strong');
+      s.textContent = k;
+      card.appendChild(s);
+      const d = document.createElement('div');
+      d.className = 'muted';
+      d.textContent = typeof v === 'number' ? frlFmt(v, 2) : (v === null || v === undefined ? '—' : String(v));
+      card.appendChild(d);
+      host.appendChild(card);
+    });
+  }
+
+  async function perfRefresh() {
+    const perf = await api('perf/telemetry');
+    perfRenderLive(perf);
+    return perf;
+  }
+
   async function frlRefresh() {
     await frlLoadCatalog();
-    const [status, obs] = await Promise.all([api('frontier/status'), api('frontier/observers')]);
+    const [status, obs, syn, perf] = await Promise.all([
+      api('frontier/status'),
+      api('frontier/observers'),
+      api('frontier/synthesis'),
+      api('perf/telemetry'),
+    ]);
     $('frl-status').textContent = `Observing ${status.observed_source} hub · live runtime frontier ${status.live && status.live.enabled ? 'enabled' : 'off (default)'} · ${(frl.catalog.experiments || []).length} experiments ready.`;
     frlRenderObservers(obs);
+    frlRenderSynthesis(syn);
+    perfRenderLive(perf);
   }
 
   async function frlWaitJob(jobId) {
@@ -7849,11 +7935,27 @@ if ($('neuroweave')) {
     const r = await api('frontier/step', { steps });
     $('frl-status').textContent = `Lab hub stepped ${r.stepped} times → observed_steps=${r.summary.observed_steps}.`;
     frlRenderObservers(r);
+    if (r && r.synthesis) frlRenderSynthesis(r.synthesis);
   });
   $('frl-step-reset').onclick = () => action(async () => {
     const r = await api('frontier/step', { steps: 1, reset: true });
     $('frl-status').textContent = `Lab hub reset and stepped once → observed_steps=${r.summary.observed_steps}.`;
     frlRenderObservers(r);
+    if (r && r.synthesis) frlRenderSynthesis(r.synthesis);
+  });
+  if ($('perf-refresh')) $('perf-refresh').onclick = () => action(perfRefresh);
+  if ($('perf-bench-run')) $('perf-bench-run').onclick = () => action(async () => {
+    const mode = $('perf-bench-mode') ? $('perf-bench-mode').value : 'scaling';
+    const steps = Math.max(1, Math.min(64, Number($('perf-bench-steps')?.value) || 12));
+    const learn = $('perf-bench-learn') ? $('perf-bench-learn').checked : true;
+    $('perf-bench-status').textContent = `Running isolated ${mode} benchmark (${steps} steps, learn=${learn})…`;
+    const body = mode === 'scaling'
+      ? { mode, steps, learn, neurons: [48, 192, 600] }
+      : { mode, steps, learn, nodes_per_source: 16 };
+    const receipt = await api('perf/benchmark', body);
+    show('perf-bench-out', receipt);
+    $('perf-bench-status').textContent = `Completed ${mode} benchmark · digest=${String(receipt.digest || '').slice(0, 12)} (verified isolated run).`;
+    await perfRefresh();
   });
   $('frl-exp-run').onclick = () => action(async () => {
     await frlLoadCatalog();

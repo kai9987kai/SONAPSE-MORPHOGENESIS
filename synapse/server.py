@@ -77,6 +77,7 @@ class Workbench:
         self.reconsolidation_engine = MemoryReconsolidationEngine(seed=seed)
         self.jobs={}; self.cancel={}; self.receipts={}; self.omnibus_runner=None; self.last_tandem_receipt=None
         self.tandem_job_lock=threading.RLock(); self.tandem_job=None
+        self._observatory_cache=None
         jobsdir=self.root/'jobs'; jobsdir.mkdir(exist_ok=True)
         for path in jobsdir.glob('*.json'):
             try:
@@ -84,6 +85,15 @@ class Workbench:
                 if job['status'] in ('queued','running'):
                     job.update(status='interrupted',error='Server restarted before this job completed'); self.persist(job)
             except (ValueError,KeyError,OSError): pass
+    def _get_observatory(self):
+        agent=self.runtime.agent
+        key=(id(agent),getattr(getattr(agent,'brain',None),'n',0))
+        cached=getattr(self,'_observatory_cache',None)
+        if cached is None or cached[0]!=key:
+            from .observatory import NeuralObservatory
+            cached=(key,NeuralObservatory(agent))
+            self._observatory_cache=cached
+        return cached[1]
     def attach_runtime_observers(self,runtime,reset_portable_history=False):
         if getattr(runtime,'transition_taps',None) is None:
             try: runtime.transition_taps=[]
@@ -483,11 +493,9 @@ class Workbench:
             if path=='/api/checkpoints':
                 return {'checkpoints':sorted(p.stem for p in self.root.glob('*.pt') if p.is_file())}
             if path=='/api/observatory/structure':
-                from .observatory import NeuralObservatory
-                return NeuralObservatory(self.runtime.agent).get_structure_payload()
+                return self._get_observatory().get_structure_payload()
             if path=='/api/observatory/activity':
-                from .observatory import NeuralObservatory
-                return NeuralObservatory(self.runtime.agent).get_live_activity_payload()
+                return self._get_observatory().get_live_activity_payload()
             if path=='/api/connectomes':
                 from .connectome_datasets import list_connectome_datasets
                 return {'status': 'ok', 'total_datasets': 8, 'datasets': list_connectome_datasets()}
@@ -573,6 +581,8 @@ class Workbench:
                 }
             if path=='/api/sim-worker/status':
                 return self.sim_worker.status()
+            if path=='/api/perf/telemetry':
+                return self.runtime.perf_telemetry()
             if path=='/api/world4d/status':
                 if hasattr(self.runtime.world, 'snapshot') and getattr(self.runtime.config, 'task', '') == 'world4d_tesseract_bypass':
                     return {'active': True, **self.runtime.world.snapshot()}
@@ -653,6 +663,32 @@ class Workbench:
             return self.neuroweave_api().post(path,data)
         if path.startswith('/api/frontier/'):
             return self.frontier_api().post(path,data)
+        if path=='/api/perf/benchmark':
+            from .perf_lab import PARETO_ARM_IDS, run_scaling_profile, run_subsystem_pareto_sweep
+            if not isinstance(data, dict):
+                raise ValueError('benchmark request must be a JSON object')
+            mode = str(data.get('mode', 'scaling'))
+            if mode not in ('scaling', 'pareto'):
+                raise ValueError("mode must be 'scaling' or 'pareto'")
+            steps = integer(data.get('steps', 12), 'steps', 1, 64)
+            learn = data.get('learn', True)
+            if type(learn) is not bool:
+                raise ValueError('learn must be a boolean')
+            seed = integer(data.get('seed', getattr(self.runtime.config, 'seed', 7)), 'seed', 0, 2**31 - 1)
+            if mode == 'scaling':
+                raw_neurons = data.get('neurons', [48, 192, 600])
+                if not isinstance(raw_neurons, list) or not 1 <= len(raw_neurons) <= 5:
+                    raise ValueError('neurons must be a list of 1..5 integers')
+                neurons = [integer(n, 'neurons', 48, 4000) for n in raw_neurons]
+                return run_scaling_profile(neuron_counts=neurons, steps=steps, learn=learn, seed=seed)
+            nodes_per_source = integer(data.get('nodes_per_source', 16), 'nodes_per_source', 16, 128)
+            arms = data.get('arms')
+            if arms is not None:
+                if not isinstance(arms, list) or not 1 <= len(arms) <= len(PARETO_ARM_IDS) or any(a not in PARETO_ARM_IDS for a in arms):
+                    raise ValueError(f'arms must be a non-empty list drawn from {list(PARETO_ARM_IDS)}')
+            return run_subsystem_pareto_sweep(
+                nodes_per_source=nodes_per_source, steps=steps, learn=learn, seed=seed, arms=arms
+            )
         if path=='/api/export': return self.start_portable_export()
         if path=='/api/training/pretrain': return self.start_enhancement('pretrain',data)
         if path=='/api/rsi/live': return self.start_enhancement('rsi',data)

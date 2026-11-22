@@ -172,6 +172,11 @@ class FrontierObserverHub:
             'evidence_tier': EVIDENCE_TIER,
         })
 
+    def synthesis(self) -> dict[str, Any]:
+        """Strictly read-only cross-scale synthesis across all active observers."""
+        from .synthesis import synthesize_frontier_observers
+        return synthesize_frontier_observers(self.summary())
+
     def telemetry(self, *, heavy_every: int = 32) -> dict[str, Any]:
         """Deterministic low-overhead step telemetry for ``agent.last_telemetry['frontier']``.
 

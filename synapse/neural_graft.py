@@ -14,7 +14,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .experience import encode_experience_state
+from .experience import encode_sensory_batch
 from .stateio import digest
 
 
@@ -222,10 +222,11 @@ class NeuralResidualGraft:
         device = next(self.network.parameters()).device
         obs = torch.as_tensor(np.stack([r['obs'] for r in records]), dtype=torch.float32, device=device).clamp(-5, 5)
         action = torch.as_tensor(np.stack([r['action'] for r in records]), dtype=torch.float32, device=device)
-        next_obs = torch.as_tensor(np.stack([r['next_obs'] for r in records]), dtype=torch.float32, device=device).clamp(-5, 5)
+        observations = np.stack([r['next_obs'] for r in records])
+        next_obs = torch.as_tensor(observations, dtype=torch.float32, device=device).clamp(-5, 5)
         rewards = torch.tensor([r['reward'] for r in records], dtype=torch.float32, device=device).clamp(-20, 20)
         dones = torch.tensor([r['done'] for r in records], dtype=torch.float32, device=device)
-        sensory = torch.tensor(np.stack([encode_experience_state(r['next_obs'])[:14] for r in records]), dtype=torch.float32, device=device)
+        sensory = torch.as_tensor(encode_sensory_batch(observations), dtype=torch.float32, device=device)
         predicted = self.network.dynamics(torch.cat([obs, action], -1))
         prediction_loss = F.mse_loss(predicted[:, :14], sensory) + F.mse_loss(predicted[:, 14], rewards)
         with torch.no_grad():

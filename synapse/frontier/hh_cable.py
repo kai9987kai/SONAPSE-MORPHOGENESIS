@@ -315,6 +315,97 @@ class HHCable:
         return self._rest
 
     # ------------------------------------------------------------------ integrator
+    def _rhs_into(self, S: np.ndarray, stim0: np.ndarray, gcol: np.ndarray,
+                  D: np.ndarray, ws: dict[str, np.ndarray]) -> np.ndarray:
+        """Compute time derivative into preallocated ``D`` using reusable workspace ``ws``."""
+        v = S[0]
+        u = ws['u']
+        np.add(v, 65.0, out=u)
+        R = ws['R']
+        beta_arg = ws['beta_arg']
+        np.multiply(_BETA_K, u, out=beta_arg)
+        beta_arg += _BETA_C
+        np.exp(beta_arg, out=R[3:])                           # 4 e^(-u/18), e^(-(u-30)/10), 0.125 e^(-u/80)
+        R[4] += 1.0
+        np.reciprocal(R[4], out=R[4])                         # beta_h = 1 / (1 + e^(-(u-30)/10))
+        ah_arg = ws['ah_arg']
+        np.multiply(_AH_K, u, out=ah_arg)
+        ah_arg += _AH_C
+        np.exp(ah_arg, out=R[1])                              # alpha_h = 0.07 e^(-u/20)
+        x = ws['x']
+        np.subtract(u, _TRAP_SHIFT, out=x)                    # alpha_m and alpha_n arguments
+        trap_den = ws['trap_den']
+        np.multiply(-0.1, x, out=trap_den)
+        np.expm1(trap_den, out=trap_den)
+        trap = ws['trap']
+        np.multiply(_TRAP_SCALE, x, out=trap)
+        np.divide(trap, trap_den, out=trap)
+        if not math.isfinite(trap.sum()):                     # x == 0 exactly (0/0): use the limit y + x/2
+            np.copyto(trap, -_TRAP_SCALE * (10.0 + 0.5 * x), where=~np.isfinite(trap))
+        R[0] = trap[0]
+        R[2] = trap[1]
+        tmp3 = ws['tmp3']
+        np.add(R[:3], R[3:], out=tmp3)
+        tmp3 *= S[1:]
+        np.subtract(R[:3], tmp3, out=tmp3)
+        np.multiply(self.phi, tmp3, out=D[1:])                # phi (alpha (1 - x) - beta x)
+        m, h, n = S[1], S[2], S[3]
+        dv = ws['dv']
+        tmpv = ws['tmpv']
+        # dv = -(gNa * m^3 * h * (v - ENa) + gK * n^4 * (v - EK) + gL * (v - EL))
+        np.multiply(m, m, out=dv)
+        dv *= m
+        dv *= h
+        dv *= self.gNa
+        np.subtract(v, self.ENa, out=tmpv)
+        dv *= tmpv
+        tmpv2 = ws['tmpv2']
+        np.multiply(n, n, out=tmpv)
+        tmpv *= tmpv
+        tmpv *= self.gK
+        np.subtract(v, self.EK, out=tmpv2)
+        tmpv *= tmpv2
+        dv += tmpv
+        np.subtract(v, self.EL, out=tmpv)
+        tmpv *= self.gL
+        dv += tmpv
+        np.negative(dv, out=dv)
+        if v.shape[1] > 1:
+            d = ws['d']
+            np.subtract(v[:, 1:], v[:, :-1], out=d)
+            d *= gcol
+            dv[:, :-1] += d
+            dv[:, 1:] -= d
+        dv[:, 0] += stim0
+        np.multiply(dv, 1.0 / self.Cm, out=D[0])
+        return D
+
+    @staticmethod
+    def _make_rk4_workspace(B: int, N: int) -> dict[str, np.ndarray]:
+        ws: dict[str, np.ndarray] = {
+            'u': np.empty((B, N)),
+            'R': np.empty((6, B, N)),
+            'beta_arg': np.empty((3, B, N)),
+            'ah_arg': np.empty((B, N)),
+            'x': np.empty((2, B, N)),
+            'trap_den': np.empty((2, B, N)),
+            'trap': np.empty((2, B, N)),
+            'tmp3': np.empty((3, B, N)),
+            'dv': np.empty((B, N)),
+            'tmpv': np.empty((B, N)),
+            'tmpv2': np.empty((B, N)),
+            'k1': np.empty((4, B, N)),
+            'k2': np.empty((4, B, N)),
+            'k3': np.empty((4, B, N)),
+            'k4': np.empty((4, B, N)),
+            'S_stage': np.empty((4, B, N)),
+            'S_next': np.empty((4, B, N)),
+            'd1_buf': np.empty((4, B, N)),
+        }
+        if N > 1:
+            ws['d'] = np.empty((B, N - 1))
+        return ws
+
     def _rhs(self, S: np.ndarray, stim0: np.ndarray, gcol: np.ndarray) -> np.ndarray:
         """Time derivative of the stacked state ``S = [v, m, h, n]`` of shape (4, B, N)."""
         v = S[0]
@@ -351,6 +442,32 @@ class HHCable:
         k3 = self._rhs(S + (0.5 * dt) * k2, stim0, gcol)
         k4 = self._rhs(S + dt * k3, stim0, gcol)
         return S + (dt / 6.0) * (k1 + 2.0 * (k2 + k3) + k4)
+
+    def _step_rk4_ws(self, S: np.ndarray, stim0: np.ndarray, gcol: np.ndarray,
+                     ws: dict[str, np.ndarray], S_out: np.ndarray) -> np.ndarray:
+        dt = self.dt_ms
+        half_dt = 0.5 * dt
+        sixth_dt = dt / 6.0
+        k1, k2, k3, k4 = ws['k1'], ws['k2'], ws['k3'], ws['k4']
+        stage = ws['S_stage']
+        self._rhs_into(S, stim0, gcol, k1, ws)
+        np.multiply(k1, half_dt, out=stage)
+        stage += S
+        self._rhs_into(stage, stim0, gcol, k2, ws)
+        np.multiply(k2, half_dt, out=stage)
+        stage += S
+        self._rhs_into(stage, stim0, gcol, k3, ws)
+        np.multiply(k3, dt, out=stage)
+        stage += S
+        self._rhs_into(stage, stim0, gcol, k4, ws)
+        # S_out = S + (dt/6) * (k1 + 2*(k2 + k3) + k4)
+        np.add(k2, k3, out=stage)
+        stage *= 2.0
+        stage += k1
+        stage += k4
+        stage *= sixth_dt
+        np.add(S, stage, out=S_out)
+        return S_out
 
     def _step_exp_euler(self, S: np.ndarray, stim0: np.ndarray, gcol: np.ndarray, deg: np.ndarray) -> np.ndarray:
         dt, phi = self.dt_ms, self.phi
@@ -410,32 +527,42 @@ class HHCable:
             trace[:, 0] = S[0][:, trace_site]
         dt = self.dt_ms
         ci = 0
-        for k in range(n_steps):
-            if ci < len(changes) and k == changes[ci]:
-                stim0 = (amp * ((on <= k) & (end > k))).sum(axis=1)
-                ci += 1
-            if self.method == 'rk4':
-                S_new = self._step_rk4(S, stim0, gcol)
-            else:
-                S_new = self._step_exp_euler(S, stim0, gcol, deg)
-            cur = S_new[0][:, rec]
-            up = armed & (cur >= SPIKE_THRESHOLD_MV)
-            if up.any():
-                d0 = self._rhs(S, stim0, gcol)[0][:, rec]
-                d1 = self._rhs(S_new, stim0, gcol)[0][:, rec]
-                for b, s in zip(*np.nonzero(up)):
-                    frac = _hermite_crossing(float(prev[b, s]), float(cur[b, s]), float(d0[b, s]), float(d1[b, s]),
-                                             dt, SPIKE_THRESHOLD_MV)
-                    times[int(b)][int(s)].append((k + frac) * dt)
-                armed &= ~up
-            armed |= cur < REARM_MV
-            np.maximum(peak, cur, out=peak)
-            if trace is not None and (k + 1) % trace_every == 0:
-                trace[:, (k + 1) // trace_every] = S_new[0][:, trace_site]
-            if (k + 1) % _FINITE_CHECK_EVERY == 0 and not np.all(np.isfinite(S_new)):
-                raise FloatingPointError('HH cable integration diverged (non-finite state)')
-            prev = cur
-            S = S_new
+        ws = self._make_rk4_workspace(B, N) if self.method == 'rk4' else None
+        S_buf = ws['S_next'] if ws is not None else None
+        with np.errstate(divide='ignore', invalid='ignore'):
+            for k in range(n_steps):
+                if ci < len(changes) and k == changes[ci]:
+                    stim0 = (amp * ((on <= k) & (end > k))).sum(axis=1)
+                    ci += 1
+                if ws is not None:
+                    S_new = self._step_rk4_ws(S, stim0, gcol, ws, S_buf)
+                else:
+                    S_new = self._step_exp_euler(S, stim0, gcol, deg)
+                cur = S_new[0][:, rec]
+                up = armed & (cur >= SPIKE_THRESHOLD_MV)
+                if up.any():
+                    if ws is not None:
+                        d0 = ws['k1'][0][:, rec]
+                        d1 = self._rhs_into(S_new, stim0, gcol, ws['d1_buf'], ws)[0][:, rec]
+                    else:
+                        d0 = self._rhs(S, stim0, gcol)[0][:, rec]
+                        d1 = self._rhs(S_new, stim0, gcol)[0][:, rec]
+                    for b, s in zip(*np.nonzero(up)):
+                        frac = _hermite_crossing(float(prev[b, s]), float(cur[b, s]), float(d0[b, s]), float(d1[b, s]),
+                                                 dt, SPIKE_THRESHOLD_MV)
+                        times[int(b)][int(s)].append((k + frac) * dt)
+                    armed &= ~up
+                armed |= cur < REARM_MV
+                np.maximum(peak, cur, out=peak)
+                if trace is not None and (k + 1) % trace_every == 0:
+                    trace[:, (k + 1) // trace_every] = S_new[0][:, trace_site]
+                if (k + 1) % _FINITE_CHECK_EVERY == 0 and not np.all(np.isfinite(S_new)):
+                    raise FloatingPointError('HH cable integration diverged (non-finite state)')
+                prev = cur
+                if ws is not None:
+                    S, S_buf = S_new, S
+                else:
+                    S = S_new
         if not np.all(np.isfinite(S)):
             raise FloatingPointError('HH cable integration diverged (non-finite state)')
         out: dict[str, Any] = {'spike_times_ms': times, 'peak_mv': peak, 'final_v_mv': S[0].copy()}

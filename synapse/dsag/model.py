@@ -78,6 +78,11 @@ class DualSomaAxodendriticGraft(nn.Module):
         self._seen_sequences: dict[tuple[str, int, str, int], tuple[int, int]] = {}
         self._seen_checksums: set[str] = set()
         self._metrics: dict[str, Any] = {}
+        self._route_cache_key: tuple | None = None
+        self._route_indices_cache: torch.Tensor | None = None
+        self._branch_mask_cache: torch.Tensor | None = None
+        self._topo_digest_key: tuple | None = None
+        self._topo_digest_cache: str | None = None
         self.reset()
 
     def _resolve_targets(self, input_dim: int) -> tuple[int, ...]:
@@ -109,14 +114,30 @@ class DualSomaAxodendriticGraft(nn.Module):
 
     @property
     def topology_digest(self) -> str:
-        encoded = json.dumps({
-            "spec_digest": self.spec.spec_digest,
-            "input_dim": self.input_dim,
-            "target_indices": self.target_indices,
-            "active_branch_segments": self._active_branch_segments,
-            "topology_version": self._topology_version,
-        }, sort_keys=True, separators=(",", ":"))
-        return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+        key = (self._active_branch_segments, self._topology_version)
+        if self._topo_digest_key != key or self._topo_digest_cache is None:
+            encoded = json.dumps({
+                "spec_digest": self.spec.spec_digest,
+                "input_dim": self.input_dim,
+                "target_indices": self.target_indices,
+                "active_branch_segments": self._active_branch_segments,
+                "topology_version": self._topology_version,
+            }, sort_keys=True, separators=(",", ":"))
+            self._topo_digest_cache = hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+            self._topo_digest_key = key
+        return self._topo_digest_cache
+
+    def _route_tensors(self, device: torch.device, dtype: torch.dtype) -> tuple[torch.Tensor, torch.Tensor]:
+        key = (self._active_branch_segments, device, dtype)
+        if self._route_cache_key != key or self._route_indices_cache is None or self._branch_mask_cache is None:
+            route_indices = torch.tensor(self._active_branch_segments, device=device, dtype=torch.long)
+            branch_mask = torch.zeros((self.spec.segment_count, self.spec.max_branches), device=device, dtype=dtype)
+            for branch_index, segment_index in enumerate(self._active_branch_segments):
+                branch_mask[segment_index, branch_index] = 1.0
+            self._route_indices_cache = route_indices
+            self._branch_mask_cache = branch_mask
+            self._route_cache_key = key
+        return self._route_indices_cache, self._branch_mask_cache
 
     def reset(self, batch_size: int = 1) -> None:
         if type(batch_size) is not int or batch_size < 1:
@@ -379,13 +400,20 @@ class DualSomaAxodendriticGraft(nn.Module):
             else:
                 branch_sources.append(torch.zeros_like(rates))
         routed_rates = torch.stack(branch_sources, dim=1) if branch_sources else rates.new_zeros((batch, 0, self.input_dim))
-        branch_drive = torch.einsum("bjn,jdn->bjd", routed_rates, self.branch_input)
+        branch_drive = (
+            torch.bmm(routed_rates.transpose(0, 1), self.branch_input.transpose(1, 2)).transpose(0, 1)
+            if routed_rates.shape[1] else rates.new_zeros((batch, 0, self.spec.soma_dim))
+        )
 
         old_a, old_b = state["soma_a"], state["soma_b"]
         if old_a.device != rates.device or old_a.dtype != rates.dtype:
             old_a, old_b = old_a.to(rates), old_b.to(rates)
-        old_branch = state["branches"].to(rates)
-        old_segments = state["segments"].to(rates)
+        old_branch = state["branches"]
+        if old_branch.device != rates.device or old_branch.dtype != rates.dtype:
+            old_branch = old_branch.to(rates)
+        old_segments = state["segments"]
+        if old_segments.device != rates.device or old_segments.dtype != rates.dtype:
+            old_segments = old_segments.to(rates)
         ctx_a = F.linear(ctx, self.soma_a_context)
         ctx_b = F.linear(ctx, self.soma_b_context)
         drive_a = F.linear(rates, self.soma_a_input) + ctx_a + pkt_a
@@ -404,19 +432,24 @@ class DualSomaAxodendriticGraft(nn.Module):
         else:
             next_b = torch.zeros_like(old_b)
 
-        route_indices = torch.tensor(self._active_branch_segments, device=rates.device, dtype=torch.long)
+        route_indices, branch_mask = self._route_tensors(rates.device, rates.dtype)
         active_count = len(self._active_branch_segments)
-        if self._active_branch_segments:
+        if active_count:
             local_axon = old_segments.index_select(1, route_indices)
-            branch_drive[:, :active_count, :] += torch.einsum("bjd,jde->bje", local_axon, self.branch_from_axon[:active_count])
+            branch_drive[:, :active_count, :] += torch.bmm(
+                local_axon.transpose(0, 1), self.branch_from_axon[:active_count]
+            ).transpose(0, 1)
         else:
             local_axon = rates.new_zeros((batch, 0, self.spec.soma_dim))
         branch_drive[:, :active_count, :] += pkt_branch[:, :active_count, :]
         if self.spec.axo_branches:
-            next_branch = (1.0 - self.spec.eta_branch) * old_branch + self.spec.eta_branch * torch.tanh(
-                branch_drive + torch.einsum("bjd,jde->bje", old_branch, self.branch_recurrent)
-                if active_count else old_branch
-            )
+            if active_count:
+                branch_rec = torch.bmm(old_branch.transpose(0, 1), self.branch_recurrent).transpose(0, 1)
+                next_branch = (1.0 - self.spec.eta_branch) * old_branch + self.spec.eta_branch * torch.tanh(
+                    branch_drive + branch_rec
+                )
+            else:
+                next_branch = (1.0 - self.spec.eta_branch) * old_branch + self.spec.eta_branch * torch.tanh(old_branch)
             if active_count < self.spec.max_branches:
                 next_branch[:, active_count:, :] = 0.0
         else:
@@ -432,19 +465,7 @@ class DualSomaAxodendriticGraft(nn.Module):
         left = torch.zeros_like(old_segments)
         if self.spec.segment_count > 1:
             left[:, 1:, :] = source_segments[:, :-1, :]
-        branch_mask = torch.zeros((self.spec.segment_count, self.spec.max_branches), device=rates.device, dtype=rates.dtype)
-        for branch_index, segment_index in enumerate(self._active_branch_segments):
-            branch_mask[segment_index, branch_index] = 1.0
         route_gain = self.branch_to_segment * branch_mask
-        branch_current = torch.einsum("kj,bjd->bkd", route_gain, next_branch)
-        axon_drive = (
-            torch.einsum("bkd,kde->bke", old_segments, self.segment_recurrent)
-            + torch.einsum("bkd,kde->bke", left, self.segment_forward)
-            + branch_current
-            + torch.einsum("bd,kde->bke", next_a, self.segment_from_soma_a)
-            + torch.einsum("bd,kde->bke", next_b, self.segment_from_soma_b)
-            + torch.einsum("bkd,kde->bke", pkt_segment.reshape(batch, self.spec.segment_count, self.spec.soma_dim), self.segment_from_packet)
-        )
         segment_phase, branch_phase = self._phase_groups(phase_angles, batch, rates.device, rates.dtype)
         if branch_phase is not None and packet_phases:
             branch_phase = branch_phase.clone()
@@ -456,9 +477,23 @@ class DualSomaAxodendriticGraft(nn.Module):
             gates = 0.5 * (1.0 + torch.cos(branch_phase[..., :active_count] - segment_phase.index_select(1, route_indices)))
             if not self.spec.richer_messages:
                 gates = gates.detach()
-            branch_current = torch.einsum("kj,bjd->bkd", route_gain[:, :active_count], next_branch[:, :active_count, :] * gates.unsqueeze(-1))
-            axon_drive = axon_drive - torch.einsum("kj,bjd->bkd", route_gain[:, :active_count], next_branch[:, :active_count, :]) + branch_current
+            branch_current = torch.matmul(route_gain[:, :active_count], next_branch[:, :active_count, :] * gates.unsqueeze(-1))
             phase_coherence = float(gates.detach().mean().cpu())
+        else:
+            branch_current = torch.matmul(route_gain, next_branch)
+        seg_t = old_segments.transpose(0, 1)
+        left_t = left.transpose(0, 1)
+        pkt_seg_t = pkt_segment.reshape(batch, self.spec.segment_count, self.spec.soma_dim).transpose(0, 1)
+        soma_a_seg = torch.matmul(next_a[:, None, None, :], self.segment_from_soma_a).squeeze(2)
+        soma_b_seg = torch.matmul(next_b[:, None, None, :], self.segment_from_soma_b).squeeze(2)
+        axon_drive = (
+            torch.bmm(seg_t, self.segment_recurrent).transpose(0, 1)
+            + torch.bmm(left_t, self.segment_forward).transpose(0, 1)
+            + branch_current
+            + soma_a_seg
+            + soma_b_seg
+            + torch.bmm(pkt_seg_t, self.segment_from_packet).transpose(0, 1)
+        )
         next_segments = (1.0 - self.spec.eta_axon) * old_segments + self.spec.eta_axon * torch.tanh(axon_drive)
         final_hidden = F.linear(next_segments[:, -1, :], self.terminal_from_axon)
         final_hidden = final_hidden + F.linear(next_b, self.terminal_from_soma_b) + F.linear(ctx, self.terminal_from_context)

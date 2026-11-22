@@ -184,29 +184,17 @@ class CrossConnectomeGraft(nn.Module):
         Verify Dale's law compliance percentage across all presynaptic columns.
         A column satisfies Dale's law if all its non-zero entries match pre_signs[j].
         """
-        w_eff = self.get_effective_weights()
-        num_cols = self.node_dim
-        valid_cols = 0
-        total_active_cols = 0
+        return self._dale_compliance(self.get_effective_weights(), tol)
 
-        for j in range(num_cols):
-            col = w_eff[:, j]
-            nonzero_mask = col.abs() > tol
-            if not nonzero_mask.any():
-                continue
-            total_active_cols += 1
-            col_nonzero = col[nonzero_mask]
-            expected_sign = float(self.pre_signs[j].item())
-            if expected_sign > 0:
-                if (col_nonzero >= -tol).all():
-                    valid_cols += 1
-            else:
-                if (col_nonzero <= tol).all():
-                    valid_cols += 1
-
-        if total_active_cols == 0:
+    def _dale_compliance(self, weights: torch.Tensor, tol: float) -> float:
+        active = weights.abs() > tol
+        active_columns = active.any(dim=0)
+        wrong_sign = torch.where(self.pre_signs > 0, weights < -tol, weights > tol)
+        violated = (active & wrong_sign).any(dim=0)
+        total = int(active_columns.sum().item())
+        if total == 0:
             return 100.0
-        return float(100.0 * valid_cols / total_active_cols)
+        return 100.0 * (total - int(violated.sum().item())) / total
 
     def forward(
         self,
@@ -340,7 +328,7 @@ class CrossConnectomeGraft(nn.Module):
         ]
 
         total_synapses = int(self.provenance_mask.sum().item())
-        compliance = self.verify_dales_law()
+        compliance = self._dale_compliance(w_eff, 1e-7)
 
         self.telemetry = CrossGraftTelemetry(
             num_active_bridges=len(self.regions),

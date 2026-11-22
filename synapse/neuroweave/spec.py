@@ -11,6 +11,7 @@ subsystems, experiments, persistence and the UI share one source of truth.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, replace
+from functools import cached_property
 import hashlib
 import json
 from typing import Any, Mapping
@@ -297,7 +298,7 @@ class NeuroWeaveSpecV1:
             payload['sensory_modes'] = tuple(tuple(item) for item in payload['sensory_modes'])
         return cls(**payload)
 
-    @property
+    @cached_property
     def spec_digest(self) -> str:
         return hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True).encode('utf-8')).hexdigest()
 
