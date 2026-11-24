@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonapse.morphogenesis/schemas/v1/training_example.json",
+  "title": "TrainingExample",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "example_id",
+    "task_domain",
+    "inputs",
+    "target_output",
+    "source_kind"
+  ],
+  "properties": {
+    "example_id": {
+      "type": "string"
+    },
+    "task_domain": {
+      "type": "string"
+    },
+    "is_failure": {
+      "type": "boolean"
+    },
+    "verified": {
+      "type": "boolean"
+    },
+    "source_kind": {
+      "enum": [
+        "biological_recording",
+        "artificial_model_activity",
+        "synthetic_simulation",
+        "hybrid_experimental"
+      ]
+    },
+    "quarantine_passed": {
+      "type": "boolean"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "schema": "synapse-state-v1",
+  "checkpoint_id": "d2abf87647e140eea005d383b440c91a",
+  "sha256": "e0ae6cbde429d5cec2298fb6b65ec53d634db229e4984e2cd777e295cee7a3c5",
+  "bytes": 152877,
+  "state_digest": "bb6daac5605065e226374482e25aaa8314c478f61986beb4359b0bf93e808121"
+}

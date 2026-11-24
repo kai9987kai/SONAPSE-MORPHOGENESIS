@@ -143,8 +143,14 @@ class SynapseConfig:
     # Frontier Pack (synapse/frontier): additive, default-off read-only
     # observers and opt-in graft optimizer. Omitted from to_dict() when None.
     frontier: object | None = None
+    # SONAPSE MORPHOGENESIS: additive, default-off developmental connectome
+    # platform. Omitted from to_dict() when None for byte-identical legacy schemas.
+    morphogenesis: object | None = None
 
     def __post_init__(self):
+        if self.morphogenesis is not None:
+            from sonapse_morphogenesis.core.bridge import coerce_morphogenesis_spec
+            object.__setattr__(self, 'morphogenesis', coerce_morphogenesis_spec(self.morphogenesis))
         if self.frontier is not None:
             from .frontier.bridge import coerce_frontier_spec
             object.__setattr__(self, 'frontier', coerce_frontier_spec(self.frontier))
@@ -457,6 +463,10 @@ class SynapseConfig:
             d.pop('frontier')
         else:
             d['frontier'] = self.frontier.to_dict()
+        if self.morphogenesis is None:
+            d.pop('morphogenesis')
+        else:
+            d['morphogenesis'] = self.morphogenesis.to_dict()
         return d
 
     def max_tandem_feature_audit(self):
@@ -506,6 +516,7 @@ class SynapseConfig:
             'dsag': None,
             'neuroweave': None,
             'frontier': None,
+            'morphogenesis': None,
             'experience_planning': False, 'surprise_memory': True, 'experience_horizon': 1,
             'experimental_cognition': False, 'continual_backprop': False,
             'fast_weight_memory': False, 'dormant_lifecycle': True,
@@ -569,6 +580,10 @@ class SynapseConfig:
         from .frontier.bridge import normalize_saved_frontier
         if not normalize_saved_frontier(self.frontier, normalized):
             return False
+        if self.morphogenesis is not None or normalized.get('morphogenesis') is not None:
+            from sonapse_morphogenesis.core.bridge import normalize_saved_morphogenesis
+            if not normalize_saved_morphogenesis(self.morphogenesis, normalized):
+                return False
         try:
             restored = type(self)(**normalized)
         except (TypeError, ValueError):

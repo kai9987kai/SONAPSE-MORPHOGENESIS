@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonapse.morphogenesis/schemas/v1/developmental_genome.json",
+  "title": "DevelopmentalGenome",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "genome_id",
+    "generation",
+    "connectome"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "genome_id": {
+      "type": "string"
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "parent_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "connectome": {
+      "type": "object"
+    },
+    "growth_rules": {
+      "type": "object"
+    },
+    "pruning_rules": {
+      "type": "object"
+    },
+    "differentiation_rules": {
+      "type": "object"
+    },
+    "metabolic_budget": {
+      "type": "number",
+      "minimum": 0.0
+    }
+  }
+}

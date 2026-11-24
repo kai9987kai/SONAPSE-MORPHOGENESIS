@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="240" viewBox="0 0 440 240">
+<rect width="100%" height="100%" rx="10" fill="#0f172a"/>
+<text x="14" y="20" fill="#e2e8f0" font-family="monospace" font-size="13" font-weight="bold">SymbioteEcho Neuron (Original) [symbiote_echo] · F2</text>
+<text x="14" y="230" fill="#94a3b8" font-family="monospace" font-size="10">Compartments: 5 | Edges: 5 | Organelles: 2 | Cost: 4.73</text>
+<line x1="102.8" y1="84.0" x2="217.6" y2="92.0" stroke="#64748b" stroke-width="2"/>
+<line x1="102.8" y1="156.0" x2="217.6" y2="148.0" stroke="#64748b" stroke-width="2" stroke-dasharray="4 3"/>
+<line x1="217.6" y1="148.0" x2="217.6" y2="92.0" stroke="#e879f9" stroke-width="2" stroke-dasharray="4 3"/>
+<line x1="217.6" y1="92.0" x2="217.6" y2="148.0" stroke="#ef4444" stroke-width="2"/>
+<line x1="217.6" y1="92.0" x2="337.2" y2="120.0" stroke="#64748b" stroke-width="2"/>
+<circle cx="102.8" cy="84.0" r="7.0" fill="#34d399" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="102.8" y="73.0" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">self_dend</text>
+<circle cx="102.8" cy="156.0" r="7.0" fill="#22d3ee" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="102.8" y="145.0" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">peer_dend</text>
+<circle cx="217.6" cy="92.0" r="11.4" fill="#38bdf8" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="217.6" y="76.5" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">self_soma</text>
+<text x="217.6" y="113.5" text-anchor="middle" fill="#fde047" font-family="monospace" font-size="8">[checkpoint_vesicle]</text>
+<circle cx="217.6" cy="148.0" r="11.4" fill="#818cf8" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="217.6" y="132.6" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">mirror_soma</text>
+<text x="217.6" y="169.4" text-anchor="middle" fill="#fde047" font-family="monospace" font-size="8">[contraston]</text>
+<circle cx="337.2" cy="120.0" r="7.0" fill="#fb7185" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="337.2" y="109.0" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">axon</text>
+</svg>

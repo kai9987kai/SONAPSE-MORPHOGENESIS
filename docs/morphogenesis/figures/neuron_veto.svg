@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="240" viewBox="0 0 440 240">
+<rect width="100%" height="100%" rx="10" fill="#0f172a"/>
+<text x="14" y="20" fill="#e2e8f0" font-family="monospace" font-size="13" font-weight="bold">Veto Neuron [veto] · F2</text>
+<text x="14" y="230" fill="#94a3b8" font-family="monospace" font-size="10">Compartments: 4 | Edges: 3 | Organelles: 2 | Cost: 3.79</text>
+<line x1="104.3" y1="86.2" x2="217.5" y2="120.0" stroke="#64748b" stroke-width="2"/>
+<line x1="104.3" y1="153.8" x2="217.5" y2="120.0" stroke="#ef4444" stroke-width="2"/>
+<line x1="217.5" y1="120.0" x2="335.7" y2="120.0" stroke="#64748b" stroke-width="2"/>
+<circle cx="104.3" cy="86.2" r="7.0" fill="#34d399" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="104.3" y="75.2" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">dend_drive</text>
+<circle cx="104.3" cy="153.8" r="7.2" fill="#ef4444" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="104.3" y="142.5" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">veto_guard</text>
+<text x="104.3" y="171.0" text-anchor="middle" fill="#fde047" font-family="monospace" font-size="8">[uncertaintosome]</text>
+<circle cx="217.5" cy="120.0" r="11.8" fill="#38bdf8" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="217.5" y="104.2" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">soma</text>
+<text x="217.5" y="141.8" text-anchor="middle" fill="#fde047" font-family="monospace" font-size="8">[resource_regulator]</text>
+<circle cx="335.7" cy="120.0" r="7.0" fill="#fb7185" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="335.7" y="109.0" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">axon</text>
+</svg>

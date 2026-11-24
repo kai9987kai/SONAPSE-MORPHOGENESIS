@@ -1,0 +1,3923 @@
+{
+  "schema_version": "1.0.0",
+  "genome_id": "gen_mixed_-14cb853284",
+  "generation": 0,
+  "parent_ids": [],
+  "connectome": {
+    "schema_version": "1.0.0",
+    "connectome_id": "mixed_custom_standard_16_s7",
+    "name": "mixed_custom_standard (16 neurons)",
+    "source_kind": "synthetic_simulation",
+    "neurons": [
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n0",
+        "family": "bifurcation_gate",
+        "name": "BifurcationGate Neuron (Original)",
+        "objective_category": "computational_usefulness",
+        "fidelity": 2,
+        "approximation_label": "Multi-compartment synthetic continuous recurrent dynamics coupled by physical cable geometry.",
+        "dale_sign": 1,
+        "compartments": [
+          {
+            "compartment_id": "dend",
+            "kind": "dendrite_basal",
+            "length_um": 35.0,
+            "radius_um": 2.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -2.3,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 6.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "latch_a",
+            "kind": "soma",
+            "length_um": 22.0,
+            "radius_um": 8.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -0.1,
+              1.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 14.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "latch_b",
+            "kind": "secondary_soma",
+            "length_um": 22.0,
+            "radius_um": 8.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -0.1,
+              -1.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 14.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "axon",
+            "kind": "axon_segment",
+            "length_um": 90.0,
+            "radius_um": 1.4,
+            "myelin_factor": 0.7,
+            "coords_3d": [
+              2.4,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 4.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "dend",
+            "target_id": "latch_a",
+            "weight": 0.85,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "dend",
+            "target_id": "latch_b",
+            "weight": -0.85,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "latch_a",
+            "target_id": "latch_a",
+            "weight": 0.95,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "latch_b",
+            "target_id": "latch_b",
+            "weight": 0.95,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "latch_a",
+            "target_id": "latch_b",
+            "weight": -0.75,
+            "coupling_type": "chemical_synapse",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "latch_b",
+            "target_id": "latch_a",
+            "weight": -0.75,
+            "coupling_type": "chemical_synapse",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "latch_a",
+            "target_id": "axon",
+            "weight": 0.7,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "latch_b",
+            "target_id": "axon",
+            "weight": -0.7,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          }
+        ],
+        "organelles": [],
+        "input_compartments": [
+          "dend"
+        ],
+        "output_compartments": [
+          "axon"
+        ],
+        "formal_math": "\\dot{a} = -a + \\tanh(0.95 a - 0.75 b + x),\\; \\dot{b} = -b + \\tanh(0.95 b - 0.75 a - x)",
+        "hypothesis": "Symmetric pitchfork-bistable coupled somas act as a single-neuron noise-tolerant 1-bit working memory latch.",
+        "description": "Original mutually-inhibiting self-exciting dual-soma latch maintaining persistent sign memory across long delays.",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n1",
+        "family": "conductance_hh",
+        "name": "Hodgkin-Huxley Conductance Neuron",
+        "objective_category": "biological_realism",
+        "fidelity": 4,
+        "approximation_label": "Conductance-based compartment model with Hodgkin-Huxley Na/K/Leak channels (Rush-Larsen Exp-Euler).",
+        "dale_sign": 1,
+        "compartments": [
+          {
+            "compartment_id": "dend",
+            "kind": "dendrite_proximal",
+            "length_um": 40.0,
+            "radius_um": 2.5,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 10.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "soma",
+            "kind": "soma",
+            "length_um": 25.0,
+            "radius_um": 10.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 10.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "axon",
+            "kind": "axon_segment",
+            "length_um": 100.0,
+            "radius_um": 1.5,
+            "myelin_factor": 0.6,
+            "coords_3d": [
+              2.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 5.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "dend",
+            "target_id": "soma",
+            "weight": 0.9,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "none"
+          },
+          {
+            "source_id": "soma",
+            "target_id": "axon",
+            "weight": 1.0,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "none"
+          }
+        ],
+        "organelles": [],
+        "input_compartments": [
+          "dend"
+        ],
+        "output_compartments": [
+          "axon"
+        ],
+        "formal_math": "C_m \\dot{V} = I_{\\text{stim}} + g_{\\text{ax}}\\Delta V - \\bar{g}_{\\text{Na}} m^3 h(V-E_{\\text{Na}}) - \\bar{g}_K n^4(V-E_K) - g_L(V-E_L)",
+        "hypothesis": "Biophysical conductance reference quantifying ion-channel nonlinearity vs compute cost.",
+        "description": "",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n2",
+        "family": "compass",
+        "name": "Compass Neuron",
+        "objective_category": "biological_realism",
+        "fidelity": 2,
+        "approximation_label": "Multi-compartment synthetic continuous recurrent dynamics coupled by physical cable geometry.",
+        "dale_sign": 1,
+        "compartments": [
+          {
+            "compartment_id": "ring_0",
+            "kind": "integration_center",
+            "length_um": 20.0,
+            "radius_um": 5.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              1.4,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 10.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "ring_1",
+            "kind": "integration_center",
+            "length_um": 20.0,
+            "radius_um": 5.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.7000000000000001,
+              1.212435565298214,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 10.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "ring_2",
+            "kind": "integration_center",
+            "length_um": 20.0,
+            "radius_um": 5.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -0.6999999999999996,
+              1.2124355652982142,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 10.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "ring_3",
+            "kind": "integration_center",
+            "length_um": 20.0,
+            "radius_um": 5.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -1.4,
+              1.7145055188062944e-16,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 10.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "ring_4",
+            "kind": "integration_center",
+            "length_um": 20.0,
+            "radius_um": 5.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -0.7000000000000006,
+              -1.2124355652982137,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 10.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "ring_5",
+            "kind": "integration_center",
+            "length_um": 20.0,
+            "radius_um": 5.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.7000000000000001,
+              -1.212435565298214,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 10.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "soma_out",
+            "kind": "soma",
+            "length_um": 22.0,
+            "radius_um": 8.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              3.2,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 7.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "ring_0",
+            "target_id": "ring_1",
+            "weight": 0.55,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_0",
+            "target_id": "ring_5",
+            "weight": 0.55,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_0",
+            "target_id": "ring_3",
+            "weight": -0.45,
+            "coupling_type": "chemical_synapse",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_0",
+            "target_id": "soma_out",
+            "weight": 0.4,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_1",
+            "target_id": "ring_2",
+            "weight": 0.55,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_1",
+            "target_id": "ring_0",
+            "weight": 0.55,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_1",
+            "target_id": "ring_4",
+            "weight": -0.45,
+            "coupling_type": "chemical_synapse",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_1",
+            "target_id": "soma_out",
+            "weight": 0.20000000000000007,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_2",
+            "target_id": "ring_3",
+            "weight": 0.55,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_2",
+            "target_id": "ring_1",
+            "weight": 0.55,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_2",
+            "target_id": "ring_5",
+            "weight": -0.45,
+            "coupling_type": "chemical_synapse",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_2",
+            "target_id": "soma_out",
+            "weight": -0.19999999999999993,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_3",
+            "target_id": "ring_4",
+            "weight": 0.55,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_3",
+            "target_id": "ring_2",
+            "weight": 0.55,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_3",
+            "target_id": "ring_0",
+            "weight": -0.45,
+            "coupling_type": "chemical_synapse",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_3",
+            "target_id": "soma_out",
+            "weight": -0.4,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_4",
+            "target_id": "ring_5",
+            "weight": 0.55,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_4",
+            "target_id": "ring_3",
+            "weight": 0.55,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_4",
+            "target_id": "ring_1",
+            "weight": -0.45,
+            "coupling_type": "chemical_synapse",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_4",
+            "target_id": "soma_out",
+            "weight": -0.20000000000000018,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_5",
+            "target_id": "ring_0",
+            "weight": 0.55,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_5",
+            "target_id": "ring_4",
+            "weight": 0.55,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_5",
+            "target_id": "ring_2",
+            "weight": -0.45,
+            "coupling_type": "chemical_synapse",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "ring_5",
+            "target_id": "soma_out",
+            "weight": 0.20000000000000007,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          }
+        ],
+        "organelles": [],
+        "input_compartments": [
+          "ring_0",
+          "ring_1",
+          "ring_2",
+          "ring_3",
+          "ring_4",
+          "ring_5"
+        ],
+        "output_compartments": [
+          "soma_out"
+        ],
+        "formal_math": "\\dot{r}_k = -r_k + \\phi\\left(\\sum_j W_{\\text{ring}}(k-j) r_j + I_k\\right)",
+        "hypothesis": "Cyclic ring-attractor internal compartments maintain directional/heading phase representations.",
+        "description": "Ellipsoid-body-inspired neuron containing a 6-compartment local excitation / opposite inhibition cyclic ring.",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n3",
+        "family": "predictive_interneuron",
+        "name": "Predictive Inhibitory Interneuron",
+        "objective_category": "computational_usefulness",
+        "fidelity": 2,
+        "approximation_label": "Multi-compartment synthetic continuous recurrent dynamics coupled by physical cable geometry.",
+        "dale_sign": 1,
+        "compartments": [
+          {
+            "compartment_id": "dend",
+            "kind": "dendrite_proximal",
+            "length_um": 25.0,
+            "radius_um": 2.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 5.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "soma",
+            "kind": "local_inhibitory",
+            "length_um": 16.0,
+            "radius_um": 6.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 5.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "dend",
+            "target_id": "soma",
+            "weight": 0.9,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "none"
+          }
+        ],
+        "organelles": [
+          {
+            "organelle_id": "pred_i",
+            "organelle_type": "predicton",
+            "compartment_id": "soma",
+            "params": {},
+            "size_scale": 1.0,
+            "sensitivity": 1.0,
+            "active": true
+          }
+        ],
+        "input_compartments": [
+          "dend"
+        ],
+        "output_compartments": [
+          "soma"
+        ],
+        "formal_math": "r_{\\text{inh}} = -\\tanh(\\hat{x}_t + \\alpha(x_t - \\hat{x}_t))",
+        "hypothesis": "Fast inhibitory cancellation of predictable signals improves surprise contrast.",
+        "description": "",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n4",
+        "family": "resonator",
+        "name": "Resonator Neuron",
+        "objective_category": "biological_realism",
+        "fidelity": 2,
+        "approximation_label": "Multi-compartment synthetic continuous recurrent dynamics coupled by physical cable geometry.",
+        "dale_sign": 1,
+        "compartments": [
+          {
+            "compartment_id": "dend",
+            "kind": "dendrite_basal",
+            "length_um": 35.0,
+            "radius_um": 2.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -2.2,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 6.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "osc_a",
+            "kind": "integration_center",
+            "length_um": 20.0,
+            "radius_um": 7.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 8.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "osc_b",
+            "kind": "integration_center",
+            "length_um": 20.0,
+            "radius_um": 7.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 8.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "axon",
+            "kind": "axon_segment",
+            "length_um": 90.0,
+            "radius_um": 1.5,
+            "myelin_factor": 0.7,
+            "coords_3d": [
+              2.4,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 4.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "dend",
+            "target_id": "osc_a",
+            "weight": 0.85,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "osc_a",
+            "target_id": "osc_b",
+            "weight": 0.9,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "osc_b",
+            "target_id": "osc_a",
+            "weight": -0.9,
+            "coupling_type": "chemical_synapse",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "osc_a",
+            "target_id": "axon",
+            "weight": 0.9,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          }
+        ],
+        "organelles": [
+          {
+            "organelle_id": "res_ph1",
+            "organelle_type": "phase_organelle",
+            "compartment_id": "osc_a",
+            "params": {
+              "omega": 0.35
+            },
+            "size_scale": 1.0,
+            "sensitivity": 1.0,
+            "active": true
+          },
+          {
+            "organelle_id": "res_ph2",
+            "organelle_type": "phase_organelle",
+            "compartment_id": "osc_b",
+            "params": {
+              "omega": 0.7
+            },
+            "size_scale": 1.0,
+            "sensitivity": 1.0,
+            "active": true
+          }
+        ],
+        "input_compartments": [
+          "dend"
+        ],
+        "output_compartments": [
+          "axon"
+        ],
+        "formal_math": "\\dot{x} = \\omega y + I,\\; \\dot{y} = -\\omega x - \\gamma y",
+        "hypothesis": "Coupled oscillatory compartments selectively amplify resonant frequencies and encode phase synchrony.",
+        "description": "Intrinsic oscillatory neuron with quadrature excitatory-inhibitory loop and dual PhaseOrganelles.",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n5",
+        "family": "adaptive_pyramidal",
+        "name": "Adaptive Pyramidal Neuron",
+        "objective_category": "biological_realism",
+        "fidelity": 2,
+        "approximation_label": "Multi-compartment synthetic continuous recurrent dynamics coupled by physical cable geometry.",
+        "dale_sign": 1,
+        "compartments": [
+          {
+            "compartment_id": "apical",
+            "kind": "dendrite_apical",
+            "length_um": 90.0,
+            "radius_um": 1.8,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              2.5,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 18.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 1.2,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "basal",
+            "kind": "dendrite_basal",
+            "length_um": 45.0,
+            "radius_um": 2.2,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              -1.2,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 8.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "soma",
+            "kind": "soma",
+            "length_um": 24.0,
+            "radius_um": 9.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 10.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "axon",
+            "kind": "axon_segment",
+            "length_um": 120.0,
+            "radius_um": 1.2,
+            "myelin_factor": 0.7,
+            "coords_3d": [
+              2.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 4.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "apical",
+            "target_id": "soma",
+            "weight": 0.75,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "none"
+          },
+          {
+            "source_id": "basal",
+            "target_id": "soma",
+            "weight": 0.85,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "none"
+          },
+          {
+            "source_id": "soma",
+            "target_id": "axon",
+            "weight": 0.95,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "none"
+          }
+        ],
+        "organelles": [],
+        "input_compartments": [
+          "basal",
+          "apical"
+        ],
+        "output_compartments": [
+          "axon"
+        ],
+        "formal_math": "s_{\\text{soma}} = \\phi(g_a s_{\\text{apical}} + g_b s_{\\text{basal}} + g_{\\text{NMDA}} s_{\\text{apical}}^+ s_{\\text{basal}}^+)",
+        "hypothesis": "Apical-basal NMDA coincidence detects top-down context paired with bottom-up input.",
+        "description": "",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n6",
+        "family": "tessera",
+        "name": "Tessera Neuron",
+        "objective_category": "computational_usefulness",
+        "fidelity": 2,
+        "approximation_label": "Multi-compartment synthetic continuous recurrent dynamics coupled by physical cable geometry.",
+        "dale_sign": 1,
+        "compartments": [
+          {
+            "compartment_id": "dend",
+            "kind": "dendrite_basal",
+            "length_um": 38.0,
+            "radius_um": 2.2,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -2.5,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 8.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "soma",
+            "kind": "soma",
+            "length_um": 24.0,
+            "radius_um": 9.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -0.5,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 9.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "branch_fast",
+            "kind": "axon_segment",
+            "length_um": 80.0,
+            "radius_um": 1.8,
+            "myelin_factor": 0.85,
+            "coords_3d": [
+              1.8,
+              1.4,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 3.5,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "branch_mem",
+            "kind": "axon_segment",
+            "length_um": 140.0,
+            "radius_um": 1.2,
+            "myelin_factor": 0.35,
+            "coords_3d": [
+              1.8,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 12.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "branch_mod",
+            "kind": "axon_segment",
+            "length_um": 110.0,
+            "radius_um": 1.1,
+            "myelin_factor": 0.2,
+            "coords_3d": [
+              1.8,
+              -1.4,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 20.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "dend",
+            "target_id": "soma",
+            "weight": 0.9,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "soma",
+            "target_id": "branch_fast",
+            "weight": 0.9,
+            "coupling_type": "feedback_gated",
+            "delay_ms": 0.5,
+            "gated_by": "dend",
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "soma",
+            "target_id": "branch_mem",
+            "weight": 0.85,
+            "coupling_type": "feedback_gated",
+            "delay_ms": 2.0,
+            "gated_by": "soma",
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "soma",
+            "target_id": "branch_mod",
+            "weight": 0.75,
+            "coupling_type": "paracrine",
+            "delay_ms": 3.0,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          }
+        ],
+        "organelles": [
+          {
+            "organelle_id": "tess_route",
+            "organelle_type": "routosome",
+            "compartment_id": "soma",
+            "params": {},
+            "size_scale": 1.0,
+            "sensitivity": 1.0,
+            "active": true
+          }
+        ],
+        "input_compartments": [
+          "dend"
+        ],
+        "output_compartments": [
+          "branch_fast",
+          "branch_mem",
+          "branch_mod"
+        ],
+        "formal_math": "y_k = g_k(c_t)\\, \\phi(s(t - \\tau_k)),\\; k \\in \\{\\text{fast}, \\text{mem}, \\text{mod}\\}",
+        "hypothesis": "Independently gated output branches multiplex fast, delayed, and modulatory projections from one soma.",
+        "description": "Multi-branch demultiplexing neuron routing distinct activity facets to separate target populations.",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n7",
+        "family": "recurrent_rate",
+        "name": "Conventional Recurrent Rate Neuron",
+        "objective_category": "computational_usefulness",
+        "fidelity": 1,
+        "approximation_label": "Abstract continuous rate dynamics (no spikes, no explicit ionic channels).",
+        "dale_sign": 1,
+        "compartments": [
+          {
+            "compartment_id": "soma",
+            "kind": "soma",
+            "length_um": 15.0,
+            "radius_um": 6.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 8.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "soma",
+            "target_id": "soma",
+            "weight": 0.45,
+            "coupling_type": "chemical_synapse",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "none"
+          }
+        ],
+        "organelles": [],
+        "input_compartments": [
+          "soma"
+        ],
+        "output_compartments": [
+          "soma"
+        ],
+        "formal_math": "\\tau \\dot{r} = -r + \\tanh(w_{\\text{rec}} r + I_{\\text{ext}})",
+        "hypothesis": "Lowest-cost continuous rate control baseline.",
+        "description": "",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n8",
+        "family": "ouroboros",
+        "name": "Ouroboros Neuron",
+        "objective_category": "speculative_synthetic_biology",
+        "fidelity": 2,
+        "approximation_label": "Multi-compartment synthetic continuous recurrent dynamics coupled by physical cable geometry.",
+        "dale_sign": 1,
+        "compartments": [
+          {
+            "compartment_id": "dend_primary",
+            "kind": "dendrite_basal",
+            "length_um": 45.0,
+            "radius_um": 2.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -2.4,
+              0.8,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 7.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "dend_return",
+            "kind": "dendrite_apical",
+            "length_um": 55.0,
+            "radius_um": 1.8,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -2.4,
+              -0.8,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 18.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "soma",
+            "kind": "soma",
+            "length_um": 24.0,
+            "radius_um": 9.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 9.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "axon_seg1",
+            "kind": "axon_segment",
+            "length_um": 100.0,
+            "radius_um": 1.3,
+            "myelin_factor": 0.4,
+            "coords_3d": [
+              1.8,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 5.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "fb_fast",
+            "kind": "axon_feedback",
+            "length_um": 80.0,
+            "radius_um": 1.1,
+            "myelin_factor": 0.5,
+            "coords_3d": [
+              0.6,
+              1.8,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 6.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "fb_slow",
+            "kind": "axon_feedback",
+            "length_um": 180.0,
+            "radius_um": 0.9,
+            "myelin_factor": 0.1,
+            "coords_3d": [
+              0.6,
+              -1.8,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 24.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "dend_primary",
+            "target_id": "soma",
+            "weight": 0.9,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "dend_return",
+            "target_id": "soma",
+            "weight": 0.65,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "soma",
+            "target_id": "axon_seg1",
+            "weight": 0.95,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "axon_seg1",
+            "target_id": "fb_fast",
+            "weight": 0.75,
+            "coupling_type": "feedback_gated",
+            "delay_ms": 1.5,
+            "gated_by": "soma",
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "axon_seg1",
+            "target_id": "fb_slow",
+            "weight": 0.65,
+            "coupling_type": "feedback_gated",
+            "delay_ms": 4.5,
+            "gated_by": "dend_return",
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "fb_fast",
+            "target_id": "dend_primary",
+            "weight": 0.45,
+            "coupling_type": "feedback_gated",
+            "delay_ms": 1.0,
+            "gated_by": "dend_primary",
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "fb_slow",
+            "target_id": "dend_return",
+            "weight": 0.6,
+            "coupling_type": "feedback_gated",
+            "delay_ms": 3.0,
+            "gated_by": "soma",
+            "plasticity_rule": "three_factor"
+          }
+        ],
+        "organelles": [
+          {
+            "organelle_id": "ouro_chrono",
+            "organelle_type": "chronosome",
+            "compartment_id": "fb_slow",
+            "params": {
+              "tap_delay": 5
+            },
+            "size_scale": 1.0,
+            "sensitivity": 1.0,
+            "active": true
+          }
+        ],
+        "input_compartments": [
+          "dend_primary"
+        ],
+        "output_compartments": [
+          "axon_seg1"
+        ],
+        "formal_math": "d_{\\text{ret}}(t) = \\phi(g_1 a(t-\\tau_1) + g_2 a(t-\\tau_2)),\\; a(t)=\\phi(W[d_{\\text{in}}(t), d_{\\text{ret}}(t)])",
+        "hypothesis": "Dual gated axonal-to-dendritic feedback loops with distinct physical delays sustain multi-scale temporal echoes.",
+        "description": "Self-referential neuron with fast and slow gated axonal feedback loops returning to apical and basal dendrites.",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n9",
+        "family": "recurrent_rate",
+        "name": "Conventional Recurrent Rate Neuron",
+        "objective_category": "computational_usefulness",
+        "fidelity": 1,
+        "approximation_label": "Abstract continuous rate dynamics (no spikes, no explicit ionic channels).",
+        "dale_sign": 1,
+        "compartments": [
+          {
+            "compartment_id": "soma",
+            "kind": "soma",
+            "length_um": 15.0,
+            "radius_um": 6.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 8.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "soma",
+            "target_id": "soma",
+            "weight": 0.45,
+            "coupling_type": "chemical_synapse",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "none"
+          }
+        ],
+        "organelles": [],
+        "input_compartments": [
+          "soma"
+        ],
+        "output_compartments": [
+          "soma"
+        ],
+        "formal_math": "\\tau \\dot{r} = -r + \\tanh(w_{\\text{rec}} r + I_{\\text{ext}})",
+        "hypothesis": "Lowest-cost continuous rate control baseline.",
+        "description": "",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n10",
+        "family": "chronos",
+        "name": "Chronos Neuron",
+        "objective_category": "computational_usefulness",
+        "fidelity": 2,
+        "approximation_label": "Multi-compartment synthetic continuous recurrent dynamics coupled by physical cable geometry.",
+        "dale_sign": 1,
+        "compartments": [
+          {
+            "compartment_id": "dend",
+            "kind": "dendrite_basal",
+            "length_um": 35.0,
+            "radius_um": 2.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -2.6,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 5.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "tau_fast",
+            "kind": "integration_center",
+            "length_um": 20.0,
+            "radius_um": 5.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -0.5,
+              1.4,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 3.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "tau_mid",
+            "kind": "integration_center",
+            "length_um": 35.0,
+            "radius_um": 6.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -0.5,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 14.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "tau_slow",
+            "kind": "integration_center",
+            "length_um": 50.0,
+            "radius_um": 7.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -0.5,
+              -1.4,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 48.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "soma",
+            "kind": "soma",
+            "length_um": 24.0,
+            "radius_um": 9.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              1.4,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 8.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "axon_delay",
+            "kind": "axon_segment",
+            "length_um": 220.0,
+            "radius_um": 1.1,
+            "myelin_factor": 0.25,
+            "coords_3d": [
+              3.2,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 5.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "dend",
+            "target_id": "tau_fast",
+            "weight": 0.9,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "dend",
+            "target_id": "tau_mid",
+            "weight": 0.8,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 2.0,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "dend",
+            "target_id": "tau_slow",
+            "weight": 0.7,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 5.0,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "tau_fast",
+            "target_id": "soma",
+            "weight": 0.6,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "tau_mid",
+            "target_id": "soma",
+            "weight": 0.7,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "tau_slow",
+            "target_id": "soma",
+            "weight": 0.8,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "soma",
+            "target_id": "axon_delay",
+            "weight": 0.95,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 2.0,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          }
+        ],
+        "organelles": [
+          {
+            "organelle_id": "chr_1",
+            "organelle_type": "chronosome",
+            "compartment_id": "tau_mid",
+            "params": {
+              "tap_delay": 3
+            },
+            "size_scale": 1.0,
+            "sensitivity": 1.0,
+            "active": true
+          },
+          {
+            "organelle_id": "chr_2",
+            "organelle_type": "chronosome",
+            "compartment_id": "tau_slow",
+            "params": {
+              "tap_delay": 7
+            },
+            "size_scale": 1.0,
+            "sensitivity": 1.0,
+            "active": true
+          }
+        ],
+        "input_compartments": [
+          "dend"
+        ],
+        "output_compartments": [
+          "axon_delay"
+        ],
+        "formal_math": "h_k(t+1) = (1-\\Delta t/\\tau_k) h_k(t) + (\\Delta t/\\tau_k)\\tanh(x(t-\\delta_k)),\\; \\tau_k \\in \\{3,14,48\\}\\text{ ms}",
+        "hypothesis": "Multi-timescale compartments paired with adjustable delay taps resolve temporal credit & rhythm tasks.",
+        "description": "Multi-horizon temporal integration neuron with fast/mid/slow compartments and dual Chronosomes.",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n11",
+        "family": "predictive_interneuron",
+        "name": "Predictive Inhibitory Interneuron",
+        "objective_category": "computational_usefulness",
+        "fidelity": 2,
+        "approximation_label": "Multi-compartment synthetic continuous recurrent dynamics coupled by physical cable geometry.",
+        "dale_sign": 1,
+        "compartments": [
+          {
+            "compartment_id": "dend",
+            "kind": "dendrite_proximal",
+            "length_um": 25.0,
+            "radius_um": 2.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 5.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "soma",
+            "kind": "local_inhibitory",
+            "length_um": 16.0,
+            "radius_um": 6.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 5.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "dend",
+            "target_id": "soma",
+            "weight": 0.9,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "none"
+          }
+        ],
+        "organelles": [
+          {
+            "organelle_id": "pred_i",
+            "organelle_type": "predicton",
+            "compartment_id": "soma",
+            "params": {},
+            "size_scale": 1.0,
+            "sensitivity": 1.0,
+            "active": true
+          }
+        ],
+        "input_compartments": [
+          "dend"
+        ],
+        "output_compartments": [
+          "soma"
+        ],
+        "formal_math": "r_{\\text{inh}} = -\\tanh(\\hat{x}_t + \\alpha(x_t - \\hat{x}_t))",
+        "hypothesis": "Fast inhibitory cancellation of predictable signals improves surprise contrast.",
+        "description": "",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n12",
+        "family": "symbiote_echo",
+        "name": "SymbioteEcho Neuron (Original)",
+        "objective_category": "speculative_synthetic_biology",
+        "fidelity": 2,
+        "approximation_label": "Multi-compartment synthetic continuous recurrent dynamics coupled by physical cable geometry.",
+        "dale_sign": -1,
+        "compartments": [
+          {
+            "compartment_id": "self_dend",
+            "kind": "dendrite_basal",
+            "length_um": 38.0,
+            "radius_um": 2.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -2.4,
+              0.9,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 8.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "peer_dend",
+            "kind": "ml_adapter",
+            "length_um": 38.0,
+            "radius_um": 2.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -2.4,
+              -0.9,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 12.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "self_soma",
+            "kind": "soma",
+            "length_um": 22.0,
+            "radius_um": 8.5,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              0.7,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 9.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "mirror_soma",
+            "kind": "secondary_soma",
+            "length_um": 22.0,
+            "radius_um": 8.5,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              -0.7,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 16.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "axon",
+            "kind": "axon_segment",
+            "length_um": 90.0,
+            "radius_um": 1.4,
+            "myelin_factor": 0.65,
+            "coords_3d": [
+              2.5,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 4.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "self_dend",
+            "target_id": "self_soma",
+            "weight": 0.9,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "peer_dend",
+            "target_id": "mirror_soma",
+            "weight": 0.85,
+            "coupling_type": "ml_bridge",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "mirror_soma",
+            "target_id": "self_soma",
+            "weight": 0.45,
+            "coupling_type": "feedback_gated",
+            "delay_ms": 0.5,
+            "gated_by": "self_soma",
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "self_soma",
+            "target_id": "mirror_soma",
+            "weight": -0.35,
+            "coupling_type": "chemical_synapse",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "self_soma",
+            "target_id": "axon",
+            "weight": 0.95,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          }
+        ],
+        "organelles": [
+          {
+            "organelle_id": "sym_cont",
+            "organelle_type": "contraston",
+            "compartment_id": "mirror_soma",
+            "params": {},
+            "size_scale": 1.0,
+            "sensitivity": 1.0,
+            "active": true
+          },
+          {
+            "organelle_id": "sym_ckpt",
+            "organelle_type": "checkpoint_vesicle",
+            "compartment_id": "self_soma",
+            "params": {},
+            "size_scale": 1.0,
+            "sensitivity": 1.0,
+            "active": true
+          }
+        ],
+        "input_compartments": [
+          "self_dend",
+          "peer_dend"
+        ],
+        "output_compartments": [
+          "axon"
+        ],
+        "formal_math": "m_t = \\phi(x_{\\text{peer}} - \\alpha s_t),\\; s_t = \\phi(x_{\\text{self}} + \\sigma(s_t) m_t)",
+        "hypothesis": "Dedicated mirror soma tracks peer-connectome discrepancy while CheckpointVesicle protects native identity.",
+        "description": "Original dual-soma architecture designed for intermittent cross-connectome symbiosis without identity erasure.",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n13",
+        "family": "lif_reference",
+        "name": "LIF Reference Neuron",
+        "objective_category": "biological_realism",
+        "fidelity": 3,
+        "approximation_label": "Phenomenological multi-compartment spiking dynamics (LIF/Izhikevich threshold-reset).",
+        "dale_sign": -1,
+        "compartments": [
+          {
+            "compartment_id": "soma",
+            "kind": "soma",
+            "length_um": 20.0,
+            "radius_um": 8.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -52.0,
+            "tau_ms": 12.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [],
+        "organelles": [],
+        "input_compartments": [
+          "soma"
+        ],
+        "output_compartments": [
+          "soma"
+        ],
+        "formal_math": "\\tau_m \\dot{V} = (E_{\\text{rest}} - V) + R I_{\\text{syn}}; V \\ge V_{\\text{th}} \\Rightarrow \\text{spike}, V \\leftarrow E_{\\text{reset}}",
+        "hypothesis": "Baseline spiking neuron benchmark for matching spike-rate efficiency.",
+        "description": "",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n14",
+        "family": "frontier_neuron",
+        "name": "Frontier Neuron",
+        "objective_category": "speculative_synthetic_biology",
+        "fidelity": 2,
+        "approximation_label": "Multi-compartment synthetic continuous recurrent dynamics coupled by physical cable geometry.",
+        "dale_sign": -1,
+        "compartments": [
+          {
+            "compartment_id": "dend",
+            "kind": "dendrite_basal",
+            "length_um": 35.0,
+            "radius_um": 2.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              -2.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 10.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "soma",
+            "kind": "soma",
+            "length_um": 20.0,
+            "radius_um": 7.5,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 10.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "growth_cone",
+            "kind": "axon_segment",
+            "length_um": 65.0,
+            "radius_um": 1.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              2.2,
+              0.5,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 12.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {
+              "growth_cone": true
+            }
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "dend",
+            "target_id": "soma",
+            "weight": 0.85,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          },
+          {
+            "source_id": "soma",
+            "target_id": "growth_cone",
+            "weight": 0.85,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "three_factor"
+          }
+        ],
+        "organelles": [
+          {
+            "organelle_id": "front_dev",
+            "organelle_type": "developmental_genome",
+            "compartment_id": "growth_cone",
+            "params": {},
+            "size_scale": 1.0,
+            "sensitivity": 1.0,
+            "active": true
+          },
+          {
+            "organelle_id": "front_plast",
+            "organelle_type": "plasticity_nucleus",
+            "compartment_id": "growth_cone",
+            "params": {},
+            "size_scale": 1.0,
+            "sensitivity": 1.0,
+            "active": true
+          }
+        ],
+        "input_compartments": [
+          "dend"
+        ],
+        "output_compartments": [
+          "growth_cone"
+        ],
+        "formal_math": "\\Delta p_{\\text{cone}} \\propto \\nabla \\text{coherence}(s_{\\text{cone}}, s_{\\text{target}})",
+        "hypothesis": "Simulated growth-cone compartment explores candidate targets based on correlation and novelty gradients.",
+        "description": "Developmental exploration neuron with active unmyelinated growth-cone compartment.",
+        "metadata": {}
+      },
+      {
+        "schema_version": "1.0.0",
+        "morphology_id": "n15",
+        "family": "adaptive_pyramidal",
+        "name": "Adaptive Pyramidal Neuron",
+        "objective_category": "biological_realism",
+        "fidelity": 2,
+        "approximation_label": "Multi-compartment synthetic continuous recurrent dynamics coupled by physical cable geometry.",
+        "dale_sign": -1,
+        "compartments": [
+          {
+            "compartment_id": "apical",
+            "kind": "dendrite_apical",
+            "length_um": 90.0,
+            "radius_um": 1.8,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              2.5,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 18.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 1.2,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "basal",
+            "kind": "dendrite_basal",
+            "length_um": 45.0,
+            "radius_um": 2.2,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              -1.2,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 8.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "soma",
+            "kind": "soma",
+            "length_um": 24.0,
+            "radius_um": 9.0,
+            "myelin_factor": 0.0,
+            "coords_3d": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 10.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          },
+          {
+            "compartment_id": "axon",
+            "kind": "axon_segment",
+            "length_um": 120.0,
+            "radius_um": 1.2,
+            "myelin_factor": 0.7,
+            "coords_3d": [
+              2.0,
+              0.0,
+              0.0
+            ],
+            "cm_uF_cm2": 1.0,
+            "ra_ohm_cm": 100.0,
+            "g_leak_mS_cm2": 0.3,
+            "e_rest_mV": -65.0,
+            "threshold_mV": -50.0,
+            "tau_ms": 4.0,
+            "receptors": {
+              "ampa": 1.0,
+              "nmda": 0.25,
+              "gaba_a": 0.8,
+              "gaba_b": 0.2,
+              "dopamine": 0.3,
+              "serotonin": 0.2,
+              "acetylcholine": 0.3,
+              "noradrenaline": 0.2,
+              "paracrine": 0.2
+            },
+            "metabolic_weight": 1.0,
+            "active": true,
+            "metadata": {}
+          }
+        ],
+        "edges": [
+          {
+            "source_id": "apical",
+            "target_id": "soma",
+            "weight": 0.75,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "none"
+          },
+          {
+            "source_id": "basal",
+            "target_id": "soma",
+            "weight": 0.85,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "none"
+          },
+          {
+            "source_id": "soma",
+            "target_id": "axon",
+            "weight": 0.95,
+            "coupling_type": "electrical_axial",
+            "delay_ms": 0.5,
+            "gated_by": null,
+            "plasticity_rule": "none"
+          }
+        ],
+        "organelles": [],
+        "input_compartments": [
+          "basal",
+          "apical"
+        ],
+        "output_compartments": [
+          "axon"
+        ],
+        "formal_math": "s_{\\text{soma}} = \\phi(g_a s_{\\text{apical}} + g_b s_{\\text{basal}} + g_{\\text{NMDA}} s_{\\text{apical}}^+ s_{\\text{basal}}^+)",
+        "hypothesis": "Apical-basal NMDA coincidence detects top-down context paired with bottom-up input.",
+        "description": "",
+        "metadata": {}
+      }
+    ],
+    "edges": [
+      {
+        "pre_id": "n0",
+        "post_id": "n13",
+        "weight": 0.13927845252740248,
+        "delay_ms": 2.031349010682577,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n0",
+        "post_id": "n14",
+        "weight": 0.09320170314623058,
+        "delay_ms": 1.7872220506784258,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n1",
+        "post_id": "n5",
+        "weight": 0.08436378945072717,
+        "delay_ms": 0.9810053599632766,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n1",
+        "post_id": "n7",
+        "weight": 0.21672843492281646,
+        "delay_ms": 0.5093356051301898,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n1",
+        "post_id": "n9",
+        "weight": 0.1790117426886006,
+        "delay_ms": 2.700830384952072,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n1",
+        "post_id": "n14",
+        "weight": 0.28022321390930083,
+        "delay_ms": 1.769430590750875,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n2",
+        "post_id": "n3",
+        "weight": 0.22342376641096962,
+        "delay_ms": 1.3075908656455166,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n2",
+        "post_id": "n4",
+        "weight": 0.382045098413058,
+        "delay_ms": 1.448615428875781,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n2",
+        "post_id": "n10",
+        "weight": 0.2429159828596294,
+        "delay_ms": 1.0989099045738082,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n2",
+        "post_id": "n12",
+        "weight": 0.4380963788880639,
+        "delay_ms": 1.0375100933897001,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n3",
+        "post_id": "n1",
+        "weight": 0.3926774987235846,
+        "delay_ms": 2.862370427862449,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n3",
+        "post_id": "n5",
+        "weight": 0.15121149313828297,
+        "delay_ms": 2.819764211861311,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n3",
+        "post_id": "n7",
+        "weight": 0.4071010508526939,
+        "delay_ms": 2.1039292630562016,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n3",
+        "post_id": "n11",
+        "weight": 0.09408119607575846,
+        "delay_ms": 2.6905470202731774,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n4",
+        "post_id": "n0",
+        "weight": 0.21770855084912544,
+        "delay_ms": 0.5758757359602791,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n4",
+        "post_id": "n1",
+        "weight": 0.4378448470970261,
+        "delay_ms": 2.144401825096286,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n4",
+        "post_id": "n13",
+        "weight": 0.42536517515374855,
+        "delay_ms": 0.5129471645385804,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n5",
+        "post_id": "n0",
+        "weight": 0.2349943508378785,
+        "delay_ms": 2.538140694987614,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n5",
+        "post_id": "n1",
+        "weight": 0.31253092071052757,
+        "delay_ms": 2.4825591452450855,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n5",
+        "post_id": "n4",
+        "weight": 0.15345282475728894,
+        "delay_ms": 1.407817376375879,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n5",
+        "post_id": "n6",
+        "weight": 0.20804273247161703,
+        "delay_ms": 2.870310153527037,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n6",
+        "post_id": "n7",
+        "weight": 0.2390988389034303,
+        "delay_ms": 1.7987870496946474,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n7",
+        "post_id": "n1",
+        "weight": 0.09876050045074009,
+        "delay_ms": 1.032270487438348,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n7",
+        "post_id": "n4",
+        "weight": 0.3033982393672402,
+        "delay_ms": 1.697991237224062,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n7",
+        "post_id": "n13",
+        "weight": 0.10289020471785844,
+        "delay_ms": 1.5287920587449373,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n8",
+        "post_id": "n1",
+        "weight": 0.41794129876648684,
+        "delay_ms": 2.5050914449932096,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n8",
+        "post_id": "n5",
+        "weight": 0.09120686855469273,
+        "delay_ms": 0.5505389333903672,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n8",
+        "post_id": "n7",
+        "weight": 0.1493762337117076,
+        "delay_ms": 1.9176395459634892,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n8",
+        "post_id": "n9",
+        "weight": 0.29844351109889516,
+        "delay_ms": 0.9150278826180426,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n8",
+        "post_id": "n11",
+        "weight": 0.19491097290968212,
+        "delay_ms": 2.845853217161535,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n9",
+        "post_id": "n0",
+        "weight": 0.29252605685538824,
+        "delay_ms": 0.5992160461475,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n9",
+        "post_id": "n4",
+        "weight": 0.20530423085068084,
+        "delay_ms": 1.2950079946557056,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n9",
+        "post_id": "n5",
+        "weight": 0.3118463731514048,
+        "delay_ms": 2.4936454384158333,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n9",
+        "post_id": "n10",
+        "weight": 0.36373788799311746,
+        "delay_ms": 2.706551799754796,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n9",
+        "post_id": "n11",
+        "weight": 0.29224723641445355,
+        "delay_ms": 2.096874915055257,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n9",
+        "post_id": "n13",
+        "weight": 0.3246408405755312,
+        "delay_ms": 2.0798868116987963,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n10",
+        "post_id": "n4",
+        "weight": 0.08987986953192531,
+        "delay_ms": 2.127018608555572,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n10",
+        "post_id": "n5",
+        "weight": 0.2885725979788156,
+        "delay_ms": 2.8620113245171024,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n10",
+        "post_id": "n11",
+        "weight": 0.2208163624952008,
+        "delay_ms": 0.8343029720963067,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n11",
+        "post_id": "n1",
+        "weight": 0.17154154889820522,
+        "delay_ms": 1.3246307082060353,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n11",
+        "post_id": "n3",
+        "weight": 0.3585108904557921,
+        "delay_ms": 1.9476364360731355,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n11",
+        "post_id": "n5",
+        "weight": 0.3623769520185481,
+        "delay_ms": 0.8276974707283018,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n11",
+        "post_id": "n6",
+        "weight": 0.12835317094869236,
+        "delay_ms": 0.7031557777899762,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n11",
+        "post_id": "n13",
+        "weight": 0.2408809625793379,
+        "delay_ms": 2.709806161805367,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n12",
+        "post_id": "n0",
+        "weight": -0.34911016739326123,
+        "delay_ms": 2.4411838101631163,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n12",
+        "post_id": "n4",
+        "weight": -0.27194720660230914,
+        "delay_ms": 2.393649765955505,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n12",
+        "post_id": "n5",
+        "weight": -0.17850777384678912,
+        "delay_ms": 1.8403001059484305,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n12",
+        "post_id": "n8",
+        "weight": -0.14817997876060374,
+        "delay_ms": 2.498842428470357,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n13",
+        "post_id": "n2",
+        "weight": -0.36101295215389817,
+        "delay_ms": 2.394226661295972,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n13",
+        "post_id": "n7",
+        "weight": -0.3923984430722524,
+        "delay_ms": 1.8559246938869285,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n14",
+        "post_id": "n0",
+        "weight": -0.3613381195163674,
+        "delay_ms": 2.982372146871515,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n14",
+        "post_id": "n1",
+        "weight": -0.34369000014274204,
+        "delay_ms": 2.5633085007501006,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n14",
+        "post_id": "n3",
+        "weight": -0.1139696678660955,
+        "delay_ms": 2.969678954616334,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n14",
+        "post_id": "n4",
+        "weight": -0.14541879688065154,
+        "delay_ms": 1.9373823345725476,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n14",
+        "post_id": "n7",
+        "weight": -0.4183382717771702,
+        "delay_ms": 1.0429871157693063,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n14",
+        "post_id": "n9",
+        "weight": -0.25515895747015116,
+        "delay_ms": 0.5813958166129825,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n14",
+        "post_id": "n15",
+        "weight": -0.44828381398872885,
+        "delay_ms": 2.721748266770832,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n15",
+        "post_id": "n1",
+        "weight": -0.22582079424823814,
+        "delay_ms": 1.0679487522833835,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n15",
+        "post_id": "n2",
+        "weight": -0.09221885212632219,
+        "delay_ms": 1.7583411199660175,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n15",
+        "post_id": "n3",
+        "weight": -0.14523261740620705,
+        "delay_ms": 2.651189201144052,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n15",
+        "post_id": "n5",
+        "weight": -0.3278498871324055,
+        "delay_ms": 1.1646621942370488,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      },
+      {
+        "pre_id": "n15",
+        "post_id": "n14",
+        "weight": -0.13043422818267128,
+        "delay_ms": 0.7829791019551067,
+        "length_um": 100.0,
+        "receptor_type": "ampa",
+        "plasticity_rule": "three_factor",
+        "source_compartment": null,
+        "target_compartment": null,
+        "active": true,
+        "provenance": "mixed_custom_standard"
+      }
+    ],
+    "regions": {},
+    "sensory_ids": [
+      "n0",
+      "n1",
+      "n2",
+      "n3"
+    ],
+    "motor_ids": [
+      "n13",
+      "n14",
+      "n15"
+    ],
+    "provenance": {
+      "origin": "mixed_custom_standard"
+    }
+  },
+  "growth_rules": {
+    "activity_threshold": 0.45,
+    "max_new_synapses_per_epoch": 4,
+    "max_neurons": 512
+  },
+  "pruning_rules": {
+    "min_abs_weight": 0.02,
+    "inactivity_steps": 64
+  },
+  "differentiation_rules": {
+    "allow_phenotype_shift": true,
+    "plasticity_families": [
+      "three_factor",
+      "stdp",
+      "bcm"
+    ]
+  },
+  "neuromodulation_params": {
+    "da_gain": 1.0,
+    "serotonin_gain": 0.6,
+    "ach_gain": 0.8,
+    "ne_gain": 0.5,
+    "paracrine_decay": 0.85
+  },
+  "metabolic_budget": 250.0,
+  "structural_constraints": {
+    "enforce_dales_law": true,
+    "max_fan_in_l1": 4.0,
+    "max_compartments_per_neuron": 24
+  },
+  "external_interfaces": {},
+  "mutation_history": [],
+  "provenance": {
+    "origin": "mixed_custom_standard",
+    "seed": 7
+  }
+}

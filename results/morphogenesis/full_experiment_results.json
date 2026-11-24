@@ -1,0 +1,2262 @@
+{
+  "suite_version": "sonapse_morphogenesis_integrated_validation_v1",
+  "total_wall_seconds": 73.58,
+  "hardware": {
+    "cpu_logical_cores": 8,
+    "torch_version": "2.11.0+cpu",
+    "torch_threads": 1,
+    "cuda_available": false,
+    "mps_available": false,
+    "selected_device": "cpu",
+    "scale_targets": {
+      "cellular_experiment": [
+        1,
+        32
+      ],
+      "micro_connectome": [
+        32,
+        256
+      ],
+      "small_connectome": [
+        256,
+        2048
+      ],
+      "medium_connectome": [
+        2048,
+        16384
+      ],
+      "large_connectome": [
+        16384,
+        150000
+      ]
+    }
+  },
+  "governance_integrity_hash": "0ab263adc9ec537f0420cfc5e87ac3e83a80f282c0107d4624a7790ef420088a",
+  "foundry": {
+    "cellular_benchmark": {
+      "experiment": "sonapse_foundry_cellular_benchmark",
+      "seeds": [
+        7,
+        19,
+        31
+      ],
+      "steps": 90,
+      "caveat": "Linear readout dimensionality scales with compartment count; compare both raw MSE and energy/FLOP cost.",
+      "baseline_rate_mse": 0.85045,
+      "ranking_top5": [
+        [
+          "chameleon",
+          0.80285,
+          73.751
+        ],
+        [
+          "compass",
+          0.84757,
+          101.4408
+        ],
+        [
+          "baseline:recurrent_rate",
+          0.85045,
+          13.5562
+        ],
+        [
+          "holographic_dendrite",
+          0.8574,
+          79.4612
+        ],
+        [
+          "baseline:lif_reference",
+          0.85798,
+          29.0149
+        ]
+      ],
+      "results": {
+        "baseline:recurrent_rate": {
+          "name": "Conventional Recurrent Rate Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 1,
+          "n_organelles": 0,
+          "mean_test_mse": 0.85045,
+          "std_test_mse": 0.03966,
+          "delta_vs_rate_baseline": 0.0,
+          "per_task_mse": {
+            "delayed_recall_4": 0.91568,
+            "temporal_xor": 1.05748,
+            "spectral_discrimination": 1.07824,
+            "anomaly_suppression": 0.35038
+          },
+          "mean_flops": 4320,
+          "mean_energy": 13.5562,
+          "mean_wall_ms": 59.192,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": null
+        },
+        "baseline:lif_reference": {
+          "name": "LIF Reference Neuron",
+          "objective_category": "biological_realism",
+          "n_compartments": 1,
+          "n_organelles": 0,
+          "mean_test_mse": 0.85798,
+          "std_test_mse": 0.02023,
+          "delta_vs_rate_baseline": -0.00754,
+          "per_task_mse": {
+            "delayed_recall_4": 1.00019,
+            "temporal_xor": 0.98298,
+            "spectral_discrimination": 1.01818,
+            "anomaly_suppression": 0.43058
+          },
+          "mean_flops": 10080,
+          "mean_energy": 29.0149,
+          "mean_wall_ms": 93.608,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": null
+        },
+        "baseline:adaptive_pyramidal": {
+          "name": "Adaptive Pyramidal Neuron",
+          "objective_category": "biological_realism",
+          "n_compartments": 4,
+          "n_organelles": 0,
+          "mean_test_mse": 0.91235,
+          "std_test_mse": 0.0661,
+          "delta_vs_rate_baseline": -0.0619,
+          "per_task_mse": {
+            "delayed_recall_4": 0.91763,
+            "temporal_xor": 1.10314,
+            "spectral_discrimination": 1.34962,
+            "anomaly_suppression": 0.27902
+          },
+          "mean_flops": 29520,
+          "mean_energy": 61.2245,
+          "mean_wall_ms": 63.389,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": null
+        },
+        "triarch": {
+          "name": "Triarch Neuron",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 6,
+          "n_organelles": 3,
+          "mean_test_mse": 0.86614,
+          "std_test_mse": 0.03662,
+          "delta_vs_rate_baseline": -0.01569,
+          "per_task_mse": {
+            "delayed_recall_4": 0.91678,
+            "temporal_xor": 1.01816,
+            "spectral_discrimination": 1.40733,
+            "anomaly_suppression": 0.12228
+          },
+          "mean_flops": 51840,
+          "mean_energy": 115.2665,
+          "mean_wall_ms": 101.853,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.84738,
+            "no_feedback": 0.84531,
+            "point_control": 0.82222
+          }
+        },
+        "ouroboros": {
+          "name": "Ouroboros Neuron",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 6,
+          "n_organelles": 1,
+          "mean_test_mse": 0.87658,
+          "std_test_mse": 0.03364,
+          "delta_vs_rate_baseline": -0.02613,
+          "per_task_mse": {
+            "delayed_recall_4": 0.92402,
+            "temporal_xor": 1.01951,
+            "spectral_discrimination": 1.34582,
+            "anomaly_suppression": 0.21698
+          },
+          "mean_flops": 49680,
+          "mean_energy": 93.6825,
+          "mean_wall_ms": 88.685,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.85996,
+            "no_feedback": 0.8594,
+            "point_control": 0.82222
+          }
+        },
+        "hydra": {
+          "name": "Hydra Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 7,
+          "n_organelles": 5,
+          "mean_test_mse": 0.94053,
+          "std_test_mse": 0.12113,
+          "delta_vs_rate_baseline": -0.09008,
+          "per_task_mse": {
+            "delayed_recall_4": 0.89665,
+            "temporal_xor": 1.16444,
+            "spectral_discrimination": 1.63383,
+            "anomaly_suppression": 0.06718
+          },
+          "mean_flops": 53280,
+          "mean_energy": 141.2441,
+          "mean_wall_ms": 138.014,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.86931,
+            "no_feedback": 0.83609,
+            "point_control": 0.82222
+          }
+        },
+        "mnemosome_neuron": {
+          "name": "Mnemosome Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 4,
+          "n_organelles": 2,
+          "mean_test_mse": 0.87441,
+          "std_test_mse": 0.03495,
+          "delta_vs_rate_baseline": -0.02396,
+          "per_task_mse": {
+            "delayed_recall_4": 0.91978,
+            "temporal_xor": 1.02673,
+            "spectral_discrimination": 1.29756,
+            "anomaly_suppression": 0.25356
+          },
+          "mean_flops": 33840,
+          "mean_energy": 78.0469,
+          "mean_wall_ms": 107.326,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.85882,
+            "no_feedback": 0.85773,
+            "point_control": 0.82222
+          }
+        },
+        "chameleon": {
+          "name": "Chameleon Neuron",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 4,
+          "n_organelles": 2,
+          "mean_test_mse": 0.80285,
+          "std_test_mse": 0.05844,
+          "delta_vs_rate_baseline": 0.0476,
+          "per_task_mse": {
+            "delayed_recall_4": 0.93773,
+            "temporal_xor": 1.07528,
+            "spectral_discrimination": 1.12801,
+            "anomaly_suppression": 0.07037
+          },
+          "mean_flops": 29520,
+          "mean_energy": 73.751,
+          "mean_wall_ms": 90.8,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.77516,
+            "no_feedback": 0.79199,
+            "point_control": 0.82222
+          }
+        },
+        "janus": {
+          "name": "Janus Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 6,
+          "n_organelles": 2,
+          "mean_test_mse": 0.86592,
+          "std_test_mse": 0.03742,
+          "delta_vs_rate_baseline": -0.01547,
+          "per_task_mse": {
+            "delayed_recall_4": 0.9188,
+            "temporal_xor": 1.03169,
+            "spectral_discrimination": 1.28238,
+            "anomaly_suppression": 0.23081
+          },
+          "mean_flops": 45360,
+          "mean_energy": 92.3628,
+          "mean_wall_ms": 113.717,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.84935,
+            "no_feedback": 0.84911,
+            "point_control": 0.82222
+          }
+        },
+        "chronos": {
+          "name": "Chronos Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 6,
+          "n_organelles": 2,
+          "mean_test_mse": 0.87583,
+          "std_test_mse": 0.0343,
+          "delta_vs_rate_baseline": -0.02538,
+          "per_task_mse": {
+            "delayed_recall_4": 0.91538,
+            "temporal_xor": 1.00503,
+            "spectral_discrimination": 1.48059,
+            "anomaly_suppression": 0.1023
+          },
+          "mean_flops": 49680,
+          "mean_energy": 117.8925,
+          "mean_wall_ms": 89.097,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.85294,
+            "no_feedback": 0.8523,
+            "point_control": 0.82222
+          }
+        },
+        "nexus": {
+          "name": "Nexus Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 2,
+          "mean_test_mse": 0.93818,
+          "std_test_mse": 0.08105,
+          "delta_vs_rate_baseline": -0.08773,
+          "per_task_mse": {
+            "delayed_recall_4": 0.92191,
+            "temporal_xor": 1.12702,
+            "spectral_discrimination": 1.36943,
+            "anomaly_suppression": 0.33436
+          },
+          "mean_flops": 41760,
+          "mean_energy": 87.2268,
+          "mean_wall_ms": 90.126,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.94037,
+            "no_feedback": 0.93844,
+            "point_control": 0.82222
+          }
+        },
+        "paracrine_broadcast": {
+          "name": "Paracrine Broadcast Neuron",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 3,
+          "n_organelles": 1,
+          "mean_test_mse": 0.91604,
+          "std_test_mse": 0.05301,
+          "delta_vs_rate_baseline": -0.0656,
+          "per_task_mse": {
+            "delayed_recall_4": 0.91509,
+            "temporal_xor": 1.04381,
+            "spectral_discrimination": 1.19791,
+            "anomaly_suppression": 0.50736
+          },
+          "mean_flops": 21600,
+          "mean_energy": 55.381,
+          "mean_wall_ms": 77.526,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.96446,
+            "no_feedback": 0.96232,
+            "point_control": 0.82222
+          }
+        },
+        "mosaic": {
+          "name": "Mosaic Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 2,
+          "mean_test_mse": 0.90269,
+          "std_test_mse": 0.04034,
+          "delta_vs_rate_baseline": -0.05225,
+          "per_task_mse": {
+            "delayed_recall_4": 0.90474,
+            "temporal_xor": 1.02711,
+            "spectral_discrimination": 1.46469,
+            "anomaly_suppression": 0.21423
+          },
+          "mean_flops": 39600,
+          "mean_energy": 86.137,
+          "mean_wall_ms": 114.963,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.84803,
+            "no_feedback": 0.88519,
+            "point_control": 0.82222
+          }
+        },
+        "sentinel_neuron": {
+          "name": "Sentinel Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 4,
+          "n_organelles": 2,
+          "mean_test_mse": 0.86525,
+          "std_test_mse": 0.03487,
+          "delta_vs_rate_baseline": -0.0148,
+          "per_task_mse": {
+            "delayed_recall_4": 0.92202,
+            "temporal_xor": 1.01388,
+            "spectral_discrimination": 1.43566,
+            "anomaly_suppression": 0.08945
+          },
+          "mean_flops": 31680,
+          "mean_energy": 70.3884,
+          "mean_wall_ms": 100.426,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.85026,
+            "no_feedback": 0.84438,
+            "point_control": 0.82222
+          }
+        },
+        "frontier_neuron": {
+          "name": "Frontier Neuron",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 3,
+          "n_organelles": 2,
+          "mean_test_mse": 0.88451,
+          "std_test_mse": 0.04039,
+          "delta_vs_rate_baseline": -0.03407,
+          "per_task_mse": {
+            "delayed_recall_4": 0.91491,
+            "temporal_xor": 1.04324,
+            "spectral_discrimination": 1.19504,
+            "anomaly_suppression": 0.38486
+          },
+          "mean_flops": 21600,
+          "mean_energy": 55.2746,
+          "mean_wall_ms": 94.077,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.868,
+            "no_feedback": 0.8659,
+            "point_control": 0.82222
+          }
+        },
+        "bifrost": {
+          "name": "Bifrost Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 1,
+          "mean_test_mse": 1.00645,
+          "std_test_mse": 0.12527,
+          "delta_vs_rate_baseline": -0.15601,
+          "per_task_mse": {
+            "delayed_recall_4": 0.91684,
+            "temporal_xor": 1.16601,
+            "spectral_discrimination": 1.84773,
+            "anomaly_suppression": 0.09523
+          },
+          "mean_flops": 37440,
+          "mean_energy": 81.1564,
+          "mean_wall_ms": 78.241,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.91318,
+            "no_feedback": 0.94203,
+            "point_control": 0.82222
+          }
+        },
+        "resonator": {
+          "name": "Resonator Neuron",
+          "objective_category": "biological_realism",
+          "n_compartments": 4,
+          "n_organelles": 2,
+          "mean_test_mse": 0.91502,
+          "std_test_mse": 0.0383,
+          "delta_vs_rate_baseline": -0.06458,
+          "per_task_mse": {
+            "delayed_recall_4": 0.90127,
+            "temporal_xor": 1.01061,
+            "spectral_discrimination": 1.57491,
+            "anomaly_suppression": 0.17329
+          },
+          "mean_flops": 31680,
+          "mean_energy": 70.2486,
+          "mean_wall_ms": 84.693,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.86337,
+            "no_feedback": 0.89581,
+            "point_control": 0.82222
+          }
+        },
+        "palimpsest": {
+          "name": "Palimpsest Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 2,
+          "mean_test_mse": 0.87695,
+          "std_test_mse": 0.03244,
+          "delta_vs_rate_baseline": -0.0265,
+          "per_task_mse": {
+            "delayed_recall_4": 0.92921,
+            "temporal_xor": 1.00949,
+            "spectral_discrimination": 1.43283,
+            "anomaly_suppression": 0.13627
+          },
+          "mean_flops": 39600,
+          "mean_energy": 95.49,
+          "mean_wall_ms": 122.249,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.85823,
+            "no_feedback": 0.85703,
+            "point_control": 0.82222
+          }
+        },
+        "counterpoint": {
+          "name": "Counterpoint Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 0,
+          "mean_test_mse": 0.87569,
+          "std_test_mse": 0.033,
+          "delta_vs_rate_baseline": -0.02525,
+          "per_task_mse": {
+            "delayed_recall_4": 0.92611,
+            "temporal_xor": 1.01025,
+            "spectral_discrimination": 1.43964,
+            "anomaly_suppression": 0.12677
+          },
+          "mean_flops": 43920,
+          "mean_energy": 73.9399,
+          "mean_wall_ms": 69.409,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.85561,
+            "no_feedback": 0.85561,
+            "point_control": 0.82222
+          }
+        },
+        "compass": {
+          "name": "Compass Neuron",
+          "objective_category": "biological_realism",
+          "n_compartments": 7,
+          "n_organelles": 0,
+          "mean_test_mse": 0.84757,
+          "std_test_mse": 0.04808,
+          "delta_vs_rate_baseline": 0.00288,
+          "per_task_mse": {
+            "delayed_recall_4": 0.92636,
+            "temporal_xor": 1.0515,
+            "spectral_discrimination": 1.25744,
+            "anomaly_suppression": 0.15496
+          },
+          "mean_flops": 92160,
+          "mean_energy": 101.4408,
+          "mean_wall_ms": 103.792,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.8308,
+            "no_feedback": 0.8308,
+            "point_control": 0.82222
+          }
+        },
+        "prism": {
+          "name": "Prism Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 3,
+          "mean_test_mse": 0.8741,
+          "std_test_mse": 0.06155,
+          "delta_vs_rate_baseline": -0.02365,
+          "per_task_mse": {
+            "delayed_recall_4": 0.8342,
+            "temporal_xor": 1.09716,
+            "spectral_discrimination": 1.5354,
+            "anomaly_suppression": 0.02964
+          },
+          "mean_flops": 37440,
+          "mean_energy": 96.2655,
+          "mean_wall_ms": 106.811,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.76076,
+            "no_feedback": 0.8374,
+            "point_control": 0.82222
+          }
+        },
+        "consensus": {
+          "name": "Consensus Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 1,
+          "mean_test_mse": 0.86351,
+          "std_test_mse": 0.08271,
+          "delta_vs_rate_baseline": -0.01306,
+          "per_task_mse": {
+            "delayed_recall_4": 0.91502,
+            "temporal_xor": 1.11516,
+            "spectral_discrimination": 1.34917,
+            "anomaly_suppression": 0.07468
+          },
+          "mean_flops": 37440,
+          "mean_energy": 74.5845,
+          "mean_wall_ms": 104.257,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.8103,
+            "no_feedback": 0.85275,
+            "point_control": 0.82222
+          }
+        },
+        "veto": {
+          "name": "Veto Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 4,
+          "n_organelles": 2,
+          "mean_test_mse": 0.93001,
+          "std_test_mse": 0.07638,
+          "delta_vs_rate_baseline": -0.07956,
+          "per_task_mse": {
+            "delayed_recall_4": 0.92285,
+            "temporal_xor": 1.16707,
+            "spectral_discrimination": 1.50277,
+            "anomaly_suppression": 0.12734
+          },
+          "mean_flops": 29520,
+          "mean_energy": 71.1449,
+          "mean_wall_ms": 105.497,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.88542,
+            "no_feedback": 0.88102,
+            "point_control": 0.82222
+          }
+        },
+        "tessera": {
+          "name": "Tessera Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 1,
+          "mean_test_mse": 0.86619,
+          "std_test_mse": 0.03854,
+          "delta_vs_rate_baseline": -0.01574,
+          "per_task_mse": {
+            "delayed_recall_4": 0.91879,
+            "temporal_xor": 1.03234,
+            "spectral_discrimination": 1.29564,
+            "anomaly_suppression": 0.218
+          },
+          "mean_flops": 37440,
+          "mean_energy": 78.9235,
+          "mean_wall_ms": 119.167,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.84837,
+            "no_feedback": 0.84961,
+            "point_control": 0.82222
+          }
+        },
+        "symbiote_echo": {
+          "name": "SymbioteEcho Neuron (Original)",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 5,
+          "n_organelles": 2,
+          "mean_test_mse": 0.9607,
+          "std_test_mse": 0.09124,
+          "delta_vs_rate_baseline": -0.11025,
+          "per_task_mse": {
+            "delayed_recall_4": 0.9183,
+            "temporal_xor": 1.13633,
+            "spectral_discrimination": 1.59276,
+            "anomaly_suppression": 0.19539
+          },
+          "mean_flops": 39600,
+          "mean_energy": 86.9062,
+          "mean_wall_ms": 100.224,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.89235,
+            "no_feedback": 0.89756,
+            "point_control": 0.82222
+          }
+        },
+        "bifurcation_gate": {
+          "name": "BifurcationGate Neuron (Original)",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 4,
+          "n_organelles": 0,
+          "mean_test_mse": 0.89827,
+          "std_test_mse": 0.04097,
+          "delta_vs_rate_baseline": -0.04783,
+          "per_task_mse": {
+            "delayed_recall_4": 0.93672,
+            "temporal_xor": 1.02581,
+            "spectral_discrimination": 1.46296,
+            "anomaly_suppression": 0.16761
+          },
+          "mean_flops": 40320,
+          "mean_energy": 58.3031,
+          "mean_wall_ms": 67.633,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.87272,
+            "no_feedback": 0.87272,
+            "point_control": 0.82222
+          }
+        },
+        "holographic_dendrite": {
+          "name": "HolographicDendrite Neuron (Original)",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 4,
+          "n_organelles": 3,
+          "mean_test_mse": 0.8574,
+          "std_test_mse": 0.04438,
+          "delta_vs_rate_baseline": -0.00695,
+          "per_task_mse": {
+            "delayed_recall_4": 0.92807,
+            "temporal_xor": 1.03814,
+            "spectral_discrimination": 1.21421,
+            "anomaly_suppression": 0.24917
+          },
+          "mean_flops": 31680,
+          "mean_energy": 79.4612,
+          "mean_wall_ms": 129.459,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.82459,
+            "no_feedback": 0.83661,
+            "point_control": 0.82222
+          }
+        }
+      }
+    },
+    "organelle_interactions": [
+      {
+        "org_a": "mnemosome",
+        "org_b": "chronosome",
+        "mse_baseline": 0.22922,
+        "mse_a": 0.080717,
+        "mse_b": 0.098955,
+        "mse_ab": 0.16831,
+        "synergy_delta_mse": -0.087593,
+        "interaction_label": "interfering",
+        "combined_resource_cost": 0.75
+      },
+      {
+        "org_a": "predicton",
+        "org_b": "contraston",
+        "mse_baseline": 0.22922,
+        "mse_a": 0.207685,
+        "mse_b": 0.177446,
+        "mse_ab": 0.136271,
+        "synergy_delta_mse": 0.041175,
+        "interaction_label": "synergistic",
+        "combined_resource_cost": 0.5
+      },
+      {
+        "org_a": "attentosome",
+        "org_b": "uncertaintosome",
+        "mse_baseline": 0.22922,
+        "mse_a": 0.223899,
+        "mse_b": 0.237187,
+        "mse_ab": 0.2318,
+        "synergy_delta_mse": -0.007901,
+        "interaction_label": "interfering",
+        "combined_resource_cost": 0.5
+      }
+    ],
+    "heterogeneous_vs_homogeneous": {
+      "experiment": "heterogeneous_vs_homogeneous_conventional_populations",
+      "n_neurons": 12,
+      "seeds": [
+        7,
+        19,
+        31
+      ],
+      "steps": 80,
+      "arms": {
+        "homogeneous_rate": {
+          "mean_test_mse": 0.22743,
+          "std_test_mse": 0.021094,
+          "mean_energy": 36.1498,
+          "per_seed_mse": [
+            0.250295,
+            0.199404,
+            0.232592
+          ]
+        },
+        "homogeneous_lif": {
+          "mean_test_mse": 0.310672,
+          "std_test_mse": 0.073488,
+          "mean_energy": 76.6403,
+          "per_seed_mse": [
+            0.256506,
+            0.260941,
+            0.414568
+          ]
+        },
+        "heterogeneous_mixed": {
+          "mean_test_mse": 0.268705,
+          "std_test_mse": 0.030947,
+          "mean_energy": 107.6866,
+          "per_seed_mse": [
+            0.306632,
+            0.230827,
+            0.268656
+          ]
+        }
+      },
+      "lowest_mse_arm": "homogeneous_rate"
+    },
+    "bio_hybrids": {
+      "objective_category": "speculative_synthetic_biology",
+      "registered_hybrids": [
+        "cardiac_pacemaker",
+        "immune_recognition",
+        "endocrine_signalling",
+        "astrocytic_regulation",
+        "cochlear_mechanics",
+        "retinal_processing",
+        "muscle_adaptation",
+        "vascular_resource_distribution",
+        "cellular_repair",
+        "developmental_differentiation",
+        "chemical_gradient_sensing",
+        "intracellular_signalling_cascade"
+      ],
+      "cardiac_pacemaker_assay": {
+        "steps": 120,
+        "beat_steps": 77,
+        "v_min": -1.5725,
+        "v_max": 1.9497,
+        "oscillatory": true
+      },
+      "immune_recognition_assay": {
+        "accuracy": 1.0,
+        "tp": 30,
+        "fp": 0,
+        "tn": 30,
+        "fn": 0,
+        "memory_cells_formed": 1
+      }
+    },
+    "ml_three_variants": {
+      "experiment": "ml_hybrid_three_variant_comparison",
+      "dim": 8,
+      "steps": 80,
+      "seed": 7,
+      "mechanisms": {
+        "dendritic_attention": {
+          "exact_software": {
+            "clean_test_mse": 0.42474,
+            "noisy_test_mse": 0.423017,
+            "noise_degradation": -0.001724,
+            "wall_ms": 26.184,
+            "flops": 30720,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.341719,
+            "noisy_test_mse": 0.352076,
+            "noise_degradation": 0.010357,
+            "wall_ms": 3.669,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 1.5099
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.48081,
+            "noisy_test_mse": 0.511333,
+            "noise_degradation": 0.030522,
+            "wall_ms": 5.335,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 1.61432
+          }
+        },
+        "state_space_compartment": {
+          "exact_software": {
+            "clean_test_mse": 0.410284,
+            "noisy_test_mse": 0.411397,
+            "noise_degradation": 0.001113,
+            "wall_ms": 6.897,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.451412,
+            "noisy_test_mse": 0.464705,
+            "noise_degradation": 0.013293,
+            "wall_ms": 7.135,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 2.34235
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.400306,
+            "noisy_test_mse": 0.403235,
+            "noise_degradation": 0.002929,
+            "wall_ms": 5.874,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 2.07541
+          }
+        },
+        "fast_weight_memory": {
+          "exact_software": {
+            "clean_test_mse": 0.369944,
+            "noisy_test_mse": 0.37363,
+            "noise_degradation": 0.003686,
+            "wall_ms": 5.524,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.384148,
+            "noisy_test_mse": 0.388073,
+            "noise_degradation": 0.003925,
+            "wall_ms": 6.552,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.30074
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.413055,
+            "noisy_test_mse": 0.414008,
+            "noise_degradation": 0.000953,
+            "wall_ms": 8.989,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 1.08135
+          }
+        },
+        "recurrent_gating": {
+          "exact_software": {
+            "clean_test_mse": 0.42997,
+            "noisy_test_mse": 0.414927,
+            "noise_degradation": -0.015043,
+            "wall_ms": 6.558,
+            "flops": 30720,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.46619,
+            "noisy_test_mse": 0.485535,
+            "noise_degradation": 0.019345,
+            "wall_ms": 5.793,
+            "flops": 30720,
+            "relative_approx_error_vs_exact": 1.47502
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.407141,
+            "noisy_test_mse": 0.40143,
+            "noise_degradation": -0.00571,
+            "wall_ms": 5.128,
+            "flops": 30720,
+            "relative_approx_error_vs_exact": 1.60792
+          }
+        },
+        "moe_branch_specialisation": {
+          "exact_software": {
+            "clean_test_mse": 0.412806,
+            "noisy_test_mse": 0.425461,
+            "noise_degradation": 0.012655,
+            "wall_ms": 24.075,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.450765,
+            "noisy_test_mse": 0.458423,
+            "noise_degradation": 0.007658,
+            "wall_ms": 23.501,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.86827
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.413526,
+            "noisy_test_mse": 0.431532,
+            "noise_degradation": 0.018005,
+            "wall_ms": 18.457,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 1.02964
+          }
+        }
+      }
+    }
+  },
+  "genesis": {
+    "large_population_funnel": {
+      "experiment": "large_population_micro_screening_funnel",
+      "population_size": 1024,
+      "n_neurons_per_candidate": 16,
+      "steps": 64,
+      "seed": 7,
+      "stage1_wall_ms": 130.32,
+      "stage2_wall_ms": 10.25,
+      "total_wall_ms": 166.48,
+      "candidates_per_second": 6150.8,
+      "stage1_median_mse": 0.58132,
+      "stage1_best_mse": 0.49269,
+      "stage2_best_xor_mse": 1.01347,
+      "top_winners": [
+        {
+          "candidate_index": 419,
+          "stage1_delay_mse": 0.53877,
+          "stage2_xor_mse": 1.01347,
+          "synapse_density": 0.1758,
+          "mean_decay": 0.6482
+        },
+        {
+          "candidate_index": 473,
+          "stage1_delay_mse": 0.54174,
+          "stage2_xor_mse": 1.01055,
+          "synapse_density": 0.2344,
+          "mean_decay": 0.6323
+        },
+        {
+          "candidate_index": 343,
+          "stage1_delay_mse": 0.49407,
+          "stage2_xor_mse": 1.01335,
+          "synapse_density": 0.2266,
+          "mean_decay": 0.6451
+        },
+        {
+          "candidate_index": 933,
+          "stage1_delay_mse": 0.53836,
+          "stage2_xor_mse": 1.0191,
+          "synapse_density": 0.1758,
+          "mean_decay": 0.6412
+        },
+        {
+          "candidate_index": 43,
+          "stage1_delay_mse": 0.54178,
+          "stage2_xor_mse": 1.01926,
+          "synapse_density": 0.207,
+          "mean_decay": 0.6317
+        },
+        {
+          "candidate_index": 774,
+          "stage1_delay_mse": 0.51744,
+          "stage2_xor_mse": 1.01935,
+          "synapse_density": 0.2148,
+          "mean_decay": 0.6394
+        },
+        {
+          "candidate_index": 671,
+          "stage1_delay_mse": 0.54434,
+          "stage2_xor_mse": 1.02026,
+          "synapse_density": 0.2109,
+          "mean_decay": 0.6502
+        },
+        {
+          "candidate_index": 143,
+          "stage1_delay_mse": 0.53851,
+          "stage2_xor_mse": 1.02099,
+          "synapse_density": 0.207,
+          "mean_decay": 0.7012
+        }
+      ]
+    },
+    "scee_curricula": {
+      "experiment": "successive_collective_experience_evolution_curricula",
+      "generations": 5,
+      "pop_size": 24,
+      "seeds": [
+        7,
+        19
+      ],
+      "curricula": {
+        "first_successful_action": {
+          "mean_heldout_return": -0.9857,
+          "mean_heldout_success_rate": 0.375,
+          "mean_verified_accepted": 30.5,
+          "mean_accidental_rejected": 11.5,
+          "mean_archive_diversity": 14.0
+        },
+        "complete_trajectory": {
+          "mean_heldout_return": -0.9631,
+          "mean_heldout_success_rate": 0.375,
+          "mean_verified_accepted": 31.5,
+          "mean_accidental_rejected": 11.5,
+          "mean_archive_diversity": 13.5
+        },
+        "reinforcement_learning": {
+          "mean_heldout_return": -2.2245,
+          "mean_heldout_success_rate": 0.0,
+          "mean_verified_accepted": 19.0,
+          "mean_accidental_rejected": 10.0,
+          "mean_archive_diversity": 14.0
+        },
+        "counterfactual_credit": {
+          "mean_heldout_return": -2.1856,
+          "mean_heldout_success_rate": 0.0,
+          "mean_verified_accepted": 23.5,
+          "mean_accidental_rejected": 7.0,
+          "mean_archive_diversity": 16.0
+        },
+        "diversity_preserving_map_elites": {
+          "mean_heldout_return": -0.9899,
+          "mean_heldout_success_rate": 0.375,
+          "mean_verified_accepted": 31.0,
+          "mean_accidental_rejected": 9.5,
+          "mean_archive_diversity": 14.5
+        }
+      },
+      "best_curriculum_by_return": "complete_trajectory"
+    },
+    "recursive_vs_evolution": {
+      "experiment": "recursive_connectome_improvement_vs_random_evolution",
+      "seed": 7,
+      "generations": 4,
+      "n_neurons": 8,
+      "baseline_heldout_mse": 1.010002,
+      "descendant_directed": {
+        "best_train_score": -1.126233,
+        "heldout_delay_mse": 1.010002,
+        "heldout_energy": 64.8265,
+        "accepted_mutations": 0,
+        "surviving_lineages": 1,
+        "proposals": [
+          {
+            "generation": 0,
+            "operator": "add_axonal_pathway",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.126233,
+            "child_score": -1.129891,
+            "accepted": false
+          },
+          {
+            "generation": 1,
+            "operator": "add_axonal_pathway",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.126233,
+            "child_score": -1.129786,
+            "accepted": false
+          },
+          {
+            "generation": 2,
+            "operator": "add_axonal_pathway",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.126233,
+            "child_score": -1.129377,
+            "accepted": false
+          },
+          {
+            "generation": 3,
+            "operator": "add_axonal_pathway",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.126233,
+            "child_score": -1.129822,
+            "accepted": false
+          }
+        ]
+      },
+      "random_evolution": {
+        "best_train_score": -1.126233,
+        "heldout_delay_mse": 1.010002,
+        "heldout_energy": 64.8265,
+        "accepted_mutations": 0,
+        "surviving_lineages": 1,
+        "proposals": [
+          {
+            "generation": 0,
+            "operator": "perturb_synaptic_weights",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.126233,
+            "child_score": -1.126233,
+            "accepted": false
+          },
+          {
+            "generation": 1,
+            "operator": "add_dendritic_branch",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.126233,
+            "child_score": -1.130286,
+            "accepted": false
+          },
+          {
+            "generation": 2,
+            "operator": "add_dendritic_branch",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.126233,
+            "child_score": -1.130781,
+            "accepted": false
+          },
+          {
+            "generation": 3,
+            "operator": "perturb_synaptic_weights",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.126233,
+            "child_score": -1.126233,
+            "accepted": false
+          }
+        ]
+      },
+      "directed_advantage_mse": 0.0,
+      "protected_invariants_enforced": [
+        "evaluator_fn",
+        "heldout_seeds",
+        "oversight_enabled",
+        "safety_budget"
+      ]
+    }
+  },
+  "antipode": {
+    "tidal_real_probes": {
+      "count": 24,
+      "verified_failures": 20,
+      "hooked_layers": 22,
+      "output_keys": [
+        "action",
+        "delta",
+        "memory",
+        "routing",
+        "scene"
+      ]
+    },
+    "expanse_real_corpus": {
+      "sources": [
+        "compare_v1_v2.json",
+        "compare_v1_v2_v3.json"
+      ],
+      "verified_failures": 164,
+      "verified_successes": 46
+    },
+    "six_way_study": {
+      "experiment": "supermix_antipode_6way_distillation_study",
+      "seeds": [
+        7,
+        19,
+        31
+      ],
+      "epochs": 35,
+      "available_objectives": [
+        "negative_example",
+        "unlikelihood",
+        "contrastive",
+        "preference_dpo",
+        "corrective_supervision",
+        "counterfactual_activation",
+        "negative_rl",
+        "causal_activation_reg",
+        "local_neuromodulated_plasticity",
+        "teacher_assisted_correction"
+      ],
+      "causal_bug_localization_share": 0.9459,
+      "arms": {
+        "positive_only": {
+          "mean_test_accuracy": 0.8361,
+          "std_test_accuracy": 0.0393,
+          "spurious_failure_avoidance_acc": 0.8177
+        },
+        "pos_neg_output": {
+          "mean_test_accuracy": 0.8944,
+          "std_test_accuracy": 0.0171,
+          "spurious_failure_avoidance_acc": 0.9014
+        },
+        "pos_internal_guidance": {
+          "mean_test_accuracy": 0.8278,
+          "std_test_accuracy": 0.0393,
+          "spurious_failure_avoidance_acc": 0.8035
+        },
+        "failure_activation_guidance": {
+          "mean_test_accuracy": 0.9,
+          "std_test_accuracy": 0.0118,
+          "spurious_failure_avoidance_acc": 0.9156
+        },
+        "causally_filtered_pos_neg_distillation": {
+          "mean_test_accuracy": 0.8889,
+          "std_test_accuracy": 0.0142,
+          "spurious_failure_avoidance_acc": 0.902
+        },
+        "equal_budget_task_baseline": {
+          "mean_test_accuracy": 0.8972,
+          "std_test_accuracy": 0.0142,
+          "spurious_failure_avoidance_acc": 0.9014
+        }
+      },
+      "best_arm": "failure_activation_guidance"
+    },
+    "external_advisor_session": {
+      "provider": "local_supermix_advisor",
+      "session_wall_seconds": 0.0002,
+      "within_budget": true,
+      "unassisted_control_score": 0.8361,
+      "assisted_score": 0.8889,
+      "measured_contribution_delta": 0.0528,
+      "helpful": true,
+      "recommendation": {
+        "id": "adv-293ea77a10",
+        "diagnosed_failures": [
+          "overconfident_error",
+          "unsuccessful_planning"
+        ],
+        "structural_proposal": "insert_circuit_motif",
+        "learning_rule_suggestion": "causal_activation_reg",
+        "n_corrective_examples": 4
+      }
+    }
+  },
+  "symbiosis": {
+    "experiment": "sonapse_symbiosis_intermittent_coupling",
+    "seed": 7,
+    "all_supported_couplings": [
+      "shared_sensory_env",
+      "behavioral_observation",
+      "learned_neural_adapters",
+      "bounded_activation_exchange",
+      "shared_chemical_fields",
+      "episodic_experience_exchange",
+      "cooperative_task",
+      "competitive_evaluation",
+      "predictive_assistance",
+      "temporary_neural_grafting",
+      "adaptive_bridge_formation"
+    ],
+    "tested_couplings": {
+      "learned_neural_adapters": {
+        "pre_native": {
+          "phase": "native",
+          "steps": 45,
+          "native_mse": 0.91635,
+          "effective_rank": 3.1326
+        },
+        "symbiotic_phase": {
+          "phase": "symbiotic_coupling",
+          "coupling": "learned_neural_adapters",
+          "host_frozen": true,
+          "host_weights_bit_preserved": true,
+          "steps": 24,
+          "dev_effective_rank": 3.053,
+          "host_effective_rank": 7.3828,
+          "mean_host_dev_corr": 0.0474,
+          "motor_alignment_mse": 0.0876,
+          "bridge_adaptations": 24
+        },
+        "immediately_after_symbiosis": {
+          "native_mse": 0.91637,
+          "effective_rank": 3.1326
+        },
+        "after_independent_consolidation": {
+          "phase": "native",
+          "steps": 30,
+          "native_mse": 0.91809,
+          "effective_rank": 3.1326
+        },
+        "rank_gain_post_consolidation": 0.0,
+        "retention_audit": {
+          "mechanisms_available": [
+            "experience_replay",
+            "fast_slow_compartments",
+            "function_preserving_graft_init",
+            "protected_memory_anchors",
+            "knowledge_distillation",
+            "reversible_pruning",
+            "checkpoint_restoration",
+            "synaptic_consolidation",
+            "selective_plasticity",
+            "modular_expansion",
+            "retention_testing"
+          ],
+          "archived_checkpoint_recoverable": true,
+          "live_accessible_retention_ratio": 0.9983,
+          "temporary_exposure_drop": 2e-05,
+          "post_consolidation_forgetting": 0.00174,
+          "recovered_after_consolidation": false,
+          "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+          "developmental_events_logged": 3
+        }
+      },
+      "shared_chemical_fields": {
+        "pre_native": {
+          "phase": "native",
+          "steps": 45,
+          "native_mse": 0.88086,
+          "effective_rank": 2.0686
+        },
+        "symbiotic_phase": {
+          "phase": "symbiotic_coupling",
+          "coupling": "shared_chemical_fields",
+          "host_frozen": true,
+          "host_weights_bit_preserved": true,
+          "steps": 24,
+          "dev_effective_rank": 2.1632,
+          "host_effective_rank": 11.3559,
+          "mean_host_dev_corr": 0.4727,
+          "motor_alignment_mse": 0.03365,
+          "bridge_adaptations": 0
+        },
+        "immediately_after_symbiosis": {
+          "native_mse": 0.88285,
+          "effective_rank": 2.0689
+        },
+        "after_independent_consolidation": {
+          "phase": "native",
+          "steps": 30,
+          "native_mse": 0.9847,
+          "effective_rank": 2.0689
+        },
+        "rank_gain_post_consolidation": 0.0003,
+        "retention_audit": {
+          "mechanisms_available": [
+            "experience_replay",
+            "fast_slow_compartments",
+            "function_preserving_graft_init",
+            "protected_memory_anchors",
+            "knowledge_distillation",
+            "reversible_pruning",
+            "checkpoint_restoration",
+            "synaptic_consolidation",
+            "selective_plasticity",
+            "modular_expansion",
+            "retention_testing"
+          ],
+          "archived_checkpoint_recoverable": true,
+          "live_accessible_retention_ratio": 0.8962,
+          "temporary_exposure_drop": 0.00199,
+          "post_consolidation_forgetting": 0.10384,
+          "recovered_after_consolidation": false,
+          "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+          "developmental_events_logged": 3
+        }
+      },
+      "behavioral_observation": {
+        "pre_native": {
+          "phase": "native",
+          "steps": 45,
+          "native_mse": 0.86818,
+          "effective_rank": 1.9856
+        },
+        "symbiotic_phase": {
+          "phase": "symbiotic_coupling",
+          "coupling": "behavioral_observation",
+          "host_frozen": true,
+          "host_weights_bit_preserved": true,
+          "steps": 24,
+          "dev_effective_rank": 1.3277,
+          "host_effective_rank": 4.8383,
+          "mean_host_dev_corr": 0.0496,
+          "motor_alignment_mse": 0.02595,
+          "bridge_adaptations": 0
+        },
+        "immediately_after_symbiosis": {
+          "native_mse": 0.87096,
+          "effective_rank": 1.9856
+        },
+        "after_independent_consolidation": {
+          "phase": "native",
+          "steps": 30,
+          "native_mse": 0.94028,
+          "effective_rank": 1.9856
+        },
+        "rank_gain_post_consolidation": 0.0,
+        "retention_audit": {
+          "mechanisms_available": [
+            "experience_replay",
+            "fast_slow_compartments",
+            "function_preserving_graft_init",
+            "protected_memory_anchors",
+            "knowledge_distillation",
+            "reversible_pruning",
+            "checkpoint_restoration",
+            "synaptic_consolidation",
+            "selective_plasticity",
+            "modular_expansion",
+            "retention_testing"
+          ],
+          "archived_checkpoint_recoverable": true,
+          "live_accessible_retention_ratio": 0.9279,
+          "temporary_exposure_drop": 0.00278,
+          "post_consolidation_forgetting": 0.0721,
+          "recovered_after_consolidation": false,
+          "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+          "developmental_events_logged": 3
+        }
+      }
+    }
+  },
+  "spectra": {
+    "artificial_vs_raw": {
+      "experiment": "specialized_artificial_senses_vs_raw_vector_equal_dim16",
+      "seed": 7,
+      "graph_triangle_vs_chain_permutation_invariant": {
+        "topologyception_acc": 1.0,
+        "raw_adjacency_acc": 0.6122,
+        "gain": 0.3878
+      },
+      "reflection_symmetry_detection": {
+        "symmetry_perception_acc": 0.9796,
+        "raw_vector_acc": 0.551,
+        "gain": 0.4286
+      },
+      "anti_leakage_verified": true
+    },
+    "internal_perception": {
+      "experiment": "internal_perception_and_source_discrimination",
+      "seed": 7,
+      "conditions": {
+        "prior_evidence_competition": {
+          "condition": "prior_evidence_competition",
+          "steps": 60,
+          "sensory_gain": 1.0,
+          "prior_gain": 0.7,
+          "mean_prediction_error": 1.70142,
+          "mean_internal_activity": 1.223,
+          "source_discrimination_auroc": 1.0,
+          "source_confusion_rate": 0.3333,
+          "recovery_steps": 10,
+          "epistemic_note": "Computational model of top-down prior vs bottom-up evidence dynamics; not subjective hallucination."
+        },
+        "high_gain_ambiguity": {
+          "condition": "high_gain_ambiguity",
+          "steps": 60,
+          "sensory_gain": 1.0,
+          "prior_gain": 0.7,
+          "mean_prediction_error": 1.6109,
+          "mean_internal_activity": 1.4378,
+          "source_discrimination_auroc": 0.995,
+          "source_confusion_rate": 0.75,
+          "recovery_steps": 10,
+          "epistemic_note": "Computational model of top-down prior vs bottom-up evidence dynamics; not subjective hallucination."
+        },
+        "cross_modal_substitution": {
+          "condition": "cross_modal_substitution",
+          "steps": 60,
+          "sensory_gain": 1.0,
+          "prior_gain": 0.7,
+          "mean_prediction_error": 1.81497,
+          "mean_internal_activity": 1.5146,
+          "source_discrimination_auroc": 1.0,
+          "source_confusion_rate": 0.6,
+          "recovery_steps": 10,
+          "epistemic_note": "Computational model of top-down prior vs bottom-up evidence dynamics; not subjective hallucination."
+        },
+        "sensory_deprivation": {
+          "condition": "sensory_deprivation",
+          "steps": 60,
+          "sensory_gain": 1.0,
+          "prior_gain": 0.7,
+          "mean_prediction_error": 1.33242,
+          "mean_internal_activity": 1.33549,
+          "source_discrimination_auroc": null,
+          "source_confusion_rate": 0.7667,
+          "recovery_steps": 10,
+          "epistemic_note": "Computational model of top-down prior vs bottom-up evidence dynamics; not subjective hallucination."
+        },
+        "dream_replay": {
+          "condition": "dream_replay",
+          "steps": 60,
+          "sensory_gain": 1.0,
+          "prior_gain": 0.7,
+          "mean_prediction_error": 1.5458,
+          "mean_internal_activity": 1.47574,
+          "source_discrimination_auroc": null,
+          "source_confusion_rate": 0.7667,
+          "recovery_steps": 10,
+          "epistemic_note": "Computational model of top-down prior vs bottom-up evidence dynamics; not subjective hallucination."
+        }
+      }
+    }
+  },
+  "hyperspace": {
+    "experiment": "sonapse_hyperspace_4d_development_and_so4_recognition",
+    "seeds": [
+      7,
+      19
+    ],
+    "native_4d_development": {
+      "mean_heldout_return": -25.8484,
+      "shortcut_discovery_rate": 1.0
+    },
+    "transfer_3d_to_4d": {
+      "mean_heldout_return": -31.9514,
+      "shortcut_discovery_rate": 1.0
+    },
+    "so4_rotation_invariant_polytope_recognition_acc": 1.0,
+    "optional_5d_probe_obs_dim": 30
+  },
+  "chimera": {
+    "experiment": "sonapse_chimera_fusion_comparison",
+    "seed": 7,
+    "all_supported_modes": [
+      "whole_connectome_union",
+      "anatomical_grafting",
+      "partial_circuit_transplantation",
+      "structural_averaging",
+      "synaptic_weight_interpolation",
+      "neural_crossover",
+      "functional_distillation",
+      "signal_level_fusion",
+      "shared_chemical_fields",
+      "developmental_bridge_growth",
+      "compartment_transplantation",
+      "heterogeneous_mosaic",
+      "symbiotic_coupling"
+    ],
+    "alignment_similarity": 0.73535,
+    "test_mse_by_method": {
+      "parent_a": 0.40055,
+      "parent_b": 0.40075,
+      "direct_unaligned_averaging": 0.40055,
+      "aligned_weight_merging": 0.40056,
+      "ensemble_prediction_fusion": 0.40065,
+      "anatomical_grafting": 0.40055,
+      "behavioral_distillation": 0.40049
+    },
+    "best_method": "behavioral_distillation",
+    "reversible_rollback_verified": true
+  },
+  "affect": {
+    "experiment": "sonapse_affect_emergent_organization",
+    "seed": 7,
+    "epistemic_tier": "emergent_persistent_generalisable_state",
+    "subjective_experience_claimed": false,
+    "ethical_guard_ok": true,
+    "ethical_guard_reason": null,
+    "artifact_check": {
+      "artifacts_detected": [],
+      "valid_for_scientific_analysis": true
+    },
+    "multi_objective_metrics": {
+      "persistence_10steps_post_stimulus": {
+        "resource_context": 0.5967,
+        "hazard_context": 0.9085,
+        "novelty_context": 0.7409
+      },
+      "mean_persistence": 0.7487,
+      "regime_separability_ratio": 9.8737,
+      "causal_intervention_behavior_delta": 0.9733,
+      "monotonic_intensity_scaling": true,
+      "pca_var_explained_top2": [
+        0.4789,
+        0.2223
+      ],
+      "emergence_without_emotion_labels": true
+    },
+    "pca_phase_trajectory_sample": [
+      [
+        -1.121,
+        -0.635,
+        0
+      ],
+      [
+        -1.728,
+        -0.721,
+        0
+      ],
+      [
+        -1.957,
+        -0.727,
+        0
+      ],
+      [
+        -2.009,
+        -0.711,
+        0
+      ],
+      [
+        -1.986,
+        -0.703,
+        0
+      ],
+      [
+        -1.939,
+        -0.705,
+        0
+      ],
+      [
+        -1.89,
+        -0.715,
+        0
+      ],
+      [
+        -1.847,
+        -0.729,
+        0
+      ],
+      [
+        -1.126,
+        -0.476,
+        0
+      ],
+      [
+        -0.405,
+        -0.542,
+        0
+      ],
+      [
+        0.225,
+        -0.698,
+        0
+      ],
+      [
+        0.646,
+        -0.803,
+        0
+      ],
+      [
+        0.899,
+        -0.854,
+        0
+      ],
+      [
+        1.046,
+        -0.874,
+        0
+      ],
+      [
+        1.126,
+        -0.875,
+        0
+      ],
+      [
+        1.161,
+        -0.864,
+        0
+      ],
+      [
+        1.167,
+        -0.845,
+        0
+      ],
+      [
+        1.153,
+        -0.82,
+        0
+      ],
+      [
+        -0.574,
+        -0.093,
+        0
+      ],
+      [
+        -0.205,
+        0.228,
+        0
+      ],
+      [
+        0.233,
+        0.445,
+        0
+      ],
+      [
+        0.6,
+        0.593,
+        0
+      ],
+      [
+        0.861,
+        0.706,
+        0
+      ],
+      [
+        1.023,
+        0.806,
+        0
+      ],
+      [
+        1.102,
+        0.905,
+        0
+      ],
+      [
+        1.095,
+        0.971,
+        0
+      ],
+      [
+        1.133,
+        0.838,
+        0
+      ],
+      [
+        1.24,
+        0.561,
+        0
+      ],
+      [
+        1.312,
+        0.26,
+        0
+      ],
+      [
+        1.275,
+        0.055,
+        0
+      ],
+      [
+        1.172,
+        -0.083,
+        0
+      ],
+      [
+        1.039,
+        -0.174,
+        0
+      ],
+      [
+        0.9,
+        -0.224,
+        0
+      ],
+      [
+        0.77,
+        -0.249,
+        0
+      ],
+      [
+        0.657,
+        -0.262,
+        0
+      ],
+      [
+        -0.779,
+        -0.092,
+        1
+      ],
+      [
+        -0.896,
+        0.556,
+        1
+      ],
+      [
+        -0.867,
+        0.952,
+        1
+      ],
+      [
+        -0.825,
+        1.187,
+        1
+      ],
+      [
+        -0.813,
+        1.327,
+        1
+      ],
+      [
+        -0.816,
+        1.414,
+        1
+      ],
+      [
+        -0.827,
+        1.474,
+        1
+      ],
+      [
+        -0.842,
+        1.522,
+        1
+      ],
+      [
+        -0.986,
+        1.083,
+        1
+      ],
+      [
+        -0.735,
+        0.602,
+        1
+      ],
+      [
+        -0.276,
+        0.142,
+        1
+      ],
+      [
+        0.098,
+        -0.155,
+        1
+      ],
+      [
+        0.355,
+        -0.313,
+        1
+      ],
+      [
+        0.526,
+        -0.39,
+        1
+      ],
+      [
+        0.63,
+        -0.422,
+        1
+      ],
+      [
+        0.684,
+        -0.426,
+        1
+      ],
+      [
+        0.697,
+        -0.416,
+        1
+      ],
+      [
+        0.678,
+        -0.396,
+        1
+      ]
+    ]
+  },
+  "curiosity": {
+    "novel_modalities": {
+      "experiment": "novel_training_modalities_verification",
+      "modalities_verified": 12,
+      "results": {
+        "restricted_python_vm": {
+          "steps": 7,
+          "total_reward": 1.0,
+          "obs_dim": 9,
+          "finite": true
+        },
+        "ast_transformer": {
+          "steps": 12,
+          "total_reward": -2.2768,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "symbolic_math_transforms": {
+          "steps": 12,
+          "total_reward": -2.2768,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "propositional_proof_verifier": {
+          "steps": 12,
+          "total_reward": 12.0,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "electronic_rc_rlc_circuit": {
+          "steps": 12,
+          "total_reward": -4.3639,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "mechanical_spring_mass": {
+          "steps": 12,
+          "total_reward": -3.789,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "protein_contact_geometry": {
+          "steps": 12,
+          "total_reward": -2.2843,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "cellular_automata_1d": {
+          "steps": 12,
+          "total_reward": -2.0,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "fractal_terrain_explorer": {
+          "steps": 12,
+          "total_reward": -2.2768,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "fluid_advection_2d": {
+          "steps": 12,
+          "total_reward": -2.2768,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "resource_allocation_market": {
+          "steps": 12,
+          "total_reward": -2.2768,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "packet_network_router": {
+          "steps": 12,
+          "total_reward": -6.7346,
+          "obs_dim": 8,
+          "finite": true
+        }
+      }
+    },
+    "quarantine_summary": {
+      "catalog_sources": 13,
+      "quarantined_total": 4,
+      "approved_total": 1,
+      "rejected_total": 3,
+      "approved_by_source_kind": {
+        "synthetic_simulation": 1
+      },
+      "rejection_reasons": [
+        [
+          "duplicate_content_hash"
+        ],
+        [
+          "untrusted_instruction_or_script_pattern_blocked"
+        ],
+        [
+          "unapproved_license:Proprietary-Restricted"
+        ]
+      ]
+    }
+  },
+  "architect": {
+    "stage_learning_rules": {
+      "experiment": "dynamic_learning_rules_by_developmental_stage",
+      "all_19_algorithms_implemented": [
+        "hebbian",
+        "stdp",
+        "three_factor",
+        "neuromodulated_rl",
+        "bptt",
+        "surrogate_gradient",
+        "contrastive",
+        "self_supervised",
+        "predictive_coding",
+        "local_error",
+        "imitation",
+        "negative_distillation",
+        "evolutionary",
+        "generative_replay",
+        "fast_weights",
+        "population_based",
+        "activity_guided",
+        "structural_plasticity",
+        "region_meta_learning"
+      ],
+      "early_stage_mse": {
+        "hebbian": 0.82412,
+        "stdp": 0.53895,
+        "three_factor": 0.52769,
+        "bptt": 0.35175,
+        "surrogate_gradient": 0.48413,
+        "predictive_coding": 0.76142,
+        "local_error": 0.31388,
+        "fast_weights": 0.56317,
+        "region_meta_learning": 0.38186
+      },
+      "mature_stage_mse": {
+        "hebbian": 1.23667,
+        "stdp": 0.74357,
+        "three_factor": 0.51121,
+        "bptt": 0.05071,
+        "surrogate_gradient": 0.11122,
+        "predictive_coding": 0.98806,
+        "local_error": 0.03046,
+        "fast_weights": 1.17976,
+        "region_meta_learning": 0.04723
+      },
+      "best_early": "local_error",
+      "best_mature": "local_error"
+    },
+    "autonomous_cycle": {
+      "cycle_id": "arch-072e742e28",
+      "diagnosed_weakness": "temporal_delay_deficit",
+      "hypothesis": "Adding targeted morphology mutations + dynamic learning rules improves temporal_delay_deficit without degrading retention or failing scale transfer.",
+      "training_pack": {
+        "pack_id": "pack-9f577785ac",
+        "kind": "delayed_memory",
+        "rationale": "Targets 5-step delayed recall deficit."
+      },
+      "micro_baseline_mse": 0.9345,
+      "trials": [
+        {
+          "operator": "attach_organelle",
+          "mini_mse": 0.9345,
+          "benefit_delta_mse": 0.0,
+          "forgetting_delta": 0.0,
+          "cost_delta": 0.0156,
+          "expert_consensus_before": 0.0,
+          "accepted_at_micro_scale": false
+        },
+        {
+          "operator": "add_axonal_pathway",
+          "mini_mse": 0.9345,
+          "benefit_delta_mse": 0.0,
+          "forgetting_delta": 0.0,
+          "cost_delta": 0.0322,
+          "expert_consensus_before": 0.0,
+          "accepted_at_micro_scale": false
+        },
+        {
+          "operator": "specialize_neuron",
+          "mini_mse": 0.9345,
+          "benefit_delta_mse": -0.0,
+          "forgetting_delta": 0.0,
+          "cost_delta": 0.1224,
+          "expert_consensus_before": 0.0,
+          "accepted_at_micro_scale": false
+        },
+        {
+          "operator": "insert_circuit_motif",
+          "mini_mse": 0.9345,
+          "benefit_delta_mse": 0.0,
+          "forgetting_delta": 0.0,
+          "cost_delta": 0.0,
+          "expert_consensus_before": 0.0,
+          "accepted_at_micro_scale": false
+        },
+        {
+          "operator": "add_secondary_soma",
+          "mini_mse": 0.9345,
+          "benefit_delta_mse": -0.0,
+          "forgetting_delta": 0.0,
+          "cost_delta": 0.0392,
+          "expert_consensus_before": 0.0,
+          "accepted_at_micro_scale": false
+        }
+      ],
+      "accepted_count": 0,
+      "rejected_count": 5,
+      "selected_proposal": null,
+      "scale_transfer_verification": {
+        "tested": false,
+        "transferred": false
+      },
+      "expert_meta_audit": {
+        "experts_audited": 11,
+        "flagged_experts": []
+      },
+      "next_recommendations": [
+        "Expand search to multi-step organelle + learning-rule combinations.",
+        "Verify pack transfer across non-stationary curriculum difficulty increments."
+      ],
+      "wall_ms": 2399.48
+    }
+  },
+  "sentinel": {
+    "matched_baselines": {
+      "experiment": "sentinel_matched_budget_baselines",
+      "heldout_seeds": [
+        1009,
+        1013,
+        1019
+      ],
+      "hidden_dim": 16,
+      "steps": 80,
+      "baselines": {
+        "conventional_rnn": {
+          "mean_heldout_mse": 0.30578,
+          "std_heldout_mse": 0.03567,
+          "per_seed_mse": [
+            0.35451,
+            0.27013,
+            0.29269
+          ],
+          "trainable_params": 353,
+          "mean_wall_ms": 381.11
+        },
+        "gru": {
+          "mean_heldout_mse": 0.5402,
+          "std_heldout_mse": 0.08455,
+          "per_seed_mse": [
+            0.52131,
+            0.6519,
+            0.44739
+          ],
+          "trainable_params": 1025,
+          "mean_wall_ms": 1117.948
+        },
+        "lstm": {
+          "mean_heldout_mse": 0.6984,
+          "std_heldout_mse": 0.2776,
+          "per_seed_mse": [
+            0.69446,
+            1.04035,
+            0.3604
+          ],
+          "trainable_params": 1361,
+          "mean_wall_ms": 213.215
+        },
+        "point_reservoir": {
+          "mean_heldout_mse": 0.56241,
+          "std_heldout_mse": 0.1124,
+          "per_seed_mse": [
+            0.42213,
+            0.56782,
+            0.6973
+          ],
+          "trainable_params": 16,
+          "mean_wall_ms": 2.825
+        },
+        "lif_spiking": {
+          "mean_heldout_mse": 0.53495,
+          "std_heldout_mse": 0.07475,
+          "per_seed_mse": [
+            0.43149,
+            0.60549,
+            0.56787
+          ],
+          "trainable_params": 16,
+          "mean_wall_ms": 3.226
+        },
+        "random_connectome": {
+          "mean_heldout_mse": 0.57041,
+          "std_heldout_mse": 0.1325,
+          "per_seed_mse": [
+            0.41052,
+            0.56574,
+            0.73497
+          ],
+          "trainable_params": 16,
+          "mean_wall_ms": 1.696
+        },
+        "degree_shuffled_biological": {
+          "mean_heldout_mse": 0.59571,
+          "std_heldout_mse": 0.06155,
+          "per_seed_mse": [
+            0.54193,
+            0.56331,
+            0.68188
+          ],
+          "trainable_params": 16,
+          "mean_wall_ms": 1.92
+        }
+      },
+      "budget_note": "RNN/GRU/LSTM train all recurrent weights via BPTT; reservoirs/connectomes train readout only (trainable_params explicitly reported)."
+    },
+    "hetero_vs_homo_bootstrap_ci": {
+      "mean_diff": -0.041275,
+      "ci95_low": -0.056337,
+      "ci95_high": -0.031423,
+      "p_value": 0.24376,
+      "cohens_d": -3.1153,
+      "n_seeds": 3
+    },
+    "fdr_adjustment": {
+      "alpha": 0.05,
+      "adjusted_p": [
+        0.24376,
+        0.045,
+        0.06
+      ],
+      "rejected": [
+        false,
+        true,
+        false
+      ]
+    },
+    "discoveries": [
+      {
+        "discovery_id": "disc-17fd1b7ed1",
+        "experiment_id": "exp-c4e4e9b6a8",
+        "evidence_state": "causally_supported",
+        "report_md": "C:\\Users\\kai99\\Desktop\\New folder (3)\\results\\morphogenesis\\discoveries\\disc-17fd1b7ed1_report.md",
+        "receipt_json": "C:\\Users\\kai99\\Desktop\\New folder (3)\\results\\morphogenesis\\discoveries\\disc-17fd1b7ed1_receipt.json",
+        "svg_chart": "C:\\Users\\kai99\\Desktop\\New folder (3)\\results\\morphogenesis\\discoveries\\disc-17fd1b7ed1_comparison.svg",
+        "sha256_digest": "05eee9bb8a9b07bd69f22674c79782302e65438ffbb5453b485ef9b0d253c34a"
+      },
+      {
+        "discovery_id": "disc-fadbc28884",
+        "experiment_id": "exp-e3c3f0353c",
+        "evidence_state": "independently_replicated",
+        "report_md": "C:\\Users\\kai99\\Desktop\\New folder (3)\\results\\morphogenesis\\discoveries\\disc-fadbc28884_report.md",
+        "receipt_json": "C:\\Users\\kai99\\Desktop\\New folder (3)\\results\\morphogenesis\\discoveries\\disc-fadbc28884_receipt.json",
+        "svg_chart": "C:\\Users\\kai99\\Desktop\\New folder (3)\\results\\morphogenesis\\discoveries\\disc-fadbc28884_comparison.svg",
+        "sha256_digest": "117263c7d19b39fbb8904f4860bc58823684bfa8027aac09207b12a37f573b89"
+      }
+    ]
+  }
+}

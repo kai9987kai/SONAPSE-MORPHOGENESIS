@@ -12,4 +12,6 @@ build/
 dist/
 *.egg-info/
 *.log
+*.sqlite3-wal
+*.sqlite3-shm
 .synapse_live_*/

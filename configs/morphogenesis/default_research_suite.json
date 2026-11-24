@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0.0",
+  "suite_name": "sonapse_morphogenesis_integrated_validation_v1",
+  "seeds": [7, 19, 31],
+  "heldout_sentinel_seeds": [1009, 1013, 1019],
+  "foundry": {
+    "steps": 90,
+    "include_ablations": true
+  },
+  "genesis": {
+    "micro_population_size": 1024,
+    "n_neurons_micro": 16,
+    "scee_generations": 5,
+    "scee_pop_size": 24,
+    "recursive_generations": 4
+  },
+  "antipode": {
+    "tidal_probe_samples": 24,
+    "distillation_epochs": 35
+  },
+  "symbiosis": {
+    "couplings": ["learned_neural_adapters", "shared_chemical_fields", "behavioral_observation"]
+  },
+  "hyperspace": {
+    "generations": 12
+  },
+  "governance": {
+    "max_wall_seconds": 300.0,
+    "max_memory_mb": 2048.0,
+    "enforce_ethical_affect_guards": true
+  }
+}

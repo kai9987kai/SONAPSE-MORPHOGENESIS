@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SONAPSE MORPHOGENESIS · Interactive Scientific Workbench</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #070b14;
+      --panel: #0f172a;
+      --panel-2: #162036;
+      --border: #1e293b;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --good: #34d399;
+      --warn: #fbbf24;
+      --bad: #f87171;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: var(--sans); line-height: 1.45;
+      display: grid; grid-template-columns: 248px 1fr; min-height: 100vh;
+    }
+    aside {
+      background: var(--panel); border-right: 1px solid var(--border);
+      padding: 18px 14px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .brand { font-weight: 800; letter-spacing: 0.08em; font-size: 1rem; color: var(--accent); }
+    .subtitle { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); margin-bottom: 10px; }
+    nav button {
+      width: 100%; text-align: left; background: transparent; color: var(--text);
+      border: 1px solid transparent; border-radius: 8px; padding: 9px 10px;
+      cursor: pointer; font-size: 0.85rem; margin-bottom: 4px; display: flex; gap: 8px; align-items: center;
+    }
+    nav button:hover, nav button:focus-visible { background: var(--panel-2); border-color: var(--border); outline: none; }
+    nav button.active { background: #0c2640; border-color: var(--accent); color: #f8fafc; font-weight: 600; }
+    .pill {
+      display: inline-block; padding: 2px 8px; border-radius: 999px;
+      font-family: var(--mono); font-size: 0.72rem; background: var(--panel-2); border: 1px solid var(--border);
+    }
+    .pill.good { color: var(--good); border-color: #065f46; }
+    .pill.bad { color: var(--bad); border-color: #7f1d1d; }
+    .pill.warn { color: var(--warn); border-color: #78350f; }
+    main { padding: 18px 22px; overflow-y: auto; }
+    header {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+      gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px;
+    }
+    h1 { margin: 0; font-size: 1.25rem; }
+    h2 { margin: 0 0 8px 0; font-size: 1rem; color: var(--accent); }
+    h3 { margin: 0 0 6px 0; font-size: 0.88rem; color: #cbd5e1; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+    button.btn {
+      background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 7px; padding: 7px 12px; cursor: pointer; font-size: 0.82rem; font-weight: 500;
+    }
+    button.btn:hover { border-color: var(--accent); }
+    button.btn.primary { background: #0284c7; border-color: #38bdf8; color: #fff; }
+    button.btn.danger { background: #7f1d1d; border-color: #ef4444; color: #fff; }
+    select, input[type="number"], input[type="text"], input[type="range"] {
+      background: #0b1220; color: var(--text); border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 8px; font-size: 0.82rem; font-family: var(--mono);
+    }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 14px; }
+    .card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+    }
+    canvas {
+      width: 100%; background: #060a12; border: 1px solid var(--border);
+      border-radius: 8px; display: block; cursor: grab;
+    }
+    pre {
+      background: #060a12; border: 1px solid var(--border); border-radius: 7px;
+      padding: 10px; font-family: var(--mono); font-size: 0.74rem; color: #cbd5e1;
+      max-height: 260px; overflow: auto; white-space: pre-wrap; margin: 6px 0 0 0;
+    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .svg-box { background: #060a12; border: 1px solid var(--border); border-radius: 8px; padding: 6px; text-align: center; }
+    .kv { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.78rem; padding: 3px 0; border-bottom: 1px dashed #1e293b; }
+    .notice { font-size: 0.76rem; color: var(--muted); background: #0b1324; border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <aside>
+    <div class="brand">SONAPSE MORPHOGENESIS</div>
+    <div class="subtitle">Autonomous Developmental Connectome Lab v1.0</div>
+    <nav aria-label="Morphogenesis Modules">
+      <button class="active" data-pane="pane-connectome">01 · 3D Connectome &amp; Live Sim</button>
+      <button data-pane="pane-foundry">02 · Neuron Foundry &amp; Organelles</button>
+      <button data-pane="pane-chimera">03 · Chimera Fusion Lab</button>
+      <button data-pane="pane-spectra">04 · Spectra Signal Mixer</button>
+      <button data-pane="pane-hyperspace">05 · Hyperspace 4D Slices</button>
+      <button data-pane="pane-affect">06 · Affect &amp; Physiology</button>
+      <button data-pane="pane-antipode">07 · Antipode &amp; Symbiosis</button>
+      <button data-pane="pane-architect">08 · Architect, Genesis &amp; Archive</button>
+    </nav>
+    <div style="margin-top:auto; padding-top:12px; border-top:1px solid var(--border);">
+      <div id="hw-info" class="subtitle">Connecting to local CPU engine…</div>
+      <div style="display:flex; gap:6px; margin-top:6px;">
+        <button id="btn-estop" class="btn danger" style="width:100%;">⛔ Emergency Stop</button>
+      </div>
+      <div class="subtitle" style="margin-top:8px;">Simulation strictly decoupled from UI rendering.</div>
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <div>
+        <h1 id="page-title">3D Connectome Observatory &amp; Developmental Control</h1>
+        <span id="status-line" class="pill good" role="status" aria-live="polite">Initializing…</span>
+      </div>
+      <div class="toolbar" style="margin-bottom:0;">
+        <button id="btn-play" class="btn primary">▶ Run</button>
+        <button id="btn-pause" class="btn">Ⅱ Pause</button>
+        <button id="btn-step" class="btn">Step +1</button>
+        <button id="btn-step16" class="btn">Step +16</button>
+        <button id="btn-save-ckpt" class="btn">💾 Save Checkpoint</button>
+        <a href="/" class="btn" style="text-decoration:none;">← Sonapse-LAB</a>
+      </div>
+    </header>
+
+    <!-- 01 CONNECTOME -->
+    <section id="pane-connectome" class="tab-pane active">
+      <div class="toolbar">
+        <label>Origin: <select id="sel-origin"></select></label>
+        <label>Neurons: <input id="inp-n" type="number" min="4" max="40" value="14" style="width:66px;"></label>
+        <button id="btn-build" class="btn primary">Build Connectome</button>
+        <label>Mutation: <select id="sel-mut"></select></label>
+        <button id="btn-mutate" class="btn">Apply Reversible Mutation</button>
+        <button id="btn-rollback-tx" class="btn">↶ Rollback Last Mutation</button>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h2>3D Interactive Connectome (Drag to Rotate · Click Neuron)</h2>
+          <canvas id="cv-3d" width="520" height="330"></canvas>
+          <div style="display:flex; justify-content:space-between; margin-top:8px; font-family:var(--mono); font-size:0.75rem; color:var(--muted);">
+            <span id="conn-stats">Steps: 0 | FLOPs: 0 | Energy: 0</span>
+            <span>Blue=Sensory · Green=Excitatory · Red=Inhibitory</span>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Selected Neuron &amp; Internal Compartments</h2>
+          <div id="neuron-detail" class="subtitle">Click any neuron in the 3D canvas to inspect compartments, ATP, and organelles.</div>
+          <div id="neuron-svg-live" class="svg-box" style="min-height:150px; margin-top:8px;"></div>
+          <div class="toolbar" style="margin-top:8px;">
+            <select id="sel-live-org"></select>
+            <button id="btn-attach-org" class="btn">+ Attach Organelle</button>
+            <button id="btn-lesion-comp" class="btn danger">Lesion Comp 0</button>
+            <button id="btn-repair-comp" class="btn">Repair Comp 0</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Live Neural Activity Waveforms</h2>
+          <canvas id="cv-wave" width="520" height="170"></canvas>
+        </div>
+        <div class="card">
+          <h2>Simulated Chemical &amp; Paracrine Fields</h2>
+          <canvas id="cv-chem" width="520" height="170"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 FOUNDRY -->
+    <section id="pane-foundry" class="tab-pane">
+      <div class="notice">SONAPSE FOUNDRY — Inspect all 24 custom synthetic graft neuron families (21 specified + 3 original) &amp; 15 conventional neuron families with formal equations, physical cable parameters, and morphology diagrams.</div>
+      <div class="toolbar">
+        <label>Neuron Family: <select id="sel-foundry-fam"></select></label>
+        <button id="btn-inspect-fam" class="btn primary">Inspect Architecture</button>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h2>Morphology Diagram</h2>
+          <div id="foundry-svg" class="svg-box"></div>
+          <pre id="foundry-math"></pre>
+        </div>
+        <div class="card">
+          <h2>Physical Compartment Geometry &amp; Organelles</h2>
+          <pre id="foundry-physics"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 CHIMERA -->
+    <section id="pane-chimera" class="tab-pane">
+      <div class="notice">SONAPSE CHIMERA — Multi-cue functional + anatomical correspondence alignment &amp; 13 reversible connectome fusion modes.</div>
+      <div class="toolbar">
+        <label>Parent A: <select id="sel-chim-a"></select></label>
+        <label>Parent B: <select id="sel-chim-b"></select></label>
+        <label>Mode: <select id="sel-chim-mode"></select></label>
+        <label>Ratio A: <input id="inp-chim-ratio" type="range" min="0" max="1" step="0.1" value="0.5"></label>
+        <button id="btn-chim-merge" class="btn primary">Execute Aligned Merge</button>
+      </div>
+      <div class="card">
+        <h2>Merge Provenance &amp; Correspondence Result</h2>
+        <pre id="out-chimera">Select parent origins and click Execute Aligned Merge.</pre>
+      </div>
+    </section>
+
+    <!-- 04 SPECTRA -->
+    <section id="pane-spectra" class="tab-pane">
+      <div class="notice">SONAPSE SPECTRA — Mix multimodal neural signals using 13 documented operators and inject into any targeted anatomical site with exact before/after comparisons.</div>
+      <div class="toolbar">
+        <label>Signal A: <select id="sel-sp-a"><option value="math_function">Math (Chirp)</option><option value="text">Text Stream</option><option value="audio">Audio</option><option value="protein_structure">Protein 3D</option></select></label>
+        <label>Signal B: <select id="sel-sp-b"><option value="text">Text Stream</option><option value="math_function">Math (Harmonic)</option><option value="procedural_generator">Procedural</option></select></label>
+        <label>Operator: <select id="sel-sp-op"></select></label>
+        <label>Encoding: <select id="sel-sp-enc"></select></label>
+        <label>Target Site: <select id="sel-sp-target"></select></label>
+        <label>Strength: <input id="inp-sp-str" type="range" min="0.1" max="2.0" step="0.1" value="0.9"></label>
+        <button id="btn-sp-inject" class="btn primary">Mix &amp; Inject Signal</button>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h2>Before vs. After Mean Activity Waveform</h2>
+          <canvas id="cv-spectra" width="520" height="200"></canvas>
+        </div>
+        <div class="card">
+          <h2>Replayable Intervention Receipt</h2>
+          <pre id="out-spectra">Click Mix &amp; Inject Signal to run a matched baseline vs perturbed injection.</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 HYPERSPACE -->
+    <section id="pane-hyperspace" class="tab-pane">
+      <div class="notice">SONAPSE HYPERSPACE — Native 4D spatial environment with direct 4D sensors/motors, 3D cross-section slices at w, and interactive 4D->3D tesseract perspective projection.</div>
+      <div class="toolbar">
+        <button id="btn-hs-step-w" class="btn primary">Step +W (4D Bypass)</button>
+        <button id="btn-hs-step-x" class="btn">Step +X (Toward Goal)</button>
+        <button id="btn-hs-reset" class="btn">Reset 4D World</button>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h2>4D Tesseract Projection &amp; Agent Slice</h2>
+          <canvas id="cv-4d" width="520" height="280"></canvas>
+        </div>
+        <div class="card">
+          <h2>4D Telemetry &amp; Slice State</h2>
+          <pre id="out-hyperspace">Click a step button to navigate the 4D hyperwall.</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 AFFECT -->
+    <section id="pane-affect" class="tab-pane">
+      <div class="notice">SONAPSE AFFECT — Investigates emergent unlabeled persistent dynamical regimes across 13 physiological subsystems &amp; 6 neuromodulatory fields. Subjective experience is explicitly UNVERIFIABLE and UNCLAIMED. Ethical stop guards prohibit optimizing aversive/distress states.</div>
+      <div class="toolbar">
+        <button id="btn-affect-run" class="btn primary">Run Emergent Affect Dynamics &amp; Causal Assay</button>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h2>Unsupervised PCA Phase-Space Trajectory</h2>
+          <canvas id="cv-affect" width="520" height="260"></canvas>
+        </div>
+        <div class="card">
+          <h2>Multi-Objective Persistence, Separability &amp; Causal Intervention</h2>
+          <pre id="out-affect">Run assay to compute persistence, causal do()-delta, and artifact checks.</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 ANTIPODE & SYMBIOSIS -->
+    <section id="pane-antipode" class="tab-pane">
+      <div class="notice">SUPERMIX ANTIPODE instruments the actual Poseidon Tidal MoE checkpoint (`artifacts/tidal_core.pt`) &amp; Supermix-Expanse failure records. SONAPSE SYMBIOSIS couples the developing connectome intermittently to a frozen Sonapse-LAB runtime with retention auditing.</div>
+      <div class="toolbar">
+        <button id="btn-antipode-run" class="btn primary">Probe Real TidalMoE &amp; Expanse Failures</button>
+        <label>Symbiosis Coupling: <select id="sel-sym-mode"></select></label>
+        <button id="btn-symbiosis-run" class="btn primary">Run Symbiosis Cycle (Frozen Sonapse-LAB)</button>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h2>Supermix Antipode Telemetry</h2>
+          <pre id="out-antipode">Click Probe Real TidalMoE to inspect hooked layers and verified failures.</pre>
+        </div>
+        <div class="card">
+          <h2>Sonapse Symbiosis &amp; Retention Audit</h2>
+          <pre id="out-symbiosis">Click Run Symbiosis Cycle to couple with Sonapse-LAB and verify retention.</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 ARCHITECT & REGISTRY -->
+    <section id="pane-architect" class="tab-pane">
+      <div class="notice">SONAPSE ARCHITECT runs independent 14-step autonomous research cycles on isolated clones with 11 non-LLM learned research experts &amp; Meta-Auditor. SONAPSE SENTINEL archives SHA-256 receipts, checkpoints, and rollback handles.</div>
+      <div class="toolbar">
+        <button id="btn-arch-run" class="btn primary">Run Autonomous Architect Cycle</button>
+        <button id="btn-gen-screen" class="btn">Screen 512 Micro-Connectomes (CPU Funnel)</button>
+        <button id="btn-reg-refresh" class="btn">Refresh Archive &amp; Checkpoints</button>
+        <select id="sel-ckpt"></select>
+        <button id="btn-ckpt-restore" class="btn">↶ Restore Checkpoint</button>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h2>Autonomous Director &amp; Population Funnel Output</h2>
+          <pre id="out-architect">Run a cycle or micro-population screening funnel.</pre>
+        </div>
+        <div class="card">
+          <h2>Persistent Experiment Registry &amp; Discovery Archive</h2>
+          <pre id="out-registry"></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      connectome: null,
+      catalog: null,
+      selectedNodeId: null,
+      yaw: 0.45,
+      pitch: 0.35,
+      dragging: false,
+      lastMouse: null,
+      timer: null,
+    };
+
+    async function apiGet(url) {
+      const r = await fetch(url);
+      return await r.json();
+    }
+    async function apiPost(url, body = {}) {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      return await r.json();
+    }
+    function fillSelect(id, items) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = '';
+      for (const it of items) {
+        const opt = document.createElement('option');
+        opt.value = typeof it === 'string' ? it : it.organelle_type;
+        opt.textContent = typeof it === 'string' ? it : `${it.organelle_type} (cost ${it.base_resource_cost})`;
+        el.appendChild(opt);
+      }
+    }
+
+    // Tabs
+    document.querySelectorAll('nav button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.pane).classList.add('active');
+        document.getElementById('page-title').textContent = btn.textContent;
+      });
+    });
+
+    // 3D Connectome Orbit Canvas
+    const cv3d = document.getElementById('cv-3d');
+    const ctx3d = cv3d.getContext('2d');
+    let projected2d = [];
+
+    function projectPoint(x, y, z) {
+      const cy = Math.cos(state.yaw), sy = Math.sin(state.yaw);
+      const cp = Math.cos(state.pitch), sp = Math.sin(state.pitch);
+      const x1 = x * cy - z * sy;
+      const z1 = x * sy + z * cy;
+      const y2 = y * cp - z1 * sp;
+      const z2 = y * sp + z1 * cp;
+      const scale = 280 / (7.5 - z2);
+      return { sx: cv3d.width / 2 + x1 * scale, sy: cv3d.height / 2 - y2 * scale, z: z2 };
+    }
+
+    function render3D() {
+      ctx3d.clearRect(0, 0, cv3d.width, cv3d.height);
+      const c = state.connectome;
+      if (!c) return;
+      const posMap = {};
+      projected2d = [];
+      for (const n of c.nodes) {
+        const p = projectPoint(n.x, n.y, n.z);
+        posMap[n.id] = p;
+        projected2d.push({ ...p, node: n });
+      }
+      // Edges
+      for (const e of c.edges) {
+        const a = posMap[e.pre], b = posMap[e.post];
+        if (!a || !b) continue;
+        ctx3d.beginPath();
+        ctx3d.moveTo(a.sx, a.sy);
+        ctx3d.lineTo(b.sx, b.sy);
+        ctx3d.strokeStyle = e.weight >= 0 ? 'rgba(56,189,248,0.28)' : 'rgba(248,113,113,0.32)';
+        ctx3d.lineWidth = Math.min(3, 0.7 + Math.abs(e.weight) * 2);
+        ctx3d.stroke();
+      }
+      // Depth-sorted nodes
+      projected2d.sort((a, b) => a.z - b.z);
+      for (const item of projected2d) {
+        const n = item.node;
+        const r = 6 + Math.min(7, Math.abs(n.activity) * 8);
+        ctx3d.beginPath();
+        ctx3d.arc(item.sx, item.sy, r, 0, Math.PI * 2);
+        ctx3d.fillStyle = n.role === 'sensory' ? '#38bdf8' : (n.dale_sign < 0 ? '#f87171' : '#34d399');
+        ctx3d.fill();
+        ctx3d.strokeStyle = n.id === state.selectedNodeId ? '#facc15' : '#f8fafc';
+        ctx3d.lineWidth = n.id === state.selectedNodeId ? 2.6 : 1.0;
+        ctx3d.stroke();
+        ctx3d.fillStyle = '#cbd5e1';
+        ctx3d.font = '10px monospace';
+        ctx3d.fillText(n.id, item.sx + r + 3, item.sy + 3);
+      }
+      document.getElementById('conn-stats').textContent =
+        `Steps: ${c.step_count} | Neurons: ${c.nodes.length} | Synapses: ${c.edges.length} | FLOPs: ${c.total_flops} | Energy: ${c.total_energy}`;
+    }
+
+    function renderWaveforms() {
+      const c = state.connectome;
+      if (!c) return;
+      const cv = document.getElementById('cv-wave');
+      const ctx = cv.getContext('2d');
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      const hist = c.activity_history || [];
+      if (hist.length < 2) return;
+      const cols = Math.min(6, hist[0].length);
+      const palette = ['#38bdf8', '#34d399', '#818cf8', '#fbbf24', '#fb7185', '#22d3ee'];
+      for (let ch = 0; ch < cols; ch++) {
+        ctx.beginPath();
+        hist.forEach((row, i) => {
+          const x = (i / Math.max(hist.length - 1, 1)) * (cv.width - 20) + 10;
+          const y = cv.height / 2 - row[ch] * (cv.height * 0.4);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = palette[ch % palette.length];
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+      }
+      const cvc = document.getElementById('cv-chem');
+      const ctxc = cvc.getContext('2d');
+      ctxc.clearRect(0, 0, cvc.width, cvc.height);
+      const chist = c.chemical_history || [];
+      if (chist.length < 2) return;
+      const keys = ['paracrine', 'da', 'ach', 'serotonin'];
+      keys.forEach((k, ki) => {
+        ctxc.beginPath();
+        chist.forEach((row, i) => {
+          const x = (i / Math.max(chist.length - 1, 1)) * (cvc.width - 20) + 10;
+          const y = cvc.height - 16 - Math.min(1.5, Math.abs(row[k] || 0)) * (cvc.height * 0.55);
+          if (i === 0) ctxc.moveTo(x, y); else ctxc.lineTo(x, y);
+        });
+        ctxc.strokeStyle = palette[ki];
+        ctxc.lineWidth = 1.8;
+        ctxc.stroke();
+      });
+    }
+
+    async function selectNode(node) {
+      state.selectedNodeId = node.id;
+      document.getElementById('neuron-detail').textContent =
+        `${node.id} · ${node.name} [${node.family}] · F${node.fidelity} · Act=${node.activity} · ATP=${node.atp} · Compartments=${node.compartments.length} · Organelles=${node.organelles.length}`;
+      const res = await apiGet(`/api/morphogenesis/neuron/${encodeURIComponent(node.family)}`);
+      if (res.ok && res.svg) {
+        document.getElementById('neuron-svg-live').innerHTML = res.svg;
+      }
+      render3D();
+    }
+
+    cv3d.addEventListener('mousedown', e => { state.dragging = true; state.lastMouse = { x: e.clientX, y: e.clientY }; });
+    window.addEventListener('mouseup', () => { state.dragging = false; });
+    cv3d.addEventListener('mousemove', e => {
+      if (!state.dragging || !state.lastMouse) return;
+      state.yaw += (e.clientX - state.lastMouse.x) * 0.01;
+      state.pitch += (e.clientY - state.lastMouse.y) * 0.01;
+      state.lastMouse = { x: e.clientX, y: e.clientY };
+      render3D();
+    });
+    cv3d.addEventListener('click', e => {
+      const rect = cv3d.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (cv3d.width / rect.width);
+      const my = (e.clientY - rect.top) * (cv3d.height / rect.height);
+      for (const item of projected2d) {
+        if (Math.hypot(item.sx - mx, item.sy - my) < 14) { selectNode(item.node); break; }
+      }
+    });
+
+    function updateConnectome(data) {
+      if (!data || !data.ok) return;
+      state.connectome = data;
+      render3D();
+      renderWaveforms();
+      if (!state.selectedNodeId && data.nodes && data.nodes.length) selectNode(data.nodes[0]);
+    }
+
+    async function refreshRegistry() {
+      const reg = await apiGet('/api/morphogenesis/registry');
+      if (!reg.ok) return;
+      document.getElementById('out-registry').textContent = JSON.stringify({
+        experiments_count: reg.experiments.length,
+        discoveries_count: reg.discoveries.length,
+        checkpoints: reg.checkpoints.slice(0, 8),
+        recent_experiments: reg.experiments.slice(0, 4),
+      }, null, 2);
+      const sel = document.getElementById('sel-ckpt');
+      sel.innerHTML = '';
+      for (const ck of reg.checkpoints) {
+        const opt = document.createElement('option');
+        opt.value = ck.checkpoint_id;
+        opt.textContent = `${ck.label} (${ck.checkpoint_id})`;
+        sel.appendChild(opt);
+      }
+    }
+
+    async function init() {
+      const [st, cat, conn] = await Promise.all([
+        apiGet('/api/morphogenesis/status'),
+        apiGet('/api/morphogenesis/catalog'),
+        apiGet('/api/morphogenesis/connectome'),
+      ]);
+      state.catalog = cat;
+      document.getElementById('status-line').textContent = `READY · ${st.neuron_count} neurons · ${st.synapse_count} synapses · CPU (${st.hardware.cpu_logical_cores}T)`;
+      document.getElementById('hw-info').textContent = `Device: ${st.hardware.selected_device.toUpperCase()} · PyTorch ${st.hardware.torch_version}`;
+      fillSelect('sel-origin', cat.candidate_origins);
+      fillSelect('sel-mut', cat.mutation_operators);
+      fillSelect('sel-live-org', cat.organelles);
+      fillSelect('sel-foundry-fam', [...cat.graft_neurons, ...cat.conventional_neurons]);
+      fillSelect('sel-chim-a', cat.candidate_origins);
+      fillSelect('sel-chim-b', [...cat.candidate_origins].reverse());
+      fillSelect('sel-chim-mode', cat.chimera_modes);
+      fillSelect('sel-sp-op', cat.spectra_mixing_operators);
+      fillSelect('sel-sp-enc', cat.spectra_encodings);
+      fillSelect('sel-sp-target', cat.spectra_injection_targets);
+      fillSelect('sel-sym-mode', cat.coupling_mechanisms);
+      updateConnectome(conn);
+      await refreshRegistry();
+      document.getElementById('btn-inspect-fam').click();
+    }
+
+    // Wire buttons
+    document.getElementById('btn-step').onclick = async () => updateConnectome(await apiPost('/api/morphogenesis/step', { steps: 1, adapt: true }));
+    document.getElementById('btn-step16').onclick = async () => updateConnectome(await apiPost('/api/morphogenesis/step', { steps: 16, adapt: true }));
+    document.getElementById('btn-play').onclick = () => {
+      if (state.timer) return;
+      state.timer = setInterval(async () => updateConnectome(await apiPost('/api/morphogenesis/step', { steps: 2, adapt: true })), 260);
+    };
+    document.getElementById('btn-pause').onclick = () => { if (state.timer) { clearInterval(state.timer); state.timer = null; } };
+    document.getElementById('btn-build').onclick = async () => {
+      const origin = document.getElementById('sel-origin').value;
+      const n_neurons = Number(document.getElementById('inp-n').value);
+      state.selectedNodeId = null;
+      updateConnectome(await apiPost('/api/morphogenesis/connectome/build', { origin, n_neurons }));
+      refreshRegistry();
+    };
+    document.getElementById('btn-mutate').onclick = async () => {
+      const operator = document.getElementById('sel-mut').value;
+      updateConnectome(await apiPost('/api/morphogenesis/mutate', { operator }));
+    };
+    document.getElementById('btn-rollback-tx').onclick = async () => updateConnectome(await apiPost('/api/morphogenesis/mutate', { rollback: true }));
+    document.getElementById('btn-attach-org').onclick = async () => {
+      if (!state.selectedNodeId) return;
+      updateConnectome(await apiPost('/api/morphogenesis/neuron/edit', { neuron_id: state.selectedNodeId, action: 'attach_organelle', organelle_type: document.getElementById('sel-live-org').value }));
+    };
+    document.getElementById('btn-lesion-comp').onclick = async () => {
+      if (!state.selectedNodeId) return;
+      updateConnectome(await apiPost('/api/morphogenesis/neuron/edit', { neuron_id: state.selectedNodeId, action: 'lesion' }));
+    };
+    document.getElementById('btn-repair-comp').onclick = async () => {
+      if (!state.selectedNodeId) return;
+      updateConnectome(await apiPost('/api/morphogenesis/neuron/edit', { neuron_id: state.selectedNodeId, action: 'repair' }));
+    };
+    document.getElementById('btn-inspect-fam').onclick = async () => {
+      const fam = document.getElementById('sel-foundry-fam').value;
+      const res = await apiGet(`/api/morphogenesis/neuron/${encodeURIComponent(fam)}`);
+      if (!res.ok) return;
+      document.getElementById('foundry-svg').innerHTML = res.svg;
+      document.getElementById('foundry-math').textContent = `Objective: ${res.spec.objective_category}\nHypothesis: ${res.spec.hypothesis}\nMath: ${res.spec.formal_math}`;
+      document.getElementById('foundry-physics').textContent = JSON.stringify({ physics: res.physics_summary, organelles: res.spec.organelles }, null, 2);
+    };
+    document.getElementById('btn-chim-merge').onclick = async () => {
+      const res = await apiPost('/api/morphogenesis/chimera/merge', {
+        parent_a_origin: document.getElementById('sel-chim-a').value,
+        parent_b_origin: document.getElementById('sel-chim-b').value,
+        mode: document.getElementById('sel-chim-mode').value,
+        ratio_a: Number(document.getElementById('inp-chim-ratio').value),
+      });
+      document.getElementById('out-chimera').textContent = JSON.stringify(res, null, 2);
+      if (res.connectome) updateConnectome({ ok: true, ...res.connectome });
+    };
+    document.getElementById('btn-sp-inject').onclick = async () => {
+      const res = await apiPost('/api/morphogenesis/spectra/inject', {
+        modality_a: document.getElementById('sel-sp-a').value,
+        modality_b: document.getElementById('sel-sp-b').value,
+        operator: document.getElementById('sel-sp-op').value,
+        encoding: document.getElementById('sel-sp-enc').value,
+        target_scope: document.getElementById('sel-sp-target').value,
+        strength: Number(document.getElementById('inp-sp-str').value),
+      });
+      document.getElementById('out-spectra').textContent = JSON.stringify(res.result, null, 2);
+      const cv = document.getElementById('cv-spectra'), ctx = cv.getContext('2d');
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      const drawLine = (arr, color) => {
+        ctx.beginPath();
+        arr.forEach((v, i) => {
+          const x = (i / Math.max(arr.length - 1, 1)) * (cv.width - 20) + 10;
+          const y = cv.height / 2 - v * (cv.height * 0.42);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+      };
+      if (res.result) {
+        drawLine(res.result.baseline_waveform, '#64748b');
+        drawLine(res.result.injected_waveform, '#38bdf8');
+      }
+    };
+    function render4D(slice) {
+      const cv = document.getElementById('cv-4d'), ctx = cv.getContext('2d');
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      const verts = slice.projected_tesseract_vertices_3d || [];
+      ctx.strokeStyle = 'rgba(129,140,248,0.35)';
+      for (let i = 0; i < verts.length; i++) {
+        for (let j = i + 1; j < verts.length; j++) {
+          if (((i ^ j) & ((i ^ j) - 1)) === 0) {
+            const a = verts[i], b = verts[j];
+            ctx.beginPath();
+            ctx.moveTo(cv.width / 2 + a[0] * 140, cv.height / 2 - a[1] * 140);
+            ctx.lineTo(cv.width / 2 + b[0] * 140, cv.height / 2 - b[1] * 140);
+            ctx.stroke();
+          }
+        }
+      }
+      const ag = slice.agent_3d;
+      ctx.fillStyle = slice.wall_present_in_slice ? '#fbbf24' : '#34d399';
+      ctx.beginPath();
+      ctx.arc(cv.width / 2 + ag[0] * 35, cv.height / 2 - ag[1] * 35, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#e2e8f0'; ctx.font = '12px monospace';
+      ctx.fillText(`w = ${slice.current_w} | wall in slice: ${slice.wall_present_in_slice}`, 12, 20);
+    }
+    document.getElementById('btn-hs-step-w').onclick = async () => {
+      const r = await apiPost('/api/morphogenesis/hyperspace/step', { action: [0.3, 0.0, 0.0, 1.0] });
+      document.getElementById('out-hyperspace').textContent = JSON.stringify(r, null, 2);
+      render4D(r.slice);
+    };
+    document.getElementById('btn-hs-step-x').onclick = async () => {
+      const r = await apiPost('/api/morphogenesis/hyperspace/step', { action: [1.0, 0.0, 0.0, 0.0] });
+      document.getElementById('out-hyperspace').textContent = JSON.stringify(r, null, 2);
+      render4D(r.slice);
+    };
+    document.getElementById('btn-hs-reset').onclick = async () => {
+      const r = await apiPost('/api/morphogenesis/hyperspace/step', { reset: true, action: [0, 0, 0, 0] });
+      document.getElementById('out-hyperspace').textContent = JSON.stringify(r, null, 2);
+      render4D(r.slice);
+    };
+    document.getElementById('btn-affect-run').onclick = async () => {
+      const r = await apiPost('/api/morphogenesis/affect/run', {});
+      document.getElementById('out-affect').textContent = JSON.stringify(r.result, null, 2);
+      const cv = document.getElementById('cv-affect'), ctx = cv.getContext('2d');
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      const pts = r.result.pca_phase_trajectory_sample || [];
+      const colors = ['#34d399', '#f87171', '#38bdf8'];
+      for (const [px, py, lbl] of pts) {
+        ctx.fillStyle = colors[lbl % 3];
+        ctx.beginPath();
+        ctx.arc(cv.width / 2 + px * 55, cv.height / 2 - py * 55, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+    document.getElementById('btn-antipode-run').onclick = async () => {
+      const r = await apiPost('/api/morphogenesis/antipode/probe', {});
+      document.getElementById('out-antipode').textContent = JSON.stringify(r.result, null, 2);
+    };
+    document.getElementById('btn-symbiosis-run').onclick = async () => {
+      const coupling = document.getElementById('sel-sym-mode').value;
+      const r = await apiPost('/api/morphogenesis/symbiosis/run', { coupling });
+      document.getElementById('out-symbiosis').textContent = JSON.stringify(r.result, null, 2);
+    };
+    document.getElementById('btn-arch-run').onclick = async () => {
+      const r = await apiPost('/api/morphogenesis/architect/cycle', {});
+      document.getElementById('out-architect').textContent = JSON.stringify(r.result, null, 2);
+      refreshRegistry();
+    };
+    document.getElementById('btn-gen-screen').onclick = async () => {
+      const r = await apiPost('/api/morphogenesis/genesis/screen', { population_size: 512 });
+      document.getElementById('out-architect').textContent = JSON.stringify(r.result, null, 2);
+    };
+    document.getElementById('btn-reg-refresh').onclick = refreshRegistry;
+    document.getElementById('btn-save-ckpt').onclick = async () => {
+      await apiPost('/api/morphogenesis/checkpoint/save', {});
+      await refreshRegistry();
+    };
+    document.getElementById('btn-ckpt-restore').onclick = async () => {
+      const cid = document.getElementById('sel-ckpt').value;
+      if (!cid) return;
+      updateConnectome(await apiPost('/api/morphogenesis/checkpoint/rollback', { checkpoint_id: cid }));
+    };
+    document.getElementById('btn-estop').onclick = async () => {
+      if (state.timer) { clearInterval(state.timer); state.timer = null; }
+      const r = await apiPost('/api/morphogenesis/emergency_stop', { reason: 'Operator clicked Emergency Stop' });
+      const pill = document.getElementById('status-line');
+      pill.textContent = `EMERGENCY STOP ACTIVE: ${r.reason}`;
+      pill.className = 'pill bad';
+    };
+
+    init();
+  </script>
+</body>
+</html>

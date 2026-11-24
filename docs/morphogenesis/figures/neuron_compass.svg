@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="240" viewBox="0 0 440 240">
+<rect width="100%" height="100%" rx="10" fill="#0f172a"/>
+<text x="14" y="20" fill="#e2e8f0" font-family="monospace" font-size="13" font-weight="bold">Compass Neuron [compass] · F2</text>
+<text x="14" y="230" fill="#94a3b8" font-family="monospace" font-size="10">Compartments: 7 | Edges: 24 | Organelles: 0 | Cost: 5.64</text>
+<line x1="245.0" y1="120.0" x2="210.0" y2="78.4" stroke="#64748b" stroke-width="2"/>
+<line x1="245.0" y1="120.0" x2="210.0" y2="161.6" stroke="#64748b" stroke-width="2"/>
+<line x1="245.0" y1="120.0" x2="105.0" y2="120.0" stroke="#ef4444" stroke-width="2"/>
+<line x1="245.0" y1="120.0" x2="335.0" y2="120.0" stroke="#64748b" stroke-width="2"/>
+<line x1="210.0" y1="78.4" x2="140.0" y2="78.4" stroke="#64748b" stroke-width="2"/>
+<line x1="210.0" y1="78.4" x2="245.0" y2="120.0" stroke="#64748b" stroke-width="2"/>
+<line x1="210.0" y1="78.4" x2="140.0" y2="161.6" stroke="#ef4444" stroke-width="2"/>
+<line x1="210.0" y1="78.4" x2="335.0" y2="120.0" stroke="#64748b" stroke-width="2"/>
+<line x1="140.0" y1="78.4" x2="105.0" y2="120.0" stroke="#64748b" stroke-width="2"/>
+<line x1="140.0" y1="78.4" x2="210.0" y2="78.4" stroke="#64748b" stroke-width="2"/>
+<line x1="140.0" y1="78.4" x2="210.0" y2="161.6" stroke="#ef4444" stroke-width="2"/>
+<line x1="140.0" y1="78.4" x2="335.0" y2="120.0" stroke="#ef4444" stroke-width="2"/>
+<line x1="105.0" y1="120.0" x2="140.0" y2="161.6" stroke="#64748b" stroke-width="2"/>
+<line x1="105.0" y1="120.0" x2="140.0" y2="78.4" stroke="#64748b" stroke-width="2"/>
+<line x1="105.0" y1="120.0" x2="245.0" y2="120.0" stroke="#ef4444" stroke-width="2"/>
+<line x1="105.0" y1="120.0" x2="335.0" y2="120.0" stroke="#ef4444" stroke-width="2"/>
+<line x1="140.0" y1="161.6" x2="210.0" y2="161.6" stroke="#64748b" stroke-width="2"/>
+<line x1="140.0" y1="161.6" x2="105.0" y2="120.0" stroke="#64748b" stroke-width="2"/>
+<line x1="140.0" y1="161.6" x2="210.0" y2="78.4" stroke="#ef4444" stroke-width="2"/>
+<line x1="140.0" y1="161.6" x2="335.0" y2="120.0" stroke="#ef4444" stroke-width="2"/>
+<line x1="210.0" y1="161.6" x2="245.0" y2="120.0" stroke="#64748b" stroke-width="2"/>
+<line x1="210.0" y1="161.6" x2="140.0" y2="161.6" stroke="#64748b" stroke-width="2"/>
+<line x1="210.0" y1="161.6" x2="140.0" y2="78.4" stroke="#ef4444" stroke-width="2"/>
+<line x1="210.0" y1="161.6" x2="335.0" y2="120.0" stroke="#64748b" stroke-width="2"/>
+<circle cx="245.0" cy="120.0" r="9.0" fill="#f59e0b" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="245.0" y="107.0" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">ring_0</text>
+<circle cx="210.0" cy="78.4" r="9.0" fill="#f59e0b" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="210.0" y="65.4" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">ring_1</text>
+<circle cx="140.0" cy="78.4" r="9.0" fill="#f59e0b" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="140.0" y="65.4" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">ring_2</text>
+<circle cx="105.0" cy="120.0" r="9.0" fill="#f59e0b" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="105.0" y="107.0" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">ring_3</text>
+<circle cx="140.0" cy="161.6" r="9.0" fill="#f59e0b" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="140.0" y="148.6" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">ring_4</text>
+<circle cx="210.0" cy="161.6" r="9.0" fill="#f59e0b" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="210.0" y="148.6" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">ring_5</text>
+<circle cx="335.0" cy="120.0" r="11.1" fill="#38bdf8" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="335.0" y="104.9" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">soma_out</text>
+</svg>

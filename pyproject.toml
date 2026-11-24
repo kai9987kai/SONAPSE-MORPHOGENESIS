@@ -46,12 +46,14 @@ dev = ["pytest>=8", "ruff>=0.8", "pip-audit>=2.7", "hypothesis>=6"]
 
 [project.scripts]
 synapse-lab = "synapse.cli:main"
+sonapse-morphogenesis = "sonapse_morphogenesis.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["synapse*"]
+include = ["synapse*", "sonapse_morphogenesis*"]
 
 [tool.setuptools.package-data]
 synapse = ["web/*", "source_manifest.json", "_vendor/**/*"]
+sonapse_morphogenesis = ["workbench/static/*"]
 
 [tool.setuptools.exclude-package-data]
 "*" = ["*.pyc", "*.pyo", "**/*.pyc", "**/*.pyo"]

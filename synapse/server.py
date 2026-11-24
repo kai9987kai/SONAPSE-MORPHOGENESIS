@@ -381,6 +381,14 @@ class Workbench:
                 from .frontier.workbench_api import FrontierWorkbenchAPI
                 self._frontier_api = FrontierWorkbenchAPI(self)
             return self._frontier_api
+    def morphogenesis_api(self):
+        """Lazily built SONAPSE MORPHOGENESIS API (``/api/morphogenesis/*``); additive & decoupled."""
+        with self.lock:
+            if getattr(self, '_morphogenesis_api', None) is None:
+                from sonapse_morphogenesis.workbench import MorphogenesisWorkbenchAPI
+                seed = getattr(getattr(self.runtime, 'config', None), 'seed', 7)
+                self._morphogenesis_api = MorphogenesisWorkbenchAPI(state_root=self.root / 'morphogenesis', seed=seed)
+            return self._morphogenesis_api
     # NEUROWEAVE Lab routes: GET /api/neuroweave/catalog, '/api/neuroweave/status', '/api/neuroweave/observatory',
     # '/api/neuroweave/ledger', '/api/neuroweave/ecology'; POST '/api/neuroweave/configure', '/api/neuroweave/step',
     # '/api/neuroweave/experiment', '/api/neuroweave/topology', '/api/neuroweave/lesion', '/api/neuroweave/sensory',
@@ -392,6 +400,8 @@ class Workbench:
             return self.neuroweave_api().get(path)
         if path.startswith('/api/frontier/'):
             return self.frontier_api().get(path)
+        if path.startswith('/api/morphogenesis/'):
+            return self.morphogenesis_api().get(path)
         receipt_prefix='/api/planning-study/receipt/'
         if path.startswith(receipt_prefix):
             name=safe_name(path[len(receipt_prefix):])
@@ -663,6 +673,8 @@ class Workbench:
             return self.neuroweave_api().post(path,data)
         if path.startswith('/api/frontier/'):
             return self.frontier_api().post(path,data)
+        if path.startswith('/api/morphogenesis/'):
+            return self.morphogenesis_api().post(path,data)
         if path=='/api/perf/benchmark':
             from .perf_lab import PARETO_ARM_IDS, run_scaling_profile, run_subsystem_pareto_sweep
             if not isinstance(data, dict):
@@ -1424,6 +1436,10 @@ def create_server(host='127.0.0.1',port=8765,runtime=None,config=None,output_roo
                     exported=app.portable_export_path(filename)
                     return self.send_download(exported,filename)
                 if path.startswith('/api/'): return self.send(200,app.get(path))
+                if path in ('/morphogenesis', '/morphogenesis/'):
+                    from sonapse_morphogenesis.workbench import STATIC_DIR as MORPH_STATIC
+                    mfile = MORPH_STATIC / 'index.html'
+                    return self.send(200, mfile.read_bytes(), 'text/html; charset=utf-8')
                 names={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/style.css':'style.css','/favicon.svg':'favicon.svg'}
                 if path not in names: return self.send(404,{'error':'not found'})
                 file=web/names[path]; self.send(200,file.read_bytes(),mimetypes.guess_type(file.name)[0] or 'text/plain')

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonapse.morphogenesis/schemas/v1/experiment_receipt.json",
+  "title": "ExperimentReceipt",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "title",
+    "module",
+    "hypothesis",
+    "objective_category",
+    "evidence_state",
+    "sha256_digest"
+  ],
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "objective_category": {
+      "enum": [
+        "biological_realism",
+        "computational_usefulness",
+        "speculative_synthetic_biology"
+      ]
+    },
+    "evidence_state": {
+      "enum": [
+        "unverified_observation",
+        "candidate_discovery",
+        "independently_replicated",
+        "causally_supported",
+        "larger_scale_validated"
+      ]
+    },
+    "sha256_digest": {
+      "type": "string"
+    }
+  }
+}

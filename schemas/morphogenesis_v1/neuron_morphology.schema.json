@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonapse.morphogenesis/schemas/v1/neuron_morphology.json",
+  "title": "NeuronMorphologySpec",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "morphology_id",
+    "family",
+    "name",
+    "fidelity",
+    "compartments",
+    "edges"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "morphology_id": {
+      "type": "string"
+    },
+    "family": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "objective_category": {
+      "enum": [
+        "biological_realism",
+        "computational_usefulness",
+        "speculative_synthetic_biology"
+      ]
+    },
+    "fidelity": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "dale_sign": {
+      "enum": [
+        -1,
+        1
+      ]
+    },
+    "compartments": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "organelles": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}
