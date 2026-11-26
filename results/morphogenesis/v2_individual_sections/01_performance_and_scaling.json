@@ -1,0 +1,502 @@
+{
+  "section": "01_performance_and_scaling",
+  "wallclock_seconds": 38.947,
+  "cpu_seconds": 33.891,
+  "result": {
+    "compiled_vs_object_engine": {
+      "experiment": "compiled_soa_vs_object_connectome_benchmark",
+      "steps": 50,
+      "scale_comparisons": [
+        {
+          "neurons": 32,
+          "total_compartments": 109,
+          "compiled_wall_ms": 59.373,
+          "compiled_steps_per_sec_hz": 842.1,
+          "object_engine_wall_ms": 633.143,
+          "speedup_x": 10.66,
+          "finite_outputs": true
+        },
+        {
+          "neurons": 128,
+          "total_compartments": 445,
+          "compiled_wall_ms": 102.547,
+          "compiled_steps_per_sec_hz": 487.6,
+          "object_engine_wall_ms": 2846.869,
+          "speedup_x": 27.76,
+          "finite_outputs": true
+        },
+        {
+          "neurons": 256,
+          "total_compartments": 897,
+          "compiled_wall_ms": 161.341,
+          "compiled_steps_per_sec_hz": 309.9,
+          "object_engine_wall_ms": 5890.146,
+          "speedup_x": 36.51,
+          "finite_outputs": true
+        },
+        {
+          "neurons": 512,
+          "total_compartments": 1806,
+          "compiled_wall_ms": 475.785,
+          "compiled_steps_per_sec_hz": 105.1,
+          "object_engine_wall_ms": null,
+          "speedup_x": null,
+          "finite_outputs": true
+        }
+      ],
+      "large_2048_multicompartment_probe": {
+        "neurons": 2048,
+        "compartments": 7173,
+        "steps": 20,
+        "wall_ms": 1088.11,
+        "steps_per_sec_hz": 18.4
+      }
+    },
+    "host_scaling_profile": {
+      "kind": "scaling_profile",
+      "config": {
+        "neuron_counts": [
+          48,
+          192,
+          600,
+          1200
+        ],
+        "steps": 16,
+        "learn": true,
+        "seed": 7,
+        "task": "forage",
+        "compute_threads": 1
+      },
+      "profiles": [
+        {
+          "neurons": 48,
+          "synapses": 249,
+          "steps": 16,
+          "learn": true,
+          "active_subsystems": [
+            "surprise_memory"
+          ],
+          "active_subsystem_count": 1,
+          "init_ms": 2763.188,
+          "step_wall_ms": 322.353,
+          "step_cpu_ms": 281.25,
+          "mean_step_ms": 20.1441,
+          "p50_step_ms": 19.3305,
+          "p95_step_ms": 33.2636,
+          "snapshot_ms": 8.526,
+          "measured_steps_per_sec": 49.63,
+          "measured_neuron_steps_per_sec": 2382.5,
+          "stage_mean_ms": {
+            "act": 7.75,
+            "uncertainty": 7.1192,
+            "world": 0.8122,
+            "learn": 4.2473,
+            "overhead": 0.2154
+          },
+          "bottleneck_stage": "act",
+          "mean_reward": -0.028964,
+          "trajectory_digest": "6fa2f1df53a9f3a27d62bc91e94294fbaa20d90ac641fc77c7f1d111415546cd"
+        },
+        {
+          "neurons": 192,
+          "synapses": 2298,
+          "steps": 16,
+          "learn": true,
+          "active_subsystems": [
+            "surprise_memory"
+          ],
+          "active_subsystem_count": 1,
+          "init_ms": 80.531,
+          "step_wall_ms": 285.266,
+          "step_cpu_ms": 234.375,
+          "mean_step_ms": 17.8268,
+          "p50_step_ms": 18.1821,
+          "p95_step_ms": 27.0341,
+          "snapshot_ms": 4.641,
+          "measured_steps_per_sec": 56.09,
+          "measured_neuron_steps_per_sec": 10768.9,
+          "stage_mean_ms": {
+            "act": 7.5952,
+            "uncertainty": 6.4789,
+            "world": 0.7076,
+            "learn": 2.874,
+            "overhead": 0.1711
+          },
+          "bottleneck_stage": "act",
+          "mean_reward": -0.016154,
+          "trajectory_digest": "11b71b81bd3103e5a8f4507f49fdfd3608aa5ecb766d925f8fc26ad92c1b3762"
+        },
+        {
+          "neurons": 600,
+          "synapses": 12687,
+          "steps": 16,
+          "learn": true,
+          "active_subsystems": [
+            "surprise_memory"
+          ],
+          "active_subsystem_count": 1,
+          "init_ms": 115.122,
+          "step_wall_ms": 291.26,
+          "step_cpu_ms": 234.375,
+          "mean_step_ms": 18.2015,
+          "p50_step_ms": 18.4383,
+          "p95_step_ms": 26.9501,
+          "snapshot_ms": 8.685,
+          "measured_steps_per_sec": 54.93,
+          "measured_neuron_steps_per_sec": 32960.2,
+          "stage_mean_ms": {
+            "act": 7.6831,
+            "uncertainty": 6.0843,
+            "world": 0.6745,
+            "learn": 3.5781,
+            "overhead": 0.1815
+          },
+          "bottleneck_stage": "act",
+          "mean_reward": -0.022796,
+          "trajectory_digest": "713bca771353133ff63cf25af49105adba337104052a1fef883467df089bc951"
+        },
+        {
+          "neurons": 1200,
+          "synapses": 25569,
+          "steps": 16,
+          "learn": true,
+          "active_subsystems": [
+            "surprise_memory"
+          ],
+          "active_subsystem_count": 1,
+          "init_ms": 201.757,
+          "step_wall_ms": 315.163,
+          "step_cpu_ms": 296.875,
+          "mean_step_ms": 19.6956,
+          "p50_step_ms": 19.1251,
+          "p95_step_ms": 26.6468,
+          "snapshot_ms": 12.754,
+          "measured_steps_per_sec": 50.77,
+          "measured_neuron_steps_per_sec": 60920.9,
+          "stage_mean_ms": {
+            "act": 9.7052,
+            "uncertainty": 6.0884,
+            "world": 0.765,
+            "learn": 2.9098,
+            "overhead": 0.2272
+          },
+          "bottleneck_stage": "act",
+          "mean_reward": -0.022345,
+          "trajectory_digest": "dcc4a696216ed5ac8a5c540855e0266c1d1f47fcf6127e20af9fee6ce3fdb7b9"
+        }
+      ],
+      "scaling_efficiency": {
+        "neuron_scale_factor": 25.0,
+        "latency_scale_factor": 0.978,
+        "sublinear_ratio": 0.0391
+      },
+      "non_claim": "Synthetic short-horizon CPU latency and throughput profile; does not measure held-out task capability.",
+      "schema": "PerfLabReceiptV1",
+      "schema_version": 1,
+      "evidence_tier": "measured_runtime_wallclock",
+      "digest": "bd5f1343f1bf95dc3b87e1293a2a329a397c5cb8cadbc4901b3386b2d2d1c2db"
+    },
+    "host_pareto_sweep_8arms": {
+      "kind": "subsystem_pareto_sweep",
+      "config": {
+        "nodes_per_source": 16,
+        "steps": 16,
+        "learn": true,
+        "seed": 7,
+        "task": "forage",
+        "compute_threads": 1,
+        "arms": [
+          "baseline",
+          "experience_planning",
+          "dsag",
+          "neuroweave",
+          "frontier_observers",
+          "dendritic_oscillatory",
+          "neural_graft",
+          "morphogenesis"
+        ]
+      },
+      "arms": [
+        {
+          "neurons": 48,
+          "synapses": 249,
+          "steps": 16,
+          "learn": true,
+          "active_subsystems": [
+            "surprise_memory"
+          ],
+          "active_subsystem_count": 1,
+          "init_ms": 51.077,
+          "step_wall_ms": 259.318,
+          "step_cpu_ms": 265.625,
+          "mean_step_ms": 16.2054,
+          "p50_step_ms": 13.1372,
+          "p95_step_ms": 25.5411,
+          "snapshot_ms": 2.702,
+          "measured_steps_per_sec": 61.7,
+          "measured_neuron_steps_per_sec": 2961.6,
+          "stage_mean_ms": {
+            "act": 6.4958,
+            "uncertainty": 5.9191,
+            "world": 0.7059,
+            "learn": 2.9027,
+            "overhead": 0.1819
+          },
+          "bottleneck_stage": "act",
+          "mean_reward": -0.028964,
+          "trajectory_digest": "6fa2f1df53a9f3a27d62bc91e94294fbaa20d90ac641fc77c7f1d111415546cd",
+          "arm": "baseline",
+          "overhead_ms_vs_baseline": 0.0,
+          "overhead_ratio_vs_baseline": 1.0,
+          "pareto_efficient": true
+        },
+        {
+          "neurons": 48,
+          "synapses": 249,
+          "steps": 16,
+          "learn": true,
+          "active_subsystems": [
+            "experience_planning",
+            "surprise_memory"
+          ],
+          "active_subsystem_count": 2,
+          "init_ms": 46.135,
+          "step_wall_ms": 276.416,
+          "step_cpu_ms": 265.625,
+          "mean_step_ms": 17.2738,
+          "p50_step_ms": 18.312,
+          "p95_step_ms": 23.1878,
+          "snapshot_ms": 3.303,
+          "measured_steps_per_sec": 57.88,
+          "measured_neuron_steps_per_sec": 2778.4,
+          "stage_mean_ms": {
+            "act": 8.117,
+            "uncertainty": 5.4639,
+            "world": 0.6748,
+            "learn": 2.8439,
+            "overhead": 0.1741
+          },
+          "bottleneck_stage": "act",
+          "mean_reward": -0.028964,
+          "trajectory_digest": "6fa2f1df53a9f3a27d62bc91e94294fbaa20d90ac641fc77c7f1d111415546cd",
+          "arm": "experience_planning",
+          "overhead_ms_vs_baseline": 1.0684,
+          "overhead_ratio_vs_baseline": 1.0659,
+          "pareto_efficient": true
+        },
+        {
+          "neurons": 48,
+          "synapses": 249,
+          "steps": 16,
+          "learn": true,
+          "active_subsystems": [
+            "surprise_memory",
+            "dsag"
+          ],
+          "active_subsystem_count": 2,
+          "init_ms": 47.146,
+          "step_wall_ms": 369.66,
+          "step_cpu_ms": 312.5,
+          "mean_step_ms": 23.1016,
+          "p50_step_ms": 21.8197,
+          "p95_step_ms": 29.9644,
+          "snapshot_ms": 8.706,
+          "measured_steps_per_sec": 43.28,
+          "measured_neuron_steps_per_sec": 2077.6,
+          "stage_mean_ms": {
+            "act": 12.8531,
+            "uncertainty": 6.3408,
+            "world": 0.7382,
+            "learn": 2.9777,
+            "overhead": 0.1918
+          },
+          "bottleneck_stage": "act",
+          "mean_reward": -0.028964,
+          "trajectory_digest": "6fa2f1df53a9f3a27d62bc91e94294fbaa20d90ac641fc77c7f1d111415546cd",
+          "arm": "dsag",
+          "overhead_ms_vs_baseline": 6.8962,
+          "overhead_ratio_vs_baseline": 1.4255,
+          "pareto_efficient": false
+        },
+        {
+          "neurons": 48,
+          "synapses": 249,
+          "steps": 16,
+          "learn": true,
+          "active_subsystems": [
+            "surprise_memory",
+            "neuroweave"
+          ],
+          "active_subsystem_count": 2,
+          "init_ms": 89.177,
+          "step_wall_ms": 366.631,
+          "step_cpu_ms": 296.875,
+          "mean_step_ms": 22.9117,
+          "p50_step_ms": 22.296,
+          "p95_step_ms": 31.2106,
+          "snapshot_ms": 1.75,
+          "measured_steps_per_sec": 43.64,
+          "measured_neuron_steps_per_sec": 2094.7,
+          "stage_mean_ms": {
+            "act": 13.0224,
+            "uncertainty": 5.822,
+            "world": 0.6432,
+            "learn": 3.1974,
+            "overhead": 0.2267
+          },
+          "bottleneck_stage": "act",
+          "mean_reward": -0.028964,
+          "trajectory_digest": "6fa2f1df53a9f3a27d62bc91e94294fbaa20d90ac641fc77c7f1d111415546cd",
+          "arm": "neuroweave",
+          "overhead_ms_vs_baseline": 6.7063,
+          "overhead_ratio_vs_baseline": 1.4138,
+          "pareto_efficient": false
+        },
+        {
+          "neurons": 48,
+          "synapses": 249,
+          "steps": 16,
+          "learn": true,
+          "active_subsystems": [
+            "surprise_memory",
+            "frontier"
+          ],
+          "active_subsystem_count": 2,
+          "init_ms": 153.713,
+          "step_wall_ms": 459.102,
+          "step_cpu_ms": 390.625,
+          "mean_step_ms": 28.691,
+          "p50_step_ms": 25.564,
+          "p95_step_ms": 40.5959,
+          "snapshot_ms": 3.071,
+          "measured_steps_per_sec": 34.85,
+          "measured_neuron_steps_per_sec": 1672.8,
+          "stage_mean_ms": {
+            "act": 16.6075,
+            "uncertainty": 7.0538,
+            "world": 0.9742,
+            "learn": 3.8406,
+            "overhead": 0.2149
+          },
+          "bottleneck_stage": "act",
+          "mean_reward": -0.028964,
+          "trajectory_digest": "6fa2f1df53a9f3a27d62bc91e94294fbaa20d90ac641fc77c7f1d111415546cd",
+          "arm": "frontier_observers",
+          "overhead_ms_vs_baseline": 12.4856,
+          "overhead_ratio_vs_baseline": 1.7705,
+          "pareto_efficient": false
+        },
+        {
+          "neurons": 48,
+          "synapses": 249,
+          "steps": 16,
+          "learn": true,
+          "active_subsystems": [
+            "surprise_memory",
+            "dendritic_ltc",
+            "oscillatory_coherence"
+          ],
+          "active_subsystem_count": 3,
+          "init_ms": 91.623,
+          "step_wall_ms": 364.1,
+          "step_cpu_ms": 312.5,
+          "mean_step_ms": 22.7535,
+          "p50_step_ms": 22.6222,
+          "p95_step_ms": 32.2239,
+          "snapshot_ms": 1.579,
+          "measured_steps_per_sec": 43.94,
+          "measured_neuron_steps_per_sec": 2109.3,
+          "stage_mean_ms": {
+            "act": 10.6349,
+            "uncertainty": 6.3348,
+            "world": 1.1781,
+            "learn": 4.3901,
+            "overhead": 0.2156
+          },
+          "bottleneck_stage": "act",
+          "mean_reward": -0.028964,
+          "trajectory_digest": "c655e615cace0af6803f8b261640e623d0f51855a66a021dfba74084979c12f2",
+          "arm": "dendritic_oscillatory",
+          "overhead_ms_vs_baseline": 6.5481,
+          "overhead_ratio_vs_baseline": 1.4041,
+          "pareto_efficient": true
+        },
+        {
+          "neurons": 48,
+          "synapses": 249,
+          "steps": 16,
+          "learn": true,
+          "active_subsystems": [
+            "surprise_memory",
+            "neural_graft",
+            "active_training"
+          ],
+          "active_subsystem_count": 3,
+          "init_ms": 65.283,
+          "step_wall_ms": 394.879,
+          "step_cpu_ms": 312.5,
+          "mean_step_ms": 24.6776,
+          "p50_step_ms": 21.1389,
+          "p95_step_ms": 46.8172,
+          "snapshot_ms": 1.837,
+          "measured_steps_per_sec": 40.52,
+          "measured_neuron_steps_per_sec": 1944.9,
+          "stage_mean_ms": {
+            "act": 9.5272,
+            "uncertainty": 6.991,
+            "world": 0.9566,
+            "learn": 6.9703,
+            "overhead": 0.2325
+          },
+          "bottleneck_stage": "act",
+          "mean_reward": -0.027962,
+          "trajectory_digest": "7be0f4fc27bff05a3a9d69f82a50e7fae4229d8b51106bd135ae51f88eafba84",
+          "arm": "neural_graft",
+          "overhead_ms_vs_baseline": 8.4722,
+          "overhead_ratio_vs_baseline": 1.5228,
+          "pareto_efficient": false
+        },
+        {
+          "neurons": 48,
+          "synapses": 249,
+          "steps": 16,
+          "learn": true,
+          "active_subsystems": [
+            "surprise_memory",
+            "morphogenesis"
+          ],
+          "active_subsystem_count": 2,
+          "init_ms": 62.949,
+          "step_wall_ms": 411.698,
+          "step_cpu_ms": 390.625,
+          "mean_step_ms": 25.7279,
+          "p50_step_ms": 25.1216,
+          "p95_step_ms": 32.7834,
+          "snapshot_ms": 2.964,
+          "measured_steps_per_sec": 38.86,
+          "measured_neuron_steps_per_sec": 1865.4,
+          "stage_mean_ms": {
+            "act": 13.2032,
+            "uncertainty": 7.0479,
+            "world": 1.318,
+            "learn": 3.8858,
+            "overhead": 0.2731
+          },
+          "bottleneck_stage": "act",
+          "mean_reward": -0.028964,
+          "trajectory_digest": "6fa2f1df53a9f3a27d62bc91e94294fbaa20d90ac641fc77c7f1d111415546cd",
+          "arm": "morphogenesis",
+          "overhead_ms_vs_baseline": 9.5225,
+          "overhead_ratio_vs_baseline": 1.5876,
+          "pareto_efficient": false
+        }
+      ],
+      "non_claim": "Pareto frontier reflects measured short-horizon CPU latency vs. enabled subsystem count, not empirical task superiority.",
+      "schema": "PerfLabReceiptV1",
+      "schema_version": 1,
+      "evidence_tier": "measured_runtime_wallclock",
+      "digest": "8d129884656a664e54da30705dce5ca43d3e1710b0bec8a0211f59d195d43050"
+    }
+  },
+  "sha256_digest": "5bc9f23371fcb27fd2957fdba69ca1c32db03ed712dfc630e9e731f3df5a0ccd"
+}

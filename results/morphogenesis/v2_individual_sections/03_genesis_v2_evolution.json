@@ -1,0 +1,392 @@
+{
+  "section": "03_genesis_v2_evolution",
+  "wallclock_seconds": 6.684,
+  "cpu_seconds": 6.312,
+  "result": {
+    "micro_population_2048": {
+      "experiment": "large_population_micro_screening_funnel",
+      "population_size": 2048,
+      "n_neurons_per_candidate": 12,
+      "steps": 64,
+      "seed": 7,
+      "stage1_wall_ms": 122.67,
+      "stage2_wall_ms": 6.58,
+      "total_wall_ms": 156.04,
+      "candidates_per_second": 13125.0,
+      "stage1_median_mse": 0.77539,
+      "stage1_best_mse": 0.68314,
+      "stage2_best_xor_mse": 1.00539,
+      "top_winners": [
+        {
+          "candidate_index": 1779,
+          "stage1_delay_mse": 0.71417,
+          "stage2_xor_mse": 1.00539,
+          "synapse_density": 0.1806,
+          "mean_decay": 0.6854
+        },
+        {
+          "candidate_index": 1579,
+          "stage1_delay_mse": 0.71367,
+          "stage2_xor_mse": 1.0074,
+          "synapse_density": 0.2153,
+          "mean_decay": 0.6786
+        },
+        {
+          "candidate_index": 1937,
+          "stage1_delay_mse": 0.71303,
+          "stage2_xor_mse": 1.0187,
+          "synapse_density": 0.1528,
+          "mean_decay": 0.6912
+        },
+        {
+          "candidate_index": 101,
+          "stage1_delay_mse": 0.69789,
+          "stage2_xor_mse": 1.01768,
+          "synapse_density": 0.1806,
+          "mean_decay": 0.6122
+        },
+        {
+          "candidate_index": 235,
+          "stage1_delay_mse": 0.71181,
+          "stage2_xor_mse": 1.01665,
+          "synapse_density": 0.1944,
+          "mean_decay": 0.6945
+        },
+        {
+          "candidate_index": 777,
+          "stage1_delay_mse": 0.71042,
+          "stage2_xor_mse": 1.0192,
+          "synapse_density": 0.1736,
+          "mean_decay": 0.6105
+        },
+        {
+          "candidate_index": 1533,
+          "stage1_delay_mse": 0.7056,
+          "stage2_xor_mse": 1.01868,
+          "synapse_density": 0.1806,
+          "mean_decay": 0.6227
+        },
+        {
+          "candidate_index": 248,
+          "stage1_delay_mse": 0.70323,
+          "stage2_xor_mse": 1.01917,
+          "synapse_density": 0.1806,
+          "mean_decay": 0.7238
+        }
+      ]
+    },
+    "scee_collective_curricula": {
+      "experiment": "successive_collective_experience_evolution_curricula",
+      "generations": 10,
+      "pop_size": 12,
+      "seeds": [
+        7,
+        11,
+        19
+      ],
+      "curricula": {
+        "first_successful_action": {
+          "mean_heldout_return": -0.9467,
+          "mean_heldout_success_rate": 0.4722,
+          "mean_verified_accepted": 23.67,
+          "mean_accidental_rejected": 11.0,
+          "mean_archive_diversity": 14.33
+        },
+        "complete_trajectory": {
+          "mean_heldout_return": -1.0006,
+          "mean_heldout_success_rate": 0.4722,
+          "mean_verified_accepted": 21.67,
+          "mean_accidental_rejected": 11.0,
+          "mean_archive_diversity": 13.67
+        },
+        "reinforcement_learning": {
+          "mean_heldout_return": -2.324,
+          "mean_heldout_success_rate": 0.0,
+          "mean_verified_accepted": 11.33,
+          "mean_accidental_rejected": 5.33,
+          "mean_archive_diversity": 12.0
+        },
+        "counterfactual_credit": {
+          "mean_heldout_return": -2.0416,
+          "mean_heldout_success_rate": 0.0,
+          "mean_verified_accepted": 13.33,
+          "mean_accidental_rejected": 5.33,
+          "mean_archive_diversity": 14.33
+        },
+        "diversity_preserving_map_elites": {
+          "mean_heldout_return": -1.2112,
+          "mean_heldout_success_rate": 0.4722,
+          "mean_verified_accepted": 17.67,
+          "mean_accidental_rejected": 8.67,
+          "mean_archive_diversity": 13.67
+        }
+      },
+      "best_curriculum_by_return": "first_successful_action"
+    },
+    "recursive_vs_evolutionary": {
+      "experiment": "recursive_connectome_improvement_vs_random_evolution",
+      "seed": 7,
+      "generations": 10,
+      "n_neurons": 10,
+      "baseline_heldout_mse": 1.011512,
+      "descendant_directed": {
+        "best_train_score": -1.155682,
+        "heldout_delay_mse": 1.011512,
+        "heldout_energy": 79.7207,
+        "accepted_mutations": 0,
+        "surviving_lineages": 1,
+        "proposals": [
+          {
+            "generation": 0,
+            "operator": "rewire_rigl_synapse",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.155682,
+            "child_score": -1.155682,
+            "accepted": false
+          },
+          {
+            "generation": 1,
+            "operator": "insert_hodge_simplex_motif",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.155682,
+            "child_score": -1.155682,
+            "accepted": false
+          },
+          {
+            "generation": 2,
+            "operator": "add_axonal_pathway",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.155682,
+            "child_score": -1.158829,
+            "accepted": false
+          },
+          {
+            "generation": 3,
+            "operator": "rewire_rigl_synapse",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.155682,
+            "child_score": -1.155682,
+            "accepted": false
+          },
+          {
+            "generation": 4,
+            "operator": "insert_hodge_simplex_motif",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.155682,
+            "child_score": -1.155682,
+            "accepted": false
+          },
+          {
+            "generation": 5,
+            "operator": "add_axonal_pathway",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.155682,
+            "child_score": -1.158765,
+            "accepted": false
+          },
+          {
+            "generation": 6,
+            "operator": "rewire_rigl_synapse",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.155682,
+            "child_score": -1.155682,
+            "accepted": false
+          },
+          {
+            "generation": 7,
+            "operator": "insert_hodge_simplex_motif",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.155682,
+            "child_score": -1.155682,
+            "accepted": false
+          },
+          {
+            "generation": 8,
+            "operator": "add_axonal_pathway",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.155682,
+            "child_score": -1.159735,
+            "accepted": false
+          },
+          {
+            "generation": 9,
+            "operator": "rewire_rigl_synapse",
+            "reason": "high_temporal_delay_error",
+            "parent_score": -1.155682,
+            "child_score": -1.155682,
+            "accepted": false
+          }
+        ]
+      },
+      "random_evolution": {
+        "best_train_score": -1.155542,
+        "heldout_delay_mse": 1.012135,
+        "heldout_energy": 79.7207,
+        "accepted_mutations": 1,
+        "surviving_lineages": 2,
+        "proposals": [
+          {
+            "generation": 0,
+            "operator": "perturb_synaptic_weights",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155682,
+            "child_score": -1.155542,
+            "accepted": true
+          },
+          {
+            "generation": 1,
+            "operator": "add_dendritic_branch",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155542,
+            "child_score": -1.159595,
+            "accepted": false
+          },
+          {
+            "generation": 1,
+            "operator": "redistribute_compartments",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155682,
+            "child_score": -1.155682,
+            "accepted": false
+          },
+          {
+            "generation": 2,
+            "operator": "add_dendritic_branch",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155542,
+            "child_score": -1.160102,
+            "accepted": false
+          },
+          {
+            "generation": 2,
+            "operator": "add_secondary_soma",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155682,
+            "child_score": -1.160719,
+            "accepted": false
+          },
+          {
+            "generation": 3,
+            "operator": "perturb_synaptic_weights",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155542,
+            "child_score": -1.155548,
+            "accepted": false
+          },
+          {
+            "generation": 3,
+            "operator": "mutate_conduction_delay",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155682,
+            "child_score": -1.155682,
+            "accepted": false
+          },
+          {
+            "generation": 4,
+            "operator": "redistribute_compartments",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155542,
+            "child_score": -1.155542,
+            "accepted": false
+          },
+          {
+            "generation": 4,
+            "operator": "perturb_synaptic_weights",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155682,
+            "child_score": -1.155682,
+            "accepted": false
+          },
+          {
+            "generation": 5,
+            "operator": "specialize_neuron",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155542,
+            "child_score": -1.159378,
+            "accepted": false
+          },
+          {
+            "generation": 5,
+            "operator": "prune_synapse",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155682,
+            "child_score": -1.156017,
+            "accepted": false
+          },
+          {
+            "generation": 6,
+            "operator": "perturb_synaptic_weights",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155542,
+            "child_score": -1.155694,
+            "accepted": false
+          },
+          {
+            "generation": 6,
+            "operator": "specialize_neuron",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155682,
+            "child_score": -1.178732,
+            "accepted": false
+          },
+          {
+            "generation": 7,
+            "operator": "attach_organelle",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155542,
+            "child_score": -1.157542,
+            "accepted": false
+          },
+          {
+            "generation": 7,
+            "operator": "perturb_synaptic_weights",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155682,
+            "child_score": -1.155682,
+            "accepted": false
+          },
+          {
+            "generation": 8,
+            "operator": "swap_plasticity_rule",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155542,
+            "child_score": -1.155542,
+            "accepted": false
+          },
+          {
+            "generation": 8,
+            "operator": "add_axonal_pathway",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155682,
+            "child_score": -1.15868,
+            "accepted": false
+          },
+          {
+            "generation": 9,
+            "operator": "mutate_conduction_delay",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155542,
+            "child_score": -1.155708,
+            "accepted": false
+          },
+          {
+            "generation": 9,
+            "operator": "add_synapse",
+            "reason": "random_evolutionary_variation",
+            "parent_score": -1.155682,
+            "child_score": -1.155682,
+            "accepted": false
+          }
+        ]
+      },
+      "directed_advantage_mse": 0.000623,
+      "protected_invariants_enforced": [
+        "evaluator_fn",
+        "heldout_seeds",
+        "oversight_enabled",
+        "safety_budget"
+      ]
+    }
+  },
+  "sha256_digest": "05544d509704854a1a45103f6fea144039811b28b7562b4e3f67722f435e9830"
+}

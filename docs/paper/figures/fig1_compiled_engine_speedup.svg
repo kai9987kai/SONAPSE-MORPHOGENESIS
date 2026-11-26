@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="240" viewBox="0 0 560 240">
+<rect width="100%" height="100%" rx="8" fill="#0f172a"/>
+<text x="16" y="24" fill="#e2e8f0" font-family="monospace" font-size="13" font-weight="bold">Compiled SoA+CSR vs Object Engine Speedup (x)</text>
+<text x="16" y="60" fill="#cbd5e1" font-family="monospace" font-size="10">N=32 (109c)</text>
+<rect x="190" y="50" width="90.5" height="20" rx="3" fill="#38bdf8"/>
+<text x="288.5" y="60" fill="#f8fafc" font-family="monospace" font-size="10">10.6600</text>
+<text x="16" y="88" fill="#cbd5e1" font-family="monospace" font-size="10">N=128 (445c)</text>
+<rect x="190" y="78" width="235.7" height="20" rx="3" fill="#818cf8"/>
+<text x="433.7" y="88" fill="#f8fafc" font-family="monospace" font-size="10">27.7600</text>
+<text x="16" y="116" fill="#cbd5e1" font-family="monospace" font-size="10">N=256 (897c)</text>
+<rect x="190" y="106" width="310.0" height="20" rx="3" fill="#818cf8"/>
+<text x="508.0" y="116" fill="#f8fafc" font-family="monospace" font-size="10">36.5100</text>
+</svg>

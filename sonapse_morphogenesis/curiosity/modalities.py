@@ -218,11 +218,114 @@ class InteractiveModalitySuite:
             congestion = float(np.max(self.state))
             return self.state.copy(), float(-congestion), self.t >= 32, {"max_queue": round(congestion, 4)}
 
-        # Remaining continuous interactive modalities (ast, symbolic_math, protein, fractal, fluid, resource_allocation)
-        drift = np.sin(0.3 * self.t + np.arange(8)) * 0.15
-        self.state = np.tanh(0.8 * self.state + 0.35 * np.resize(act, 8) + drift)
-        reward = float(-np.mean(self.state ** 2))
-        return self.state.copy(), reward, self.t >= 24, {"modality": self.modality, "step": self.t}
+        if self.modality == "ast_transformer":
+            # Interactive expression-tree depth & constant-folding optimizer:
+            # state = [depth, const_nodes, var_nodes, dead_branches, eval_val, target_val, steps_norm, fold_gain]
+            if self.t == 1:
+                self.state[:] = [5.0, 4.0, 3.0, 2.0, 3.5, 3.5, 0.0, 0.0]
+            fold_const = 1.0 if act[0] > 0.25 and self.state[1] > 1.0 else 0.0
+            prune_dead = 1.0 if act[1] > 0.25 and self.state[3] > 0.0 else 0.0
+            bad_rewrite = 1.0 if act[2] < -0.6 else 0.0
+            self.state[1] = max(1.0, self.state[1] - 0.8 * fold_const)
+            self.state[3] = max(0.0, self.state[3] - 1.0 * prune_dead)
+            self.state[0] = max(1.0, 1.0 + 0.5 * self.state[1] + 0.5 * self.state[2] + 0.5 * self.state[3])
+            if bad_rewrite > 0.0:
+                self.state[4] += 0.5  # semantic drift penalty!
+            sem_err = abs(self.state[4] - self.state[5])
+            complexity = 0.15 * self.state[0] + 0.2 * self.state[3]
+            self.state[6] = self.t / 24.0
+            self.state[7] = fold_const + prune_dead
+            reward = float(0.4 * (fold_const + prune_dead) - complexity - 2.0 * sem_err)
+            return self.state.copy(), reward, self.t >= 24, {"tree_depth": round(float(self.state[0]), 3), "semantic_error": round(sem_err, 4)}
+
+        if self.modality == "symbolic_math_transforms":
+            # Quadratic/linear algebraic balancing: drive residual a*x^2 + b*x + c -> 0 via candidate root x
+            if self.t == 1:
+                self.state[:] = [1.0, -3.0, 2.0, 0.0, 2.0, 0.0, 0.0, 0.0]  # x^2 - 3x + 2 = (x-1)(x-2)
+            a_c, b_c, c_c, x_est = self.state[:4]
+            x_est = float(np.clip(x_est + 0.35 * act[0], -4.0, 4.0))
+            poly_val = a_c * (x_est ** 2) + b_c * x_est + c_c
+            deriv = 2.0 * a_c * x_est + b_c
+            # Optional Newton-like symbolic step when act[1] > 0.3
+            if act[1] > 0.3 and abs(deriv) > 0.15:
+                x_est = float(np.clip(x_est - 0.4 * (poly_val / deriv), -4.0, 4.0))
+                poly_val = a_c * (x_est ** 2) + b_c * x_est + c_c
+            self.state[3] = x_est
+            self.state[4] = float(np.clip(poly_val, -10.0, 10.0))
+            self.state[5] = float(np.clip(deriv, -10.0, 10.0))
+            solved = abs(poly_val) < 0.05
+            return self.state.copy(), float(-abs(poly_val)), solved or self.t >= 24, {"x_est": round(x_est, 4), "residual": round(abs(poly_val), 5)}
+
+        if self.modality == "protein_contact_geometry":
+            # 6-bead 2D/3D hydrophobic-polar (HP) chain torsion folding minimizing non-bonded H-H energy
+            angles = self.state[:4] + 0.25 * act
+            coords = np.zeros((6, 2), dtype=np.float64)
+            cum_theta = 0.0
+            for bi in range(1, 6):
+                if bi >= 2:
+                    cum_theta += float(angles[bi - 2])
+                coords[bi] = coords[bi - 1] + np.array([math.cos(cum_theta), math.sin(cum_theta)])
+            dmat = np.linalg.norm(coords[:, None, :] - coords[None, :, :], axis=-1)
+            # Steric clash penalty (<0.75) + non-adjacent hydrophobic attraction (|i-j| >= 2 near 1.0..1.5)
+            steric = 0.0
+            hh_contacts = 0.0
+            h_mask = (1, 0, 1, 1, 0, 1)
+            for i in range(6):
+                for j in range(i + 2, 6):
+                    dij = float(dmat[i, j])
+                    if dij < 0.72:
+                        steric += (0.72 - dij) * 4.0
+                    elif h_mask[i] and h_mask[j] and dij < 1.55:
+                        hh_contacts += math.exp(-((dij - 1.05) ** 2) / 0.25)
+            rg = float(np.sqrt(np.mean(np.sum((coords - np.mean(coords, axis=0)) ** 2, axis=1))))
+            energy_hp = -hh_contacts + steric + 0.1 * rg
+            self.state[:4] = np.clip(angles, -math.pi, math.pi)
+            self.state[4:] = [rg, hh_contacts, steric, -energy_hp]
+            return self.state.copy(), float(-energy_hp), self.t >= 24, {"hp_energy": round(energy_hp, 4), "hh_contacts": round(hh_contacts, 4)}
+
+        if self.modality == "fractal_terrain_explorer":
+            # Multi-octave fractal heightfield ascent avoiding steep hazard ravines
+            px, py, vx, vy = self.state[:4]
+            vx = float(np.clip(0.75 * vx + 0.30 * act[0], -0.8, 0.8))
+            vy = float(np.clip(0.75 * vy + 0.30 * act[1], -0.8, 0.8))
+            px = float(np.clip(px + vx, -3.5, 3.5))
+            py = float(np.clip(py + vy, -3.5, 3.5))
+            h = (
+                0.55 * math.cos(0.9 * px) * math.cos(0.9 * py)
+                + 0.28 * math.sin(2.1 * px + 0.5) * math.cos(2.1 * py)
+                + 0.14 * math.cos(4.3 * (px - py))
+            )
+            gx = -0.50 * math.sin(0.9 * px) * math.cos(0.9 * py) + 0.59 * math.cos(2.1 * px + 0.5) * math.cos(2.1 * py)
+            gy = -0.50 * math.cos(0.9 * px) * math.sin(0.9 * py) - 0.59 * math.sin(2.1 * px + 0.5) * math.sin(2.1 * py)
+            ravine_pen = 0.4 if h < -0.35 else 0.0
+            self.state[:] = [px, py, vx, vy, h, gx, gy, -ravine_pen]
+            return self.state.copy(), float(h - ravine_pen), self.t >= 24, {"elevation": round(h, 4), "pos": [round(px, 3), round(py, 3)]}
+
+        if self.modality == "fluid_advection_2d":
+            # 2x4 grid passive-scalar advection-diffusion under controllable vortex stirrers act[0], act[1]
+            c_grid = self.state.reshape(2, 4)
+            vort_a, vort_b = 0.35 * float(act[0]), 0.35 * float(act[1])
+            lap = (
+                np.roll(c_grid, 1, axis=0) + np.roll(c_grid, -1, axis=0)
+                + np.roll(c_grid, 1, axis=1) + np.roll(c_grid, -1, axis=1)
+                - 4.0 * c_grid
+            )
+            adv = vort_a * (np.roll(c_grid, 1, axis=1) - np.roll(c_grid, -1, axis=1)) + vort_b * (np.roll(c_grid, 1, axis=0) - c_grid)
+            c_next = np.clip(c_grid + 0.12 * lap - 0.20 * adv, -2.0, 2.0)
+            self.state = c_next.ravel()
+            mixing_var = float(np.var(self.state))
+            return self.state.copy(), float(-mixing_var), self.t >= 24, {"scalar_variance": round(mixing_var, 5)}
+
+        # resource_allocation_market: 4-sector metabolic/compute clearing market with SLA queues
+        demands = 0.35 + 0.20 * np.sin(0.35 * self.t + np.arange(4, dtype=np.float64))
+        raw_alloc = np.exp(np.clip(act, -3.0, 3.0))
+        alloc = raw_alloc / np.sum(raw_alloc) * 1.45  # Fixed total supply = 1.45 units
+        backlogs = np.clip(self.state[:4] + demands - alloc, 0.0, 3.0)
+        sla_breach = float(np.sum(np.maximum(0.0, backlogs - 0.65)))
+        self.state[:4] = backlogs
+        self.state[4:] = demands - alloc
+        reward = float(-np.mean(backlogs) - 0.5 * sla_breach)
+        return self.state.copy(), reward, self.t >= 24, {"mean_backlog": round(float(np.mean(backlogs)), 4), "sla_breach": round(sla_breach, 4)}
 
 
 def verify_all_novel_modalities(seed: int = 42) -> Dict[str, Any]:

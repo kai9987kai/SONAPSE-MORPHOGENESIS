@@ -1,0 +1,75 @@
+{
+  "status": "completed",
+  "elapsed_seconds": 7200.66,
+  "target_duration_seconds": 7200.0,
+  "progress_pct": 100.0,
+  "epochs_completed": 1956,
+  "total_gamma_ticks": 46944,
+  "total_theta_cycles": 7824,
+  "gamma_ticks_per_sec": 6.52,
+  "latest_epoch": {
+    "epoch": 1955,
+    "elapsed_campaign_s": 7200.683,
+    "epoch_wall_ms": 5261.65,
+    "gamma_ticks_total": 46944,
+    "theta_cycles_total": 7824,
+    "mean_epoch_reward": 0.59381,
+    "mean_baseline_reward": 0.08181,
+    "reward_advantage": 0.51201,
+    "cumulative_cohens_d": 1.3962,
+    "ci95_low": 0.377534,
+    "ci95_high": 0.426254,
+    "evidence_state": "larger_scale_validated",
+    "maf1_lag1_autocorr": 0.89754,
+    "mmi_pid_synergy_nats": 2.77461,
+    "phi_r_nats": 5.46248,
+    "dynamical_closure_ratio": 0.78228,
+    "twin_authorship_gap": 0.0,
+    "bilateral_mirror_overlap": 0.32782,
+    "cvar_acquisition_score": 0.49869,
+    "metabolic_energy": 0.05,
+    "safety_interventions": 0,
+    "specialist_weights": {
+      "compiled_pan_connectome": 0.1932,
+      "focal_f1_f5_organelle_core": 0.1142,
+      "ml_hybrid_18_bank": 0.2622,
+      "bio_hybrid_16_collective": 0.2735,
+      "host_sonapse_max_tandem": 0.0462,
+      "antipode_repulsion_guard": 0.1108
+    },
+    "adaptive_genesis_pop": 176,
+    "learning_rules_exercised": 33,
+    "architect_cycle": {
+      "diagnosed_weakness": "temporal_delay_deficit",
+      "accepted_count": 0,
+      "scale_transferred": false
+    }
+  },
+  "scheduler": {
+    "target_epoch_ms": 2500.0,
+    "lane_ema_ms": {
+      "REALTIME_GAMMA": 686.322,
+      "PLASTICITY_THETA": 1139.064,
+      "HOST_SYMBIOSIS": 1086.418,
+      "EVOLUTION_GENESIS_CHIMERA": 363.592,
+      "EMERGENCE_CAUSAL": 51.823,
+      "ARCHITECT_SENTINEL": 715.615
+    },
+    "lane_calls": {
+      "REALTIME_GAMMA": 1956,
+      "PLASTICITY_THETA": 1956,
+      "HOST_SYMBIOSIS": 1956,
+      "EVOLUTION_GENESIS_CHIMERA": 1956,
+      "EMERGENCE_CAUSAL": 1956,
+      "ARCHITECT_SENTINEL": 1956
+    },
+    "lane_share": {
+      "REALTIME_GAMMA": 0.1365,
+      "PLASTICITY_THETA": 0.3409,
+      "HOST_SYMBIOSIS": 0.3304,
+      "EVOLUTION_GENESIS_CHIMERA": 0.0793,
+      "EMERGENCE_CAUSAL": 0.0117,
+      "ARCHITECT_SENTINEL": 0.1013
+    }
+  }
+}

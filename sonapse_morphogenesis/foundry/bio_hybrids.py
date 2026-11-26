@@ -280,6 +280,81 @@ class IntracellularSignallingCascadeHybrid(BaseBioHybrid):
         return {"output": sign * self.k3, "cascade_gain": round(float(np.mean(self.k3)), 4)}
 
 
+class MycelialNutrientNetworkHybrid(BaseBioHybrid):
+    """13. Physarum/mycelial adaptive tube conductance reinforcement along high-flux paths."""
+    hybrid_id = "mycelial_nutrient_network"
+    biological_inspiration = "Physarum polycephalum & fungal mycelial flux-driven tube diameter reinforcement (Tero et al.)"
+
+    def reset(self) -> None:
+        self.conductance = np.ones(self.dim, dtype=np.float64)
+
+    def step(self, x: np.ndarray, context: Optional[Mapping[str, float]] = None) -> Dict[str, Any]:
+        arr = np.resize(np.asarray(x, dtype=np.float64).ravel(), self.dim)
+        flux = np.abs(self.conductance * arr)
+        # dD/dt = |Q|^mu / (1 + |Q|^mu) - decay * D
+        reinforce = (flux ** 1.5) / (0.25 + flux ** 1.5)
+        self.conductance = np.clip(0.88 * self.conductance + 0.28 * reinforce, 0.08, 2.5)
+        return {"output": np.tanh(self.conductance * arr), "mean_conductance": round(float(np.mean(self.conductance)), 4)}
+
+
+class QuorumSensingCollectiveHybrid(BaseBioHybrid):
+    """14. Autoinducer population-density threshold cooperative switch."""
+    hybrid_id = "quorum_sensing_collective"
+    biological_inspiration = "Bacterial LuxI/LuxR autoinducer quorum-sensing cooperative switch"
+
+    def reset(self) -> None:
+        self.autoinducer = 0.1
+        self.quorum_active = False
+
+    def step(self, x: np.ndarray, context: Optional[Mapping[str, float]] = None) -> Dict[str, Any]:
+        arr = np.resize(np.asarray(x, dtype=np.float64).ravel(), self.dim)
+        pop_density = float(np.mean(np.abs(arr) > 0.35))
+        self.autoinducer = float(np.clip(0.85 * self.autoinducer + 0.22 * pop_density, 0.0, 1.5))
+        # Hysteretic Schmitt-trigger threshold (activate > 0.55, deactivate < 0.35)
+        if self.autoinducer > 0.55:
+            self.quorum_active = True
+        elif self.autoinducer < 0.35:
+            self.quorum_active = False
+        gain = 1.45 if self.quorum_active else 0.45
+        return {"output": np.tanh(gain * arr), "autoinducer": round(self.autoinducer, 4), "quorum_active": self.quorum_active}
+
+
+class EpigeneticChromatinMemoryHybrid(BaseBioHybrid):
+    """15. Histone acetylation/methylation slow chromatin accessibility gate."""
+    hybrid_id = "epigenetic_chromatin_memory"
+    biological_inspiration = "Chromatin histone acetylation (open) vs methylation (closed) slow transcriptional memory"
+
+    def reset(self) -> None:
+        self.accessibility = np.full(self.dim, 0.5, dtype=np.float64)
+
+    def step(self, x: np.ndarray, context: Optional[Mapping[str, float]] = None) -> Dict[str, Any]:
+        arr = np.resize(np.asarray(x, dtype=np.float64).ravel(), self.dim)
+        acetylation = 0.04 * np.maximum(arr, 0.0) * (1.0 - self.accessibility)
+        methylation = 0.03 * np.maximum(-arr, 0.0) * self.accessibility
+        self.accessibility = np.clip(self.accessibility + acetylation - methylation, 0.05, 1.0)
+        return {"output": arr * self.accessibility, "mean_accessibility": round(float(np.mean(self.accessibility)), 4)}
+
+
+class CircadianKaiABCClockHybrid(BaseBioHybrid):
+    """16. Cyanobacterial KaiABC phosphorylation limit-cycle circadian phase gate."""
+    hybrid_id = "circadian_kaiabc_clock"
+    biological_inspiration = "KaiA/KaiB/KaiC post-translational 3-state phosphorylation oscillator"
+
+    def reset(self) -> None:
+        self.s_phos = 0.2
+        self.t_phos = 0.1
+
+    def step(self, x: np.ndarray, context: Optional[Mapping[str, float]] = None) -> Dict[str, Any]:
+        arr = np.resize(np.asarray(x, dtype=np.float64).ravel(), self.dim)
+        light_entrain = 0.05 * float(np.mean(arr))
+        ds = 0.14 * (1.0 - self.s_phos - 1.2 * self.t_phos) + light_entrain
+        dt = 0.11 * (self.s_phos - 0.65 * self.t_phos)
+        self.s_phos = float(np.clip(self.s_phos + ds, -1.0, 1.5))
+        self.t_phos = float(np.clip(self.t_phos + dt, -1.0, 1.5))
+        circadian_gate = 0.65 + 0.35 * math.tanh(self.s_phos - self.t_phos)
+        return {"output": arr * circadian_gate, "circadian_gate": round(circadian_gate, 4)}
+
+
 BIO_HYBRID_REGISTRY: Dict[str, Type[BaseBioHybrid]] = {
     cls.hybrid_id: cls
     for cls in (
@@ -297,6 +372,27 @@ BIO_HYBRID_REGISTRY: Dict[str, Type[BaseBioHybrid]] = {
         IntracellularSignallingCascadeHybrid,
     )
 }
+
+EXTENDED_BIO_HYBRID_REGISTRY: Dict[str, Type[BaseBioHybrid]] = {
+    cls.hybrid_id: cls
+    for cls in (
+        MycelialNutrientNetworkHybrid,
+        QuorumSensingCollectiveHybrid,
+        EpigeneticChromatinMemoryHybrid,
+        CircadianKaiABCClockHybrid,
+    )
+}
+
+ALL_BIO_HYBRID_REGISTRY: Dict[str, Type[BaseBioHybrid]] = {
+    **BIO_HYBRID_REGISTRY,
+    **EXTENDED_BIO_HYBRID_REGISTRY,
+}
+
+
+def create_bio_hybrid(hybrid_id: str, dim: int = 8, seed: int = 42) -> BaseBioHybrid:
+    if hybrid_id not in ALL_BIO_HYBRID_REGISTRY:
+        raise KeyError(f"Unknown bio_hybrid {hybrid_id!r}. Valid: {sorted(ALL_BIO_HYBRID_REGISTRY)}")
+    return ALL_BIO_HYBRID_REGISTRY[hybrid_id](dim=dim, seed=seed)
 
 
 def run_bio_hybrid_assays(seed: int = 42) -> Dict[str, Any]:

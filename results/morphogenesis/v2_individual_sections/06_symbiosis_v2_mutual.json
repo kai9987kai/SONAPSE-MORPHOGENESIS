@@ -1,0 +1,777 @@
+{
+  "section": "06_symbiosis_v2_mutual",
+  "wallclock_seconds": 39.129,
+  "cpu_seconds": 35.953,
+  "result": {
+    "all_11_couplings_study": {
+      "experiment": "sonapse_symbiosis_intermittent_coupling",
+      "seed": 7,
+      "all_supported_couplings": [
+        "shared_sensory_env",
+        "behavioral_observation",
+        "learned_neural_adapters",
+        "bounded_activation_exchange",
+        "shared_chemical_fields",
+        "episodic_experience_exchange",
+        "cooperative_task",
+        "competitive_evaluation",
+        "predictive_assistance",
+        "temporary_neural_grafting",
+        "adaptive_bridge_formation"
+      ],
+      "tested_couplings": {
+        "shared_sensory_env": {
+          "pre_native": {
+            "phase": "native",
+            "steps": 45,
+            "native_mse": 0.91632,
+            "effective_rank": 3.1736
+          },
+          "symbiotic_phase": {
+            "phase": "symbiotic_coupling",
+            "coupling": "shared_sensory_env",
+            "host_frozen": true,
+            "host_weights_bit_preserved": true,
+            "steps": 24,
+            "dev_effective_rank": 2.3493,
+            "host_effective_rank": 7.3828,
+            "mean_host_dev_corr": 0.0803,
+            "motor_alignment_mse": 0.0882,
+            "bridge_adaptations": 0
+          },
+          "immediately_after_symbiosis": {
+            "native_mse": 0.91634,
+            "effective_rank": 3.1737
+          },
+          "after_independent_consolidation": {
+            "phase": "native",
+            "steps": 30,
+            "native_mse": 0.91811,
+            "effective_rank": 3.1737
+          },
+          "rank_gain_post_consolidation": 0.0001,
+          "retention_audit": {
+            "mechanisms_available": [
+              "experience_replay",
+              "fast_slow_compartments",
+              "function_preserving_graft_init",
+              "protected_memory_anchors",
+              "knowledge_distillation",
+              "reversible_pruning",
+              "checkpoint_restoration",
+              "synaptic_consolidation",
+              "selective_plasticity",
+              "modular_expansion",
+              "retention_testing"
+            ],
+            "archived_checkpoint_recoverable": true,
+            "live_accessible_retention_ratio": 0.9982,
+            "temporary_exposure_drop": 2e-05,
+            "post_consolidation_forgetting": 0.00179,
+            "recovered_after_consolidation": false,
+            "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+            "developmental_events_logged": 3
+          }
+        },
+        "behavioral_observation": {
+          "pre_native": {
+            "phase": "native",
+            "steps": 45,
+            "native_mse": 0.88112,
+            "effective_rank": 2.0687
+          },
+          "symbiotic_phase": {
+            "phase": "symbiotic_coupling",
+            "coupling": "behavioral_observation",
+            "host_frozen": true,
+            "host_weights_bit_preserved": true,
+            "steps": 24,
+            "dev_effective_rank": 1.9012,
+            "host_effective_rank": 11.3559,
+            "mean_host_dev_corr": 0.4154,
+            "motor_alignment_mse": 0.02343,
+            "bridge_adaptations": 0
+          },
+          "immediately_after_symbiosis": {
+            "native_mse": 0.88305,
+            "effective_rank": 2.0691
+          },
+          "after_independent_consolidation": {
+            "phase": "native",
+            "steps": 30,
+            "native_mse": 0.98442,
+            "effective_rank": 2.0692
+          },
+          "rank_gain_post_consolidation": 0.0005,
+          "retention_audit": {
+            "mechanisms_available": [
+              "experience_replay",
+              "fast_slow_compartments",
+              "function_preserving_graft_init",
+              "protected_memory_anchors",
+              "knowledge_distillation",
+              "reversible_pruning",
+              "checkpoint_restoration",
+              "synaptic_consolidation",
+              "selective_plasticity",
+              "modular_expansion",
+              "retention_testing"
+            ],
+            "archived_checkpoint_recoverable": true,
+            "live_accessible_retention_ratio": 0.8967,
+            "temporary_exposure_drop": 0.00193,
+            "post_consolidation_forgetting": 0.1033,
+            "recovered_after_consolidation": false,
+            "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+            "developmental_events_logged": 3
+          }
+        },
+        "learned_neural_adapters": {
+          "pre_native": {
+            "phase": "native",
+            "steps": 45,
+            "native_mse": 0.86736,
+            "effective_rank": 1.9989
+          },
+          "symbiotic_phase": {
+            "phase": "symbiotic_coupling",
+            "coupling": "learned_neural_adapters",
+            "host_frozen": true,
+            "host_weights_bit_preserved": true,
+            "steps": 24,
+            "dev_effective_rank": 1.7992,
+            "host_effective_rank": 4.8383,
+            "mean_host_dev_corr": -0.0135,
+            "motor_alignment_mse": 0.02653,
+            "bridge_adaptations": 24
+          },
+          "immediately_after_symbiosis": {
+            "native_mse": 0.87003,
+            "effective_rank": 1.999
+          },
+          "after_independent_consolidation": {
+            "phase": "native",
+            "steps": 30,
+            "native_mse": 0.94238,
+            "effective_rank": 1.999
+          },
+          "rank_gain_post_consolidation": 0.0001,
+          "retention_audit": {
+            "mechanisms_available": [
+              "experience_replay",
+              "fast_slow_compartments",
+              "function_preserving_graft_init",
+              "protected_memory_anchors",
+              "knowledge_distillation",
+              "reversible_pruning",
+              "checkpoint_restoration",
+              "synaptic_consolidation",
+              "selective_plasticity",
+              "modular_expansion",
+              "retention_testing"
+            ],
+            "archived_checkpoint_recoverable": true,
+            "live_accessible_retention_ratio": 0.925,
+            "temporary_exposure_drop": 0.00267,
+            "post_consolidation_forgetting": 0.07502,
+            "recovered_after_consolidation": false,
+            "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+            "developmental_events_logged": 3
+          }
+        },
+        "bounded_activation_exchange": {
+          "pre_native": {
+            "phase": "native",
+            "steps": 45,
+            "native_mse": 0.91923,
+            "effective_rank": 2.5251
+          },
+          "symbiotic_phase": {
+            "phase": "symbiotic_coupling",
+            "coupling": "bounded_activation_exchange",
+            "host_frozen": true,
+            "host_weights_bit_preserved": true,
+            "steps": 24,
+            "dev_effective_rank": 1.9719,
+            "host_effective_rank": 11.1808,
+            "mean_host_dev_corr": 0.1364,
+            "motor_alignment_mse": 0.0929,
+            "bridge_adaptations": 24
+          },
+          "immediately_after_symbiosis": {
+            "native_mse": 0.91839,
+            "effective_rank": 2.5252
+          },
+          "after_independent_consolidation": {
+            "phase": "native",
+            "steps": 30,
+            "native_mse": 0.91738,
+            "effective_rank": 2.5253
+          },
+          "rank_gain_post_consolidation": 0.0002,
+          "retention_audit": {
+            "mechanisms_available": [
+              "experience_replay",
+              "fast_slow_compartments",
+              "function_preserving_graft_init",
+              "protected_memory_anchors",
+              "knowledge_distillation",
+              "reversible_pruning",
+              "checkpoint_restoration",
+              "synaptic_consolidation",
+              "selective_plasticity",
+              "modular_expansion",
+              "retention_testing"
+            ],
+            "archived_checkpoint_recoverable": true,
+            "live_accessible_retention_ratio": 1.0,
+            "temporary_exposure_drop": -0.00084,
+            "post_consolidation_forgetting": 0.0,
+            "recovered_after_consolidation": true,
+            "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+            "developmental_events_logged": 3
+          }
+        },
+        "shared_chemical_fields": {
+          "pre_native": {
+            "phase": "native",
+            "steps": 45,
+            "native_mse": 0.98123,
+            "effective_rank": 3.8628
+          },
+          "symbiotic_phase": {
+            "phase": "symbiotic_coupling",
+            "coupling": "shared_chemical_fields",
+            "host_frozen": true,
+            "host_weights_bit_preserved": true,
+            "steps": 24,
+            "dev_effective_rank": 3.5772,
+            "host_effective_rank": 3.9804,
+            "mean_host_dev_corr": -0.1398,
+            "motor_alignment_mse": 0.01301,
+            "bridge_adaptations": 0
+          },
+          "immediately_after_symbiosis": {
+            "native_mse": 0.98225,
+            "effective_rank": 3.8454
+          },
+          "after_independent_consolidation": {
+            "phase": "native",
+            "steps": 30,
+            "native_mse": 0.95652,
+            "effective_rank": 3.8977
+          },
+          "rank_gain_post_consolidation": 0.0349,
+          "retention_audit": {
+            "mechanisms_available": [
+              "experience_replay",
+              "fast_slow_compartments",
+              "function_preserving_graft_init",
+              "protected_memory_anchors",
+              "knowledge_distillation",
+              "reversible_pruning",
+              "checkpoint_restoration",
+              "synaptic_consolidation",
+              "selective_plasticity",
+              "modular_expansion",
+              "retention_testing"
+            ],
+            "archived_checkpoint_recoverable": true,
+            "live_accessible_retention_ratio": 1.0,
+            "temporary_exposure_drop": 0.00102,
+            "post_consolidation_forgetting": 0.0,
+            "recovered_after_consolidation": true,
+            "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+            "developmental_events_logged": 3
+          }
+        },
+        "episodic_experience_exchange": {
+          "pre_native": {
+            "phase": "native",
+            "steps": 45,
+            "native_mse": 0.98222,
+            "effective_rank": 2.2291
+          },
+          "symbiotic_phase": {
+            "phase": "symbiotic_coupling",
+            "coupling": "episodic_experience_exchange",
+            "host_frozen": true,
+            "host_weights_bit_preserved": true,
+            "steps": 24,
+            "dev_effective_rank": 2.5694,
+            "host_effective_rank": 10.6029,
+            "mean_host_dev_corr": -0.2153,
+            "motor_alignment_mse": 0.0317,
+            "bridge_adaptations": 0
+          },
+          "immediately_after_symbiosis": {
+            "native_mse": 0.9738,
+            "effective_rank": 2.2342
+          },
+          "after_independent_consolidation": {
+            "phase": "native",
+            "steps": 30,
+            "native_mse": 0.93339,
+            "effective_rank": 2.235
+          },
+          "rank_gain_post_consolidation": 0.0059,
+          "retention_audit": {
+            "mechanisms_available": [
+              "experience_replay",
+              "fast_slow_compartments",
+              "function_preserving_graft_init",
+              "protected_memory_anchors",
+              "knowledge_distillation",
+              "reversible_pruning",
+              "checkpoint_restoration",
+              "synaptic_consolidation",
+              "selective_plasticity",
+              "modular_expansion",
+              "retention_testing"
+            ],
+            "archived_checkpoint_recoverable": true,
+            "live_accessible_retention_ratio": 1.0,
+            "temporary_exposure_drop": -0.00842,
+            "post_consolidation_forgetting": 0.0,
+            "recovered_after_consolidation": true,
+            "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+            "developmental_events_logged": 3
+          }
+        },
+        "cooperative_task": {
+          "pre_native": {
+            "phase": "native",
+            "steps": 45,
+            "native_mse": 0.91151,
+            "effective_rank": 2.2191
+          },
+          "symbiotic_phase": {
+            "phase": "symbiotic_coupling",
+            "coupling": "cooperative_task",
+            "host_frozen": true,
+            "host_weights_bit_preserved": true,
+            "steps": 24,
+            "dev_effective_rank": 2.6413,
+            "host_effective_rank": 9.9969,
+            "mean_host_dev_corr": -0.3294,
+            "motor_alignment_mse": 0.10554,
+            "bridge_adaptations": 0
+          },
+          "immediately_after_symbiosis": {
+            "native_mse": 0.91193,
+            "effective_rank": 2.2196
+          },
+          "after_independent_consolidation": {
+            "phase": "native",
+            "steps": 30,
+            "native_mse": 0.91054,
+            "effective_rank": 2.2202
+          },
+          "rank_gain_post_consolidation": 0.0011,
+          "retention_audit": {
+            "mechanisms_available": [
+              "experience_replay",
+              "fast_slow_compartments",
+              "function_preserving_graft_init",
+              "protected_memory_anchors",
+              "knowledge_distillation",
+              "reversible_pruning",
+              "checkpoint_restoration",
+              "synaptic_consolidation",
+              "selective_plasticity",
+              "modular_expansion",
+              "retention_testing"
+            ],
+            "archived_checkpoint_recoverable": true,
+            "live_accessible_retention_ratio": 1.0,
+            "temporary_exposure_drop": 0.00042,
+            "post_consolidation_forgetting": 0.0,
+            "recovered_after_consolidation": true,
+            "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+            "developmental_events_logged": 3
+          }
+        },
+        "competitive_evaluation": {
+          "pre_native": {
+            "phase": "native",
+            "steps": 45,
+            "native_mse": 1.03272,
+            "effective_rank": 1.0981
+          },
+          "symbiotic_phase": {
+            "phase": "symbiotic_coupling",
+            "coupling": "competitive_evaluation",
+            "host_frozen": true,
+            "host_weights_bit_preserved": true,
+            "steps": 24,
+            "dev_effective_rank": 1.0358,
+            "host_effective_rank": 8.9731,
+            "mean_host_dev_corr": 0.3188,
+            "motor_alignment_mse": 0.01746,
+            "bridge_adaptations": 0
+          },
+          "immediately_after_symbiosis": {
+            "native_mse": 1.01916,
+            "effective_rank": 1.0983
+          },
+          "after_independent_consolidation": {
+            "phase": "native",
+            "steps": 30,
+            "native_mse": 0.84876,
+            "effective_rank": 1.0984
+          },
+          "rank_gain_post_consolidation": 0.0003,
+          "retention_audit": {
+            "mechanisms_available": [
+              "experience_replay",
+              "fast_slow_compartments",
+              "function_preserving_graft_init",
+              "protected_memory_anchors",
+              "knowledge_distillation",
+              "reversible_pruning",
+              "checkpoint_restoration",
+              "synaptic_consolidation",
+              "selective_plasticity",
+              "modular_expansion",
+              "retention_testing"
+            ],
+            "archived_checkpoint_recoverable": true,
+            "live_accessible_retention_ratio": 1.0,
+            "temporary_exposure_drop": -0.01356,
+            "post_consolidation_forgetting": 0.0,
+            "recovered_after_consolidation": true,
+            "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+            "developmental_events_logged": 3
+          }
+        },
+        "predictive_assistance": {
+          "pre_native": {
+            "phase": "native",
+            "steps": 45,
+            "native_mse": 0.91678,
+            "effective_rank": 1.9799
+          },
+          "symbiotic_phase": {
+            "phase": "symbiotic_coupling",
+            "coupling": "predictive_assistance",
+            "host_frozen": true,
+            "host_weights_bit_preserved": true,
+            "steps": 24,
+            "dev_effective_rank": 1.3657,
+            "host_effective_rank": 12.4184,
+            "mean_host_dev_corr": -0.2943,
+            "motor_alignment_mse": 0.08665,
+            "bridge_adaptations": 0
+          },
+          "immediately_after_symbiosis": {
+            "native_mse": 0.91677,
+            "effective_rank": 1.9798
+          },
+          "after_independent_consolidation": {
+            "phase": "native",
+            "steps": 30,
+            "native_mse": 0.91667,
+            "effective_rank": 1.9798
+          },
+          "rank_gain_post_consolidation": -0.0001,
+          "retention_audit": {
+            "mechanisms_available": [
+              "experience_replay",
+              "fast_slow_compartments",
+              "function_preserving_graft_init",
+              "protected_memory_anchors",
+              "knowledge_distillation",
+              "reversible_pruning",
+              "checkpoint_restoration",
+              "synaptic_consolidation",
+              "selective_plasticity",
+              "modular_expansion",
+              "retention_testing"
+            ],
+            "archived_checkpoint_recoverable": true,
+            "live_accessible_retention_ratio": 1.0,
+            "temporary_exposure_drop": -1e-05,
+            "post_consolidation_forgetting": 0.0,
+            "recovered_after_consolidation": true,
+            "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+            "developmental_events_logged": 3
+          }
+        },
+        "temporary_neural_grafting": {
+          "pre_native": {
+            "phase": "native",
+            "steps": 45,
+            "native_mse": 1.12787,
+            "effective_rank": 3.4532
+          },
+          "symbiotic_phase": {
+            "phase": "symbiotic_coupling",
+            "coupling": "temporary_neural_grafting",
+            "host_frozen": true,
+            "host_weights_bit_preserved": true,
+            "steps": 24,
+            "dev_effective_rank": 2.5799,
+            "host_effective_rank": 8.777,
+            "mean_host_dev_corr": -0.0809,
+            "motor_alignment_mse": 0.00827,
+            "bridge_adaptations": 0
+          },
+          "immediately_after_symbiosis": {
+            "native_mse": 1.10958,
+            "effective_rank": 3.4489
+          },
+          "after_independent_consolidation": {
+            "phase": "native",
+            "steps": 30,
+            "native_mse": 1.05338,
+            "effective_rank": 3.4448
+          },
+          "rank_gain_post_consolidation": -0.0084,
+          "retention_audit": {
+            "mechanisms_available": [
+              "experience_replay",
+              "fast_slow_compartments",
+              "function_preserving_graft_init",
+              "protected_memory_anchors",
+              "knowledge_distillation",
+              "reversible_pruning",
+              "checkpoint_restoration",
+              "synaptic_consolidation",
+              "selective_plasticity",
+              "modular_expansion",
+              "retention_testing"
+            ],
+            "archived_checkpoint_recoverable": true,
+            "live_accessible_retention_ratio": 1.0,
+            "temporary_exposure_drop": -0.01829,
+            "post_consolidation_forgetting": 0.0,
+            "recovered_after_consolidation": true,
+            "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+            "developmental_events_logged": 3
+          }
+        },
+        "adaptive_bridge_formation": {
+          "pre_native": {
+            "phase": "native",
+            "steps": 45,
+            "native_mse": 0.90143,
+            "effective_rank": 2.8022
+          },
+          "symbiotic_phase": {
+            "phase": "symbiotic_coupling",
+            "coupling": "adaptive_bridge_formation",
+            "host_frozen": true,
+            "host_weights_bit_preserved": true,
+            "steps": 24,
+            "dev_effective_rank": 2.7114,
+            "host_effective_rank": 3.966,
+            "mean_host_dev_corr": 0.4534,
+            "motor_alignment_mse": 0.02386,
+            "bridge_adaptations": 24
+          },
+          "immediately_after_symbiosis": {
+            "native_mse": 0.89361,
+            "effective_rank": 2.8226
+          },
+          "after_independent_consolidation": {
+            "phase": "native",
+            "steps": 30,
+            "native_mse": 0.95025,
+            "effective_rank": 2.8229
+          },
+          "rank_gain_post_consolidation": 0.0207,
+          "retention_audit": {
+            "mechanisms_available": [
+              "experience_replay",
+              "fast_slow_compartments",
+              "function_preserving_graft_init",
+              "protected_memory_anchors",
+              "knowledge_distillation",
+              "reversible_pruning",
+              "checkpoint_restoration",
+              "synaptic_consolidation",
+              "selective_plasticity",
+              "modular_expansion",
+              "retention_testing"
+            ],
+            "archived_checkpoint_recoverable": true,
+            "live_accessible_retention_ratio": 0.9512,
+            "temporary_exposure_drop": -0.00782,
+            "post_consolidation_forgetting": 0.04882,
+            "recovered_after_consolidation": false,
+            "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+            "developmental_events_logged": 3
+          }
+        }
+      }
+    },
+    "long_horizon_mutual_vs_frozen": {
+      "experiment": "long_horizon_mutual_vs_frozen_symbiosis",
+      "alternating_cycles": 6,
+      "steps_per_phase": 40,
+      "arms": {
+        "frozen_host_control": {
+          "host_frozen": true,
+          "total_steps_executed": 520,
+          "initial_native_mse": 0.91693,
+          "final_native_mse": 0.91427,
+          "final_motor_alignment_mse": 0.36328,
+          "final_effective_rank": 3.1739,
+          "retention_audit": {
+            "mechanisms_available": [
+              "experience_replay",
+              "fast_slow_compartments",
+              "function_preserving_graft_init",
+              "protected_memory_anchors",
+              "knowledge_distillation",
+              "reversible_pruning",
+              "checkpoint_restoration",
+              "synaptic_consolidation",
+              "selective_plasticity",
+              "modular_expansion",
+              "retention_testing"
+            ],
+            "archived_checkpoint_recoverable": true,
+            "live_accessible_retention_ratio": 1.0,
+            "temporary_exposure_drop": -0.00266,
+            "post_consolidation_forgetting": 0.0,
+            "recovered_after_consolidation": true,
+            "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+            "developmental_events_logged": 8
+          },
+          "cycle_trajectory": [
+            {
+              "cycle": 0,
+              "host_dev_corr": 0.0595,
+              "motor_alignment_mse": 0.10816,
+              "native_mse": 0.91809,
+              "effective_rank": 3.1736,
+              "host_weights_bit_preserved": true
+            },
+            {
+              "cycle": 1,
+              "host_dev_corr": 0.0451,
+              "motor_alignment_mse": 0.26005,
+              "native_mse": 0.9182,
+              "effective_rank": 3.1737,
+              "host_weights_bit_preserved": true
+            },
+            {
+              "cycle": 2,
+              "host_dev_corr": 0.0922,
+              "motor_alignment_mse": 0.361,
+              "native_mse": 0.91391,
+              "effective_rank": 3.1738,
+              "host_weights_bit_preserved": true
+            },
+            {
+              "cycle": 3,
+              "host_dev_corr": 0.0948,
+              "motor_alignment_mse": 0.37053,
+              "native_mse": 0.91765,
+              "effective_rank": 3.1738,
+              "host_weights_bit_preserved": true
+            },
+            {
+              "cycle": 4,
+              "host_dev_corr": 0.0245,
+              "motor_alignment_mse": 0.37099,
+              "native_mse": 0.91894,
+              "effective_rank": 3.1739,
+              "host_weights_bit_preserved": true
+            },
+            {
+              "cycle": 5,
+              "host_dev_corr": -0.0675,
+              "motor_alignment_mse": 0.36328,
+              "native_mse": 0.91427,
+              "effective_rank": 3.1739,
+              "host_weights_bit_preserved": true
+            }
+          ]
+        },
+        "mutually_adaptive_host": {
+          "host_frozen": false,
+          "total_steps_executed": 520,
+          "initial_native_mse": 0.91693,
+          "final_native_mse": 0.91427,
+          "final_motor_alignment_mse": 0.22131,
+          "final_effective_rank": 3.1739,
+          "retention_audit": {
+            "mechanisms_available": [
+              "experience_replay",
+              "fast_slow_compartments",
+              "function_preserving_graft_init",
+              "protected_memory_anchors",
+              "knowledge_distillation",
+              "reversible_pruning",
+              "checkpoint_restoration",
+              "synaptic_consolidation",
+              "selective_plasticity",
+              "modular_expansion",
+              "retention_testing"
+            ],
+            "archived_checkpoint_recoverable": true,
+            "live_accessible_retention_ratio": 1.0,
+            "temporary_exposure_drop": -0.00266,
+            "post_consolidation_forgetting": 0.0,
+            "recovered_after_consolidation": true,
+            "epistemic_note": "Archived checkpoint presence does NOT imply live behavioral retention; both are reported separately.",
+            "developmental_events_logged": 8
+          },
+          "cycle_trajectory": [
+            {
+              "cycle": 0,
+              "host_dev_corr": 0.0541,
+              "motor_alignment_mse": 0.08325,
+              "native_mse": 0.91809,
+              "effective_rank": 3.1736,
+              "host_weights_bit_preserved": true
+            },
+            {
+              "cycle": 1,
+              "host_dev_corr": 0.0426,
+              "motor_alignment_mse": 0.10934,
+              "native_mse": 0.9182,
+              "effective_rank": 3.1737,
+              "host_weights_bit_preserved": true
+            },
+            {
+              "cycle": 2,
+              "host_dev_corr": 0.1686,
+              "motor_alignment_mse": 0.12825,
+              "native_mse": 0.91391,
+              "effective_rank": 3.1738,
+              "host_weights_bit_preserved": true
+            },
+            {
+              "cycle": 3,
+              "host_dev_corr": 0.1603,
+              "motor_alignment_mse": 0.15558,
+              "native_mse": 0.91765,
+              "effective_rank": 3.1738,
+              "host_weights_bit_preserved": true
+            },
+            {
+              "cycle": 4,
+              "host_dev_corr": 0.0507,
+              "motor_alignment_mse": 0.18536,
+              "native_mse": 0.91894,
+              "effective_rank": 3.1739,
+              "host_weights_bit_preserved": true
+            },
+            {
+              "cycle": 5,
+              "host_dev_corr": -0.0508,
+              "motor_alignment_mse": 0.22131,
+              "native_mse": 0.91427,
+              "effective_rank": 3.1739,
+              "host_weights_bit_preserved": true
+            }
+          ]
+        }
+      }
+    }
+  },
+  "sha256_digest": "3eb508b35567a76942715852df109f8bd876b3f922a4c56f3215b91ea2f3e643"
+}

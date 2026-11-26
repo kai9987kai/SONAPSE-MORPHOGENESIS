@@ -1,25 +1,29 @@
 cff-version: 1.2.0
-title: "Sonapse-LAB / SYNAPSE: a CPU-first connectome research workbench"
-message: "If you use Sonapse-LAB or SYNAPSE in your research, please cite it using the metadata below."
+title: "SONAPSE MORPHOGENESIS v2.0: Autonomous Developmental Connectome Intelligence & OMNI Max Mode"
+message: "If you use SONAPSE MORPHOGENESIS or Sonapse-LAB in your research, please cite it using the metadata below."
 type: software
 authors:
   - given-names: Kai
     family-names: Piper
     alias: kai9987kai
 abstract: >-
-  Integrated connectome, weight-programming and bounded recursive-self-improvement
-  research workbench with opt-in NEUROWEAVE and Frontier extensions, sealed experiment
-  receipts and additive compatibility manifests. Synthetic research software; no claim
-  of biological fidelity or general intelligence.
+  Autonomous developmental connectome research platform built on Sonapse-LAB (0.3.0),
+  featuring a vectorized CompiledConnectomeEngine, 36 custom graft neuron families,
+  21 conventional neurons, 20 gated synthetic organelles, 33 learning rules, 18 ML hybrids,
+  16 bio hybrids, 32 biological/artificial senses, causal emergence & cross-yoked twin assays,
+  and OMNI-MORPHOGENESIS 3-tier nested oscillatory Max Mode. Synthetic CPU-first research
+  software; no claim of biological fidelity or subjective experience.
 license: Apache-2.0
-version: 0.3.0
-date-released: "2026-11-19"
-repository-code: "https://github.com/kai9987kai/Sonapse-LAB"
-url: "https://huggingface.co/Kai9987kai/Sonapse-LAB"
+version: 2.0.0
+date-released: "2026-11-26"
+repository-code: "https://github.com/kai9987kai/SONAPSE-MORPHOGENESIS"
+url: "https://huggingface.co/Kai9987kai/SONAPSE-MORPHOGENESIS"
 keywords:
   - computational-neuroscience
   - connectomics
+  - developmental-connectome
   - neuromorphic-computing
-  - reinforcement-learning
-  - spiking-neural-networks
+  - multi-compartment-neurons
+  - continual-learning
+  - causal-emergence
   - reproducibility

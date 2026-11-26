@@ -19,11 +19,12 @@ from ..core.interchange import (
     ConnectomeEdge,
     ConnectomeGraph,
     DevelopmentalGenome,
+    FidelityLevel,
     OrganelleAttachment,
     make_id,
 )
-from ..foundry.graft_neurons import GRAFT_NEURON_FAMILIES, build_graft_neuron
-from ..foundry.organelles import ORGANELLE_REGISTRY
+from ..foundry.graft_neurons import ALL_GRAFT_NEURON_FAMILIES, GRAFT_NEURON_FAMILIES, build_graft_neuron
+from ..foundry.organelles import ALL_ORGANELLE_REGISTRY, ORGANELLE_REGISTRY
 
 MUTATION_OPERATORS: Tuple[str, ...] = (
     "add_secondary_soma",
@@ -43,7 +44,20 @@ MUTATION_OPERATORS: Tuple[str, ...] = (
     "perturb_synaptic_weights",
 )
 
-PLASTICITY_RULES: Tuple[str, ...] = ("three_factor", "stdp", "bcm", "hebbian", "predictive_coding", "none")
+EXTENDED_MUTATION_OPERATORS: Tuple[str, ...] = (
+    "insert_hodge_simplex_motif",
+    "rewire_rigl_synapse",
+    "attach_arbitrosome_coordinator",
+    "differentiate_fidelity_tier",
+    "mirror_bilateral_clone",
+)
+
+ALL_MUTATION_OPERATORS: Tuple[str, ...] = MUTATION_OPERATORS + EXTENDED_MUTATION_OPERATORS
+
+PLASTICITY_RULES: Tuple[str, ...] = (
+    "three_factor", "stdp", "bcm", "hebbian", "predictive_coding",
+    "eprop_eligibility", "btsp_plateau_learning", "hodge_curl_free_plasticity", "none",
+)
 
 
 @dataclass
@@ -106,7 +120,7 @@ def apply_genome_mutation(
     child.parent_ids = [genome.genome_id]
 
     op = operator or str(rng.choice(MUTATION_OPERATORS))
-    if op not in MUTATION_OPERATORS:
+    if op not in ALL_MUTATION_OPERATORS:
         raise ValueError(f"Unknown mutation operator: {op!r}")
 
     neurons = child.connectome.neurons
@@ -228,6 +242,58 @@ def apply_genome_mutation(
         idx = int(rng.integers(0, len(edges)))
         rem = edges.pop(idx)
         delta.update({"pruned_synapse": f"{rem.pre_id}->{rem.post_id}"})
+
+    elif op == "insert_hodge_simplex_motif" and len(neurons) >= 3:
+        # Insert a cyclic 2-simplex (3-cycle + chord) supporting Hodge curl memory
+        a, b, c_i = rng.choice(len(neurons), size=3, replace=False)
+        for idx_p, (u_i, v_i) in enumerate(((a, b), (b, c_i), (c_i, a))):
+            w = float(rng.uniform(0.20, 0.50)) * neurons[u_i].dale_sign
+            edges.append(ConnectomeEdge(
+                neurons[u_i].morphology_id, neurons[v_i].morphology_id,
+                weight=w, delay_ms=1.0 + float(idx_p), plasticity_rule="hodge_curl_free_plasticity",
+                provenance="hodge_2simplex_motif",
+            ))
+        delta.update({"motif": "hodge_cyclic_2simplex", "nodes": [neurons[a].morphology_id, neurons[b].morphology_id, neurons[c_i].morphology_id]})
+
+    elif op == "rewire_rigl_synapse" and len(neurons) >= 2:
+        if edges:
+            weak_idx = int(np.argmin([abs(e.weight) for e in edges]))
+            rem = edges.pop(weak_idx)
+        else:
+            rem = None
+        # Connect a sensory neuron to a memory/motor target with delayed recurrent path
+        s_id = child.connectome.sensory_ids[0] if child.connectome.sensory_ids else neurons[0].morphology_id
+        m_id = child.connectome.motor_ids[-1] if child.connectome.motor_ids else neurons[-1].morphology_id
+        s_sign = next((u.dale_sign for u in neurons if u.morphology_id == s_id), 1)
+        w_new = float(rng.uniform(0.25, 0.65)) * s_sign
+        edges.append(ConnectomeEdge(s_id, m_id, weight=w_new, delay_ms=3.0, plasticity_rule="eprop_eligibility", provenance="rigl_rewire"))
+        delta.update({"dropped": f"{rem.pre_id}->{rem.post_id}" if rem else None, "grown": f"{s_id}->{m_id}"})
+
+    elif op == "attach_arbitrosome_coordinator":
+        comp = target_n.compartments[0]
+        target_n.organelles.append(OrganelleAttachment(f"org_mnem_{len(target_n.organelles)}", "mnemosome", comp.compartment_id))
+        target_n.organelles.append(OrganelleAttachment(f"org_chrono_{len(target_n.organelles)+1}", "chronosome", comp.compartment_id, params={"tap_delay": 3}))
+        target_n.organelles.append(OrganelleAttachment(f"org_arb_{len(target_n.organelles)+2}", "arbitrosome", comp.compartment_id))
+        target_n.metadata["organelle_arbitration"] = True
+        delta.update({"neuron": target_n.morphology_id, "attached_bundle": ["mnemosome", "chronosome", "arbitrosome"]})
+
+    elif op == "differentiate_fidelity_tier":
+        old_f = int(target_n.fidelity)
+        new_f = 2 if old_f != 2 else 3
+        target_n.fidelity = FidelityLevel(new_f)
+        delta.update({"neuron": target_n.morphology_id, "old_fidelity": old_f, "new_fidelity": new_f})
+
+    elif op == "mirror_bilateral_clone":
+        max_n = int(child.growth_rules.get("max_neurons", 512))
+        if len(neurons) < max_n:
+            clone_spec = type(target_n).from_dict(target_n.to_dict())
+            clone_spec.morphology_id = f"{target_n.morphology_id}_mir{len(neurons)}"
+            for cc in clone_spec.compartments:
+                cc.coords_3d = (-cc.coords_3d[0], cc.coords_3d[1], cc.coords_3d[2])
+            neurons.append(clone_spec)
+            edges.append(ConnectomeEdge(target_n.morphology_id, clone_spec.morphology_id, weight=0.28 * target_n.dale_sign, delay_ms=1.5, provenance="bilateral_commissure"))
+            edges.append(ConnectomeEdge(clone_spec.morphology_id, target_n.morphology_id, weight=0.28 * clone_spec.dale_sign, delay_ms=1.5, provenance="bilateral_commissure"))
+            delta.update({"cloned_from": target_n.morphology_id, "mirror_id": clone_spec.morphology_id})
 
     else:
         # Default fallback: perturb synaptic weights preserving Dale's law

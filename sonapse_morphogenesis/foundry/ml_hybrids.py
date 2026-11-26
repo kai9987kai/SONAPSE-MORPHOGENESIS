@@ -231,6 +231,86 @@ class MLHybridMechanism:
             proj = np.tanh(self.W1 @ u)
             out = 0.5 * u + 0.5 * proj
             self.flops += 2 * d * d
+
+        elif m == "kan_spline_synapse":
+            knots = np.array([-1.2, -0.4, 0.4, 1.2], dtype=np.float64)
+            basis = np.exp(-2.0 * ((u[:, None] - knots[None, :]) ** 2))
+            if v == "exact_software":
+                spline_u = basis @ np.array([-0.7, -0.2, 0.3, 0.85])
+                out = self.W1 @ spline_u + 0.25 * (u / (1.0 + np.exp(-u)))
+            elif v == "cellular_compartment":
+                spline_u = np.tanh(basis @ np.array([-0.65, -0.15, 0.25, 0.80]))
+                out = np.tanh(self.W1 @ spline_u + 0.3 * self.h)
+                self.h = out.copy()
+            else:
+                # Biologically constrained: Dale-signed receptor saturation curves
+                spline_u = np.maximum(0.0, basis[:, 2:] @ np.array([0.4, 0.9])) - np.maximum(0.0, basis[:, :2] @ np.array([0.7, 0.3]))
+                out = np.tanh(self.dale_W1 @ spline_u)
+            self.flops += 5 * d * d
+
+        elif m == "liquid_cfc_gate":
+            if v == "exact_software":
+                sig_gate = 1.0 / (1.0 + np.exp(-np.clip(self.W1 @ u + 0.4 * c, -20, 20)))
+                f_backbone = np.tanh(self.W2 @ u)
+                g_backbone = np.tanh(self.W3 @ c)
+                self.h = sig_gate * f_backbone + (1.0 - sig_gate) * (0.75 * self.h + 0.25 * g_backbone)
+                out = self.h.copy()
+            elif v == "cellular_compartment":
+                tau_eff = 1.0 / (1.0 + np.abs(self.W1 @ c))
+                self.h = (1.0 - 0.6 * tau_eff) * self.h + 0.6 * tau_eff * np.tanh(self.W2 @ u)
+                out = self.h.copy()
+            else:
+                g_cond = np.maximum(0.0, self.dale_W1 @ c)
+                alpha = np.clip(0.15 + 0.55 * g_cond / (1.0 + g_cond), 0.05, 0.85)
+                self.h = (1.0 - alpha) * self.h + alpha * np.tanh(self.dale_W2 @ u)
+                out = self.h.copy()
+            self.flops += 5 * d * d
+
+        elif m == "hyperbolic_lorentz_projection":
+            # Poincare ball Mobius radial compression + angular projection
+            raw = self.W1 @ u + 0.35 * (self.W2 @ c)
+            nrm = float(np.linalg.norm(raw)) + 1e-8
+            if v == "exact_software":
+                scale = math.tanh(0.5 * nrm) / nrm
+                out = raw * scale
+            elif v == "cellular_compartment":
+                out = raw / (1.0 + 0.85 * nrm)
+            else:
+                # Divisive normalization via inhibitory interneuron pool
+                pool_inh = 1.0 + float(np.sum(np.abs(self.dale_W1 @ u))) * 0.35
+                out = np.tanh((self.dale_W2 @ u) / pool_inh)
+            self.flops += 4 * d * d
+
+        elif m == "simplicial_hodge_attention":
+            # Edge difference (gradient) + cyclic 3-tap curl interaction
+            grad = u - np.roll(u, 1)
+            curl = u - 2.0 * np.roll(u, 1) + np.roll(u, 2)
+            if v == "exact_software":
+                att = _softmax(np.abs(grad * c))
+                out = self.W1 @ (att * grad) + 0.5 * (self.W2 @ curl)
+            elif v == "cellular_compartment":
+                out = np.tanh(0.65 * (self.W1 @ grad) + 0.45 * (self.W2 @ curl))
+            else:
+                out = np.tanh(0.6 * (self.dale_W1 @ grad) + 0.4 * (self.dale_W2 @ curl))
+            self.flops += 4 * d * d
+
+        elif m == "tether_dark_knowledge_gate":
+            # 3 specialist views weighted by inverse tail-dispersion reliability
+            s1 = np.tanh(self.W1 @ u)
+            s2 = np.tanh(self.W2 @ u)
+            s3 = np.tanh(self.W3 @ c)
+            specs = np.stack([s1, s2, s3], axis=0)
+            disp = np.array([float(np.var(s)) for s in specs]) + 0.05
+            if v == "exact_software":
+                rel = _softmax(1.5 / disp)
+                out = np.tensordot(rel, specs, axes=1)
+            elif v == "cellular_compartment":
+                rel = (1.0 / disp) / np.sum(1.0 / disp)
+                out = np.tanh(np.tensordot(rel, specs, axes=1))
+            else:
+                best = int(np.argmin(disp))
+                out = np.tanh(0.8 * specs[best] + 0.2 * np.mean(specs, axis=0))
+            self.flops += 5 * d * d
         else:
             raise KeyError(f"Unknown ML hybrid mechanism: {m}")
 
@@ -254,14 +334,31 @@ ML_HYBRID_MECHANISMS: Tuple[str, ...] = (
     "external_ai_adapter",
 )
 
+EXTENDED_ML_HYBRID_MECHANISMS: Tuple[str, ...] = (
+    "kan_spline_synapse",
+    "liquid_cfc_gate",
+    "hyperbolic_lorentz_projection",
+    "simplicial_hodge_attention",
+    "tether_dark_knowledge_gate",
+)
+
+ALL_ML_HYBRID_MECHANISMS: Tuple[str, ...] = ML_HYBRID_MECHANISMS + EXTENDED_ML_HYBRID_MECHANISMS
+
 
 def compare_three_variants(
-    mechanisms: Sequence[str] = ("dendritic_attention", "state_space_compartment", "fast_weight_memory", "recurrent_gating", "moe_branch_specialisation"),
+    mechanisms: Optional[Sequence[str]] = None,
     dim: int = 8,
     steps: int = 80,
     seed: int = 42,
+    include_extended: bool = False,
 ) -> Dict[str, Any]:
     """Compare exact_software vs cellular_compartment vs biologically_constrained across tasks & noise."""
+    if mechanisms is None:
+        mechanisms = (
+            ALL_ML_HYBRID_MECHANISMS
+            if include_extended
+            else ("dendritic_attention", "state_space_compartment", "fast_weight_memory", "recurrent_gating", "moe_branch_specialisation")
+        )
     rng = np.random.default_rng(seed)
     X = rng.normal(0.0, 1.0, size=(steps, dim))
     C = np.roll(X, 2, axis=0)

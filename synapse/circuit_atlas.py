@@ -6,12 +6,10 @@ directly to behavioral primitives (thrust, steering, threat evasion, target trac
 Computes rigorous causal necessity and sufficiency indices for each anatomical circuit.
 """
 from __future__ import annotations
-import copy
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import torch
-import torch.nn as nn
 from .agent import IntegratedAgent
 
 
@@ -32,8 +30,19 @@ class CausalCircuitAtlas:
         self.agent = agent
         self.atlas: Dict[str, CircuitCausalProfile] = {}
 
-    def _evaluate_behavioral_primitives(self, agent: IntegratedAgent, test_episodes: int = 4) -> Dict[str, float]:
-        """Evaluates behavioral primitives: thrust, steering, evasion, approach, memory."""
+    def _evaluate_behavioral_primitives(self, agent: IntegratedAgent, test_episodes: int = 4, steps_per_episode: int = 15) -> Dict[str, float]:
+        """Evaluates behavioral primitives: thrust, steering, evasion, approach, memory.
+
+        Parameters
+        ----------
+        agent : IntegratedAgent
+            The agent to evaluate.
+        test_episodes : int
+            Number of episodes to run (default 4).
+        steps_per_episode : int
+            Timesteps per episode (default 15).  Lower values speed up atlas
+            construction significantly with minimal accuracy loss.
+        """
         rng = np.random.default_rng(777)
         thrusts = []
         steerings = []
@@ -42,7 +51,7 @@ class CausalCircuitAtlas:
 
         for ep in range(test_episodes):
             agent.reset_episode()
-            for t in range(15):
+            for t in range(steps_per_episode):
                 obs = rng.normal(0.0, 0.5, size=155).astype(np.float32)
                 # Stimulus 1: Target approach cue (positive depth, color contrast)
                 obs[0] = 0.8
@@ -82,32 +91,50 @@ class CausalCircuitAtlas:
         subcircuit_name: str,
         node_indices: List[int],
         episodes: int = 3,
+        steps_per_episode: int = 8,
     ) -> CircuitCausalProfile:
-        """Evaluates the causal necessity and sufficiency of a specific circuit."""
+        """Evaluates the causal necessity and sufficiency of a specific circuit.
+
+        Uses in-place weight manipulation with save/restore to avoid expensive
+        ``deepcopy(agent)`` calls that re-load the connectome from disk.
+
+        Parameters
+        ----------
+        steps_per_episode : int
+            Timesteps per behavioural-probe episode (default 8, reduced from 15
+            for speed; causal directions are robust to shorter probes).
+        """
         # Baseline intact performance
-        baseline = self._evaluate_behavioral_primitives(self.agent, test_episodes=episodes)
+        baseline = self._evaluate_behavioral_primitives(
+            self.agent, test_episodes=episodes, steps_per_episode=steps_per_episode,
+        )
+
+        # Save original graft weights once (cheap tensor clone)
+        orig_w = self.agent.brain.graft_w.data.clone()
 
         # 1. Silencing / Lesion test (Necessity)
-        agent_lesioned = copy.deepcopy(self.agent)
         with torch.no_grad():
-            # Zero out graft weights connecting to/from these nodes
-            mask = np.isin(agent_lesioned.graph.graft_pre, node_indices) | np.isin(agent_lesioned.graph.graft_post, node_indices)
-            w = agent_lesioned.brain.graft_w.clone()
-            w[mask] = 0.0
-            agent_lesioned.brain.graft_w = nn.Parameter(w)
+            mask = np.isin(self.agent.graph.graft_pre, node_indices) | np.isin(self.agent.graph.graft_post, node_indices)
+            self.agent.brain.graft_w.data[mask] = 0.0
 
-        lesioned = self._evaluate_behavioral_primitives(agent_lesioned, test_episodes=episodes)
+        lesioned = self._evaluate_behavioral_primitives(
+            self.agent, test_episodes=episodes, steps_per_episode=steps_per_episode,
+        )
+
+        # Restore original weights before isolation test
+        self.agent.brain.graft_w.data.copy_(orig_w)
 
         # 2. Isolation test (Sufficiency)
-        agent_isolated = copy.deepcopy(self.agent)
         with torch.no_grad():
-            # Zero out all graft weights EXCEPT those within these nodes
-            keep_mask = np.isin(agent_isolated.graph.graft_pre, node_indices) & np.isin(agent_isolated.graph.graft_post, node_indices)
-            w_iso = agent_isolated.brain.graft_w.clone()
-            w_iso[~keep_mask] = 0.0
-            agent_isolated.brain.graft_w = nn.Parameter(w_iso)
+            keep_mask = np.isin(self.agent.graph.graft_pre, node_indices) & np.isin(self.agent.graph.graft_post, node_indices)
+            self.agent.brain.graft_w.data[~keep_mask] = 0.0
 
-        isolated = self._evaluate_behavioral_primitives(agent_isolated, test_episodes=episodes)
+        isolated = self._evaluate_behavioral_primitives(
+            self.agent, test_episodes=episodes, steps_per_episode=steps_per_episode,
+        )
+
+        # Restore original weights after all probes
+        self.agent.brain.graft_w.data.copy_(orig_w)
 
         # Compute causal effects
         deltas = {}
@@ -148,9 +175,9 @@ class CausalCircuitAtlas:
 
         for np_id, nodes in neuropils.items():
             name = neuropil_names.get(np_id, f"Neuropil_{np_id}")
-            # Sample up to 24 nodes for rapid profiling
-            sample_nodes = nodes[:24]
-            prof = self.map_circuit(name, sample_nodes, episodes=2)
+            # Sample up to 16 nodes for rapid profiling (down from 24)
+            sample_nodes = nodes[:16]
+            prof = self.map_circuit(name, sample_nodes, episodes=2, steps_per_episode=6)
             atlas_summary[name] = {
                 'num_neurons': len(nodes),
                 'primary_function': prof.primary_function,

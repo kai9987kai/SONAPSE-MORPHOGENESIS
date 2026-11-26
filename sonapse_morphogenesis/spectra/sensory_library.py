@@ -47,6 +47,15 @@ ARTIFICIAL_SENSORY_MODALITIES: Tuple[str, ...] = (
     "counterfactual_perception",
 )
 
+EXTENDED_ARTIFICIAL_SENSORY_MODALITIES: Tuple[str, ...] = (
+    "emergenceception",
+    "hodge_cycle_perception",
+    "hyperbolic_curvature_perception",
+    "mealy_interface_perception",
+)
+
+ALL_ARTIFICIAL_SENSORY_MODALITIES: Tuple[str, ...] = ARTIFICIAL_SENSORY_MODALITIES + EXTENDED_ARTIFICIAL_SENSORY_MODALITIES
+
 
 def _pad_or_trim(vec: np.ndarray, dim: int) -> np.ndarray:
     arr = np.asarray(vec, dtype=np.float64).ravel()
@@ -337,12 +346,65 @@ class ExpandedSensoryEncoder:
                 diff = np.asarray(raw_input, dtype=np.float64).ravel()
             feats = np.concatenate([[float(np.sum(diff)), float(np.linalg.norm(diff))], diff])
             vec = np.tanh(_pad_or_trim(feats, d))
+
+        elif modality == "emergenceception":
+            # GhostInTheMachine-inspired slow-subspace vs micro-variance & lag-1 predictability sense
+            X = np.asarray(raw_input, dtype=np.float64)
+            if X.ndim != 2 or X.shape[0] < 3:
+                X = _pad_or_trim(X, 24).reshape(6, 4)
+            macro = np.mean(X, axis=1)
+            lag_macro = float(np.corrcoef(macro[:-1], macro[1:])[0, 1]) if float(np.std(macro)) > 1e-8 else 0.0
+            if not math.isfinite(lag_macro):
+                lag_macro = 0.0
+            micro_vars = np.var(X, axis=0)
+            sync_ratio = float(np.var(macro) / (np.mean(micro_vars) + 1e-8))
+            feats = np.concatenate([[lag_macro, sync_ratio, float(np.mean(macro))], micro_vars])
+            vec = np.tanh(_pad_or_trim(feats, d))
+
+        elif modality == "hodge_cycle_perception":
+            # Topological Betti-0 / Betti-1 loop excess & skew-symmetric circulation sense
+            A = np.asarray(raw_input, dtype=np.float64)
+            if A.ndim != 2:
+                n = max(2, int(math.sqrt(A.size)))
+                A = _pad_or_trim(A, n * n).reshape(n, n)
+            skew = 0.5 * (A - A.T)
+            sym = 0.5 * (np.abs(A) + np.abs(A.T))
+            n_v = A.shape[0]
+            n_e = int(np.sum(sym > 1e-5) // 2)
+            betti1_proxy = max(0, n_e - n_v + 1)
+            curl_norm = float(np.linalg.norm(skew))
+            feats = np.concatenate([[float(betti1_proxy) / max(n_v, 1), curl_norm], np.diag(sym @ sym)])
+            vec = np.tanh(_pad_or_trim(feats, d))
+
+        elif modality == "hyperbolic_curvature_perception":
+            # Gromov delta-hyperbolicity 4-point condition proxy on pairwise distances
+            pts = np.asarray(raw_input, dtype=np.float64)
+            if pts.ndim != 2 or pts.shape[0] < 4:
+                pts = _pad_or_trim(pts, 16).reshape(4, 4)
+            dmat = np.linalg.norm(pts[:4, None, :] - pts[None, :4, :], axis=-1)
+            s1 = dmat[0, 1] + dmat[2, 3]
+            s2 = dmat[0, 2] + dmat[1, 3]
+            s3 = dmat[0, 3] + dmat[1, 2]
+            sums = sorted([s1, s2, s3])
+            gromov_delta = 0.5 * (sums[2] - sums[1])
+            radii = np.linalg.norm(pts, axis=1)
+            feats = np.concatenate([[gromov_delta, float(np.mean(radii)), float(np.max(radii))], radii])
+            vec = np.tanh(_pad_or_trim(feats, d))
+
+        elif modality == "mealy_interface_perception":
+            # CROSSWIRE-inspired input/output transition determinism & bijection entropy sense
+            arr = np.asarray(raw_input, dtype=np.float64).ravel()
+            diffs = np.diff(arr) if arr.size >= 2 else np.zeros(1)
+            sign_flips = float(np.mean(np.diff(np.sign(arr)) != 0)) if arr.size >= 3 else 0.0
+            uniq_ratio = float(len(np.unique(np.round(arr, 2)))) / max(arr.size, 1)
+            feats = np.concatenate([[sign_flips, uniq_ratio, float(np.std(diffs))], diffs])
+            vec = np.tanh(_pad_or_trim(feats, d))
         else:
             raise KeyError(f"Unknown sensory modality: {modality!r}")
 
         return {
             "modality": modality,
-            "is_artificial": modality in ARTIFICIAL_SENSORY_MODALITIES,
+            "is_artificial": modality in ALL_ARTIFICIAL_SENSORY_MODALITIES,
             "vector": vec,
             "dim": d,
         }

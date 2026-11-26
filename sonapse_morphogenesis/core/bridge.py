@@ -74,6 +74,19 @@ class MorphogenesisSpecV1:
             observe_only=bool(d.get("observe_only", True)),
         )
 
+    @classmethod
+    def max_preset(cls, seed: int = 7, neurons: int = 32) -> "MorphogenesisSpecV1":
+        """Bounded, active Max Mode preset for Sonapse-LAB Tandem Max integration."""
+        return cls(
+            enabled=True,
+            gain=0.02,
+            max_gain=0.15,
+            fidelity=2,
+            neurons=max(8, min(128, int(neurons))),
+            seed=int(seed),
+            observe_only=False,
+        )
+
 
 def coerce_morphogenesis_spec(value: Any) -> Optional[MorphogenesisSpecV1]:
     if value is None:
@@ -88,7 +101,7 @@ def coerce_morphogenesis_spec(value: Any) -> Optional[MorphogenesisSpecV1]:
 def normalize_saved_morphogenesis(
     current_spec: Optional[MorphogenesisSpecV1], normalized_saved: Dict[str, Any]
 ) -> bool:
-    """Allow legacy checkpoints lacking morphogenesis_v1 to load cleanly."""
+    """Allow legacy checkpoints lacking morphogenesis_v1 to load cleanly (additive rule)."""
     normalized_saved.setdefault("morphogenesis", None)
     saved = normalized_saved.get("morphogenesis")
     saved_spec: Optional[MorphogenesisSpecV1] = None
@@ -106,7 +119,6 @@ def normalize_saved_morphogenesis(
     if (
         current_spec is not None
         and current_spec.enabled
-        and (current_spec.observe_only or current_spec.gain == 0.0)
         and (saved_spec is None or not saved_spec.enabled)
     ):
         normalized_saved["morphogenesis"] = current_spec
@@ -173,10 +185,11 @@ class MorphogenesisBusChannel(NeuralGraftProtocol):
         self.connectome = MultiFidelityConnectome(self.graph, dt_ms=1.0, seed=self.spec.seed)
 
         rng = np.random.default_rng(self.spec.seed + 404)
-        self.in_proj = rng.standard_normal((self.spec.neurons, self.host_dim)).astype(np.float32) * (1.0 / max(np.sqrt(self.host_dim), 1.0))
+        self.in_proj = (rng.standard_normal((self.spec.neurons, self.host_dim)) / max(np.sqrt(self.host_dim), 1.0)).astype(np.float32)
         # Strict function-preserving zero-output initialization!
         self.out_proj = np.zeros((self.host_dim, self.spec.neurons), dtype=np.float32)
-        self._last_telemetry: Dict[str, Any] = {"steps": 0, "gain": self.spec.gain, "observe_only": self.spec.observe_only}
+        self._cached_proj: Optional[np.ndarray] = None
+        self._last_telemetry: Dict[str, Any] = {"steps": 0, "gain": float(self.spec.gain), "observe_only": bool(self.spec.observe_only)}
 
     @property
     def name(self) -> str:
@@ -185,6 +198,15 @@ class MorphogenesisBusChannel(NeuralGraftProtocol):
     @property
     def enabled(self) -> bool:
         return bool(self._enabled and self.spec.enabled)
+
+    def set_enabled(self, value: bool) -> None:
+        if type(value) is not bool:
+            raise ValueError("enabled must be a bool")
+        self._enabled = value
+
+    def reset(self, batch_size: int = 1) -> None:
+        """Episode boundary: clear microstep cache while preserving learned weights and state."""
+        self._cached_proj = None
 
     def compute_current(
         self,
@@ -203,46 +225,73 @@ class MorphogenesisBusChannel(NeuralGraftProtocol):
             m = min(r_np.size, self.host_dim)
             padded[:m] = r_np[:m]
             r_np = padded
-        ext = self.in_proj @ r_np
-        if advance:
-            res = self.connectome.step(ext, adapt=bool(adapt and not self.spec.observe_only))
+        if advance and (microstep == 0 or self._cached_proj is None):
+            ext = self.in_proj @ r_np
+            do_adapt = bool(adapt and not self.spec.observe_only)
+            res = self.connectome.step(ext, adapt=do_adapt, collect_telemetry=False)
+            last_out_f32 = self.connectome.last_outputs.astype(np.float32)
+            proj = (self.out_proj @ last_out_f32) * float(self.spec.gain)
+            self._cached_proj = proj.astype(np.float32)
+            if do_adapt and self.spec.gain > 0.0:
+                # Bounded Oja-stabilized Hebbian graft readout update (starts from zero)
+                dw = 5e-4 * (np.outer(r_np, last_out_f32) - 0.1 * self.out_proj)
+                self.out_proj = np.clip(self.out_proj + dw.astype(np.float32), np.float32(-0.25), np.float32(0.25)).astype(np.float32)
             self._last_telemetry = {
-                "steps": res["step"],
-                "gain": self.spec.gain,
-                "observe_only": self.spec.observe_only,
-                "step_energy": res["step_energy"],
-                "step_flops": res["step_flops"],
+                "steps": int(res["step"]),
+                "gain": float(self.spec.gain),
+                "observe_only": bool(self.spec.observe_only),
+                "step_energy": float(res["step_energy"]),
+                "step_flops": int(res["step_flops"]),
                 "mean_output": round(float(np.mean(res["outputs"])), 6),
+                "out_proj_norm": round(float(np.linalg.norm(self.out_proj)), 6),
             }
+        elif self._cached_proj is not None:
+            proj = self._cached_proj
+        else:
+            proj = (self.out_proj @ self.connectome.last_outputs.astype(np.float32)) * float(self.spec.gain)
+
         if self.spec.observe_only or self.spec.gain == 0.0:
             return torch.zeros_like(r)
-        proj = (self.out_proj @ self.connectome.last_outputs.astype(np.float32)) * float(self.spec.gain)
         out = torch.from_numpy(proj).to(device=r.device, dtype=r.dtype)
         if out.numel() != r.numel():
             out = out[: r.numel()] if out.numel() > r.numel() else torch.nn.functional.pad(out, (0, r.numel() - out.numel()))
         return out.view_as(r)
 
-    def get_telemetry_dict(self) -> Dict[str, Any]:
+    def get_telemetry_dict(self, include_timing: bool = False) -> Dict[str, Any]:
         return dict(self._last_telemetry)
 
     def export_state(self) -> Dict[str, Any]:
         return {
+            "schema": "MorphogenesisCheckpointV1",
             "spec": self.spec.to_dict(),
-            "host_dim": self.host_dim,
-            "in_proj": self.in_proj.copy(),
-            "out_proj": self.out_proj.copy(),
+            "host_dim": int(self.host_dim),
+            "enabled": bool(self._enabled),
+            "in_proj": self.in_proj.astype(np.float32).copy(),
+            "out_proj": self.out_proj.astype(np.float32).copy(),
+            "cached_proj": None if self._cached_proj is None else self._cached_proj.astype(np.float32).copy(),
+            "connectome": self.connectome.export_state(),
             "last_outputs": self.connectome.last_outputs.copy(),
-            "step_count": self.connectome.step_count,
+            "step_count": int(self.connectome.step_count),
+            "last_telemetry": dict(self._last_telemetry),
         }
 
     def import_state(self, state: Dict[str, Any]) -> None:
+        if "enabled" in state:
+            self._enabled = bool(state["enabled"])
         if "in_proj" in state:
             self.in_proj = np.asarray(state["in_proj"], dtype=np.float32).copy()
         if "out_proj" in state:
             self.out_proj = np.asarray(state["out_proj"], dtype=np.float32).copy()
-        if "last_outputs" in state:
-            self.connectome.last_outputs = np.asarray(state["last_outputs"], dtype=np.float64).copy()
-        self.connectome.step_count = int(state.get("step_count", 0))
+        cached = state.get("cached_proj")
+        self._cached_proj = None if cached is None else np.asarray(cached, dtype=np.float32).copy()
+        if "connectome" in state and isinstance(state["connectome"], Mapping):
+            self.connectome.import_state(state["connectome"])
+        else:
+            if "last_outputs" in state:
+                self.connectome.last_outputs = np.asarray(state["last_outputs"], dtype=np.float64).copy()
+            self.connectome.step_count = int(state.get("step_count", 0))
+        if "last_telemetry" in state and isinstance(state["last_telemetry"], Mapping):
+            self._last_telemetry = dict(state["last_telemetry"])
 
 
 def load_malecns_subgraph(max_nodes: int = 32, seed: int = 42) -> ConnectomeGraph:
@@ -335,3 +384,44 @@ def load_malecns_subgraph(max_nodes: int = 32, seed: int = 42) -> ConnectomeGrap
 
 def get_tidal_core_path() -> Path:
     return tidal_checkpoint_path()
+
+
+def run_morphogenesis_laboratory(
+    spec: MorphogenesisSpecV1,
+    channel: Optional[MorphogenesisBusChannel] = None,
+    steps: int = 8,
+    seed: int = 7,
+) -> Dict[str, Any]:
+    """Isolated, read-only bounded Morphogenesis laboratory receipt for Tandem Max Section 08.
+
+    Executes on fresh isolated objects so the live ``IntegratedAgent`` trajectory and RNG
+    are never perturbed prior to the Section 05 checkpoint commit.
+    """
+    from .compiled_engine import CompiledConnectomeEngine
+    from ..emergence.causal_emergence import extract_maf_slow_subspace, compute_gaussian_mmi_pid
+
+    rng = np.random.default_rng(int(seed) + 808)
+    graph = build_zero_impact_subconnectome(spec)
+    compiled = CompiledConnectomeEngine(graph, dt_ms=1.0, seed=int(seed))
+    n_steps = max(6, min(32, int(steps)))
+    traj = np.zeros((n_steps, len(graph.neurons)), dtype=np.float64)
+    for t in range(n_steps):
+        stim = rng.normal(0.0, 0.35, size=len(graph.neurons))
+        res = compiled.step(stim, adapt=True)
+        traj[t] = res["outputs"]
+
+    maf = extract_maf_slow_subspace(traj, k_modes=min(3, max(1, len(graph.neurons) // 4)))
+    half = max(1, len(graph.neurons) // 2)
+    pid = compute_gaussian_mmi_pid(traj[:, :half], traj[:, half:])
+    live_telemetry = channel.get_telemetry_dict(include_timing=False) if channel is not None else None
+    return {
+        "section": "08 · SONAPSE MORPHOGENESIS Laboratory",
+        "status": "completed",
+        "spec": spec.to_dict(),
+        "compiled_engine_steps": n_steps,
+        "neurons": len(graph.neurons),
+        "compartments": compiled.n_comp_total,
+        "maf_slow_autocorrelations": maf["autocorrelations"],
+        "mmi_pid_synergy_nats": pid["synergy"],
+        "live_channel_telemetry": live_telemetry,
+    }

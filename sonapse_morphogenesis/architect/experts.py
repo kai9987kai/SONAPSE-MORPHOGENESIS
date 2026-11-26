@@ -43,22 +43,31 @@ class ExpertPrediction:
 
 
 class LearnedResearchExpert:
-    """Lightweight non-LLM Bayesian-ridge online predictor trained on real experiment histories."""
+    """Lightweight non-LLM Bayesian-ridge online predictor trained on real experiment histories.
+
+    Uses role-specialized orthogonal feature emphasis + Sherman-Morrison O(d^2) rank-1
+    inverse covariance updates so all 11 experts maintain genuine epistemic diversity
+    and constant-time online learning over multi-hour campaigns.
+    """
 
     def __init__(self, name: str, feat_dim: int = 8, ridge: float = 0.5, seed: int = 42) -> None:
         self.name = name
         self.feat_dim = int(feat_dim)
         self.ridge = float(ridge)
         self.rng = np.random.default_rng(seed)
-        self.X_hist: List[np.ndarray] = []
-        self.y_benefit: List[float] = []
-        self.y_cost: List[float] = []
-        self.y_risk: List[float] = []
-        self.w_ben = np.zeros(feat_dim, dtype=np.float64)
-        self.w_cost = np.zeros(feat_dim, dtype=np.float64)
-        self.w_risk = np.zeros(feat_dim, dtype=np.float64)
-        self.cov_inv = np.eye(feat_dim, dtype=np.float64) / ridge
-        # Calibration ledger for Meta-Auditor
+        # Role-specific feature lens & weak prior breaking identical-clone degeneracy
+        raw_lens = 0.65 + 0.70 * self.rng.random(self.feat_dim)
+        self.feature_lens = raw_lens / float(np.mean(raw_lens))
+        self.prior_ben = self.rng.normal(0.0, 0.015, size=self.feat_dim)
+        self.w_ben = self.prior_ben.copy()
+        self.w_cost = np.abs(self.rng.normal(0.02, 0.01, size=self.feat_dim))
+        self.w_risk = np.abs(self.rng.normal(0.02, 0.01, size=self.feat_dim))
+        self.cov_inv = np.eye(self.feat_dim, dtype=np.float64) / self.ridge
+        self.xty_ben = self.ridge * self.prior_ben.copy()
+        self.xty_cost = self.ridge * self.w_cost.copy()
+        self.xty_risk = self.ridge * self.w_risk.copy()
+        self.sample_count = 0
+        # Bounded history & calibration ledger for Meta-Auditor
         self.pred_history: List[float] = []
         self.actual_history: List[float] = []
 
@@ -67,33 +76,34 @@ class LearnedResearchExpert:
         out = np.zeros(self.feat_dim, dtype=np.float64)
         m = min(arr.size, self.feat_dim)
         out[:m] = np.nan_to_num(arr[:m], nan=0.0)
-        return out
+        return out * self.feature_lens
 
     def fit_observation(self, proposal_features: Sequence[float], actual_benefit: float, actual_cost: float, actual_risk: float) -> None:
         x = self._encode_proposal(proposal_features)
-        # Log pre-fit prediction error for honest prequential audit
         pred_before = float(np.dot(self.w_ben, x))
         self.pred_history.append(pred_before)
         self.actual_history.append(float(actual_benefit))
+        if len(self.pred_history) > 256:
+            self.pred_history = self.pred_history[-256:]
+            self.actual_history = self.actual_history[-256:]
 
-        self.X_hist.append(x)
-        self.y_benefit.append(float(actual_benefit))
-        self.y_cost.append(float(actual_cost))
-        self.y_risk.append(float(actual_risk))
-
-        X = np.vstack(self.X_hist)
-        A = X.T @ X + self.ridge * np.eye(self.feat_dim)
-        self.cov_inv = np.linalg.inv(A)
-        self.w_ben = self.cov_inv @ (X.T @ np.asarray(self.y_benefit))
-        self.w_cost = self.cov_inv @ (X.T @ np.asarray(self.y_cost))
-        self.w_risk = self.cov_inv @ (X.T @ np.asarray(self.y_risk))
+        # Exact Sherman-Morrison rank-1 update: (A + x x^T)^-1 = A^-1 - (A^-1 x x^T A^-1) / (1 + x^T A^-1 x)
+        ax = self.cov_inv @ x
+        denom = 1.0 + float(np.dot(x, ax))
+        self.cov_inv = self.cov_inv - np.outer(ax, ax) / max(denom, 1e-9)
+        self.xty_ben = self.xty_ben + x * float(actual_benefit)
+        self.xty_cost = self.xty_cost + x * float(actual_cost)
+        self.xty_risk = self.xty_risk + x * float(actual_risk)
+        self.w_ben = self.cov_inv @ self.xty_ben
+        self.w_cost = self.cov_inv @ self.xty_cost
+        self.w_risk = self.cov_inv @ self.xty_risk
+        self.sample_count += 1
 
     def predict(self, proposal_features: Sequence[float]) -> ExpertPrediction:
         x = self._encode_proposal(proposal_features)
         ben = float(np.dot(self.w_ben, x))
         cost = float(max(0.0, np.dot(self.w_cost, x)))
         risk = float(np.clip(np.dot(self.w_risk, x), 0.0, 1.0))
-        # Exact Bayesian linear predictive variance proxy x^T A^-1 x
         unc = float(math.sqrt(max(float(x @ self.cov_inv @ x), 1e-6)))
         return ExpertPrediction(
             expert_name=self.name,
@@ -180,3 +190,28 @@ class InternalExpertPanel:
     def update_all(self, proposal_features: Sequence[float], actual_benefit: float, actual_cost: float, actual_risk: float) -> None:
         for exp in self.experts.values():
             exp.fit_observation(proposal_features, actual_benefit, actual_cost, actual_risk)
+
+    def score_fantasy_decision_risk(self, candidate_features: Sequence[Sequence[float]], cvar_alpha: float = 0.25) -> List[Dict[str, Any]]:
+        """COUNTERFORM v0.2 inspired CVaR sensitivity-particle fantasy decision-risk acquisition."""
+        scored: List[Dict[str, Any]] = []
+        for idx, feat in enumerate(candidate_features):
+            panel = self.consult(feat)
+            per_exp = list(panel["per_expert"].values())
+            utilities = np.array([
+                float(p["benefit"]) - 0.15 * float(p["cost"]) - 0.35 * float(p["risk"])
+                for p in per_exp
+            ], dtype=np.float64)
+            k_tail = max(1, int(math.ceil(cvar_alpha * len(utilities))))
+            cvar_tail = float(np.mean(np.sort(utilities)[:k_tail]))
+            disagreement = float(np.std(utilities))
+            acq_score = 0.55 * float(np.mean(utilities)) + 0.30 * cvar_tail + 0.15 * disagreement
+            scored.append({
+                "candidate_idx": idx,
+                "mean_utility": round(float(np.mean(utilities)), 5),
+                "cvar_25": round(cvar_tail, 5),
+                "epistemic_disagreement": round(disagreement, 5),
+                "acquisition_score": round(acq_score, 5),
+                "abstain_exploratory": bool(cvar_tail < -0.15),
+            })
+        scored.sort(key=lambda r: r["acquisition_score"], reverse=True)
+        return scored

@@ -1,0 +1,123 @@
+{
+  "section": "09_host_tandem_max_and_omni_ablation",
+  "wallclock_seconds": 1044.663,
+  "cpu_seconds": 1422.328,
+  "result": {
+    "sonapse_lab_tandem_max_summary": {
+      "status": "completed",
+      "total_neurons": 192,
+      "total_wallclock_seconds": 736.386,
+      "tandem_sha256": "a671372db20bcbfb0a50a2fa07a4c9463c733b31770a25630d503897a65e9aa7",
+      "sections_completed": [
+        "01_overview_and_omnibus",
+        "02_capabilities_matrix",
+        "03_patches_and_circuits",
+        "04_experiments_rsi_and_causal_9arm",
+        "05_checkpoints"
+      ],
+      "feature_audit_complete": true,
+      "enabled_feature_count": 125,
+      "section_06_neuroweave_status": "ok",
+      "section_07_frontier_status": "ok",
+      "section_08_morphogenesis": {
+        "section": "08 \u00b7 SONAPSE MORPHOGENESIS Laboratory",
+        "status": "completed",
+        "spec": {
+          "enabled": true,
+          "gain": 0.02,
+          "max_gain": 0.15,
+          "fidelity": 2,
+          "neurons": 16,
+          "seed": 7,
+          "observe_only": false
+        },
+        "compiled_engine_steps": 8,
+        "neurons": 16,
+        "compartments": 48,
+        "maf_slow_autocorrelations": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mmi_pid_synergy_nats": 0.0,
+        "live_channel_telemetry": {
+          "steps": 304,
+          "gain": 0.02,
+          "observe_only": false,
+          "step_energy": 1.817232,
+          "step_flops": 1076,
+          "mean_output": -2.5e-05,
+          "out_proj_norm": 0.0
+        }
+      }
+    },
+    "omni_max_mode_4arm_ablation": {
+      "experiment": "omni_max_mode_4arm_architectural_ablation",
+      "seeds": [
+        7,
+        11,
+        19
+      ],
+      "epochs_per_seed": 8,
+      "arms": {
+        "full_3tier_omni_max": {
+          "mean_reward": 0.35371,
+          "std_reward": 0.10861,
+          "late_half_mean_reward": 0.48964,
+          "per_seed_mean_reward": [
+            0.38833,
+            0.466,
+            0.2068
+          ]
+        },
+        "no_faultline_uniform_panel": {
+          "mean_reward": 0.3333,
+          "std_reward": 0.13131,
+          "late_half_mean_reward": 0.45818,
+          "per_seed_mean_reward": [
+            0.38557,
+            0.46148,
+            0.15285
+          ]
+        },
+        "single_hebbian_rule_only": {
+          "mean_reward": 0.06778,
+          "std_reward": 0.17716,
+          "late_half_mean_reward": -0.00758,
+          "per_seed_mean_reward": [
+            0.06405,
+            0.2866,
+            -0.14732
+          ]
+        },
+        "uncoupled_no_host_tandem": {
+          "mean_reward": 0.47355,
+          "std_reward": 0.02296,
+          "late_half_mean_reward": 0.51782,
+          "per_seed_mean_reward": [
+            0.45296,
+            0.50559,
+            0.46209
+          ]
+        }
+      },
+      "full_vs_uniform_bootstrap": {
+        "mean_diff": 0.020411,
+        "ci95_low": 0.002765,
+        "ci95_high": 0.053954,
+        "p_value": 0.24376,
+        "cohens_d": 0.7023,
+        "n_seeds": 3
+      },
+      "full_vs_single_hebbian_bootstrap": {
+        "mean_diff": 0.285932,
+        "ci95_low": 0.179397,
+        "ci95_high": 0.354115,
+        "p_value": 0.24376,
+        "cohens_d": 3.0594,
+        "n_seeds": 3
+      }
+    }
+  },
+  "sha256_digest": "821e7ebfb7def5b516a2c772b547bbd16c03eec6aa6ff95918ae5ed89165703e"
+}

@@ -47,6 +47,7 @@ PARETO_ARM_IDS: tuple[str, ...] = (
     'frontier_observers',
     'dendritic_oscillatory',
     'neural_graft',
+    'morphogenesis',
 )
 _WALLCLOCK_KEYS = frozenset({
     'measured_wallclock_ms',
@@ -229,7 +230,7 @@ def active_subsystem_list(config: SynapseConfig) -> list[str]:
     for flag in flag_names:
         if getattr(config, flag, False):
             names.append(flag)
-    for sub in ('dsag', 'neuroweave', 'frontier'):
+    for sub in ('dsag', 'neuroweave', 'frontier', 'morphogenesis'):
         spec = getattr(config, sub, None)
         if spec is not None and getattr(spec, 'enabled', False):
             names.append(sub)
@@ -262,6 +263,9 @@ def _build_pareto_arm_config(
         return SynapseConfig(**base, dendritic_ltc=True, oscillatory_coherence=True)
     if arm_id == 'neural_graft':
         return SynapseConfig(**base, neural_graft=True, active_training=True)
+    if arm_id == 'morphogenesis':
+        from sonapse_morphogenesis.core.bridge import MorphogenesisSpecV1
+        return SynapseConfig(**base, morphogenesis=MorphogenesisSpecV1.max_preset(seed=seed, neurons=16))
     raise ValueError(f'unknown pareto arm: {arm_id!r}; supported: {PARETO_ARM_IDS}')
 
 

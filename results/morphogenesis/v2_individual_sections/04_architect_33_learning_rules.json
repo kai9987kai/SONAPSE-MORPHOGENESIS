@@ -1,0 +1,557 @@
+{
+  "section": "04_architect_33_learning_rules",
+  "wallclock_seconds": 21.074,
+  "cpu_seconds": 23.906,
+  "result": {
+    "extended_33_learning_suite": {
+      "experiment": "extended_connectome_learning_33_algorithm_benchmark",
+      "seed": 7,
+      "steps": 100,
+      "total_algorithms": 33,
+      "top5_lowest_corrupted_mse": [
+        [
+          "negative_distillation",
+          0.00871
+        ],
+        [
+          "region_meta_learning",
+          0.01155
+        ],
+        [
+          "shy_synaptic_renormalization",
+          0.01163
+        ],
+        [
+          "rigl_connectome_rewiring",
+          0.01207
+        ],
+        [
+          "local_error",
+          0.013
+        ]
+      ],
+      "top5_pareto_wiring_efficiency": [
+        [
+          "negative_distillation",
+          14.7169
+        ],
+        [
+          "shy_synaptic_renormalization",
+          14.1165
+        ],
+        [
+          "rigl_connectome_rewiring",
+          14.0123
+        ],
+        [
+          "region_meta_learning",
+          13.9935
+        ],
+        [
+          "local_error",
+          13.8095
+        ]
+      ],
+      "algorithms": {
+        "hebbian": {
+          "generation": 1,
+          "clean_eval_mse": 1.14566,
+          "corrupted_eval_mse": 1.29858,
+          "wiring_cable_cost": 10.4757,
+          "composite_pareto_score": 0.5226
+        },
+        "stdp": {
+          "generation": 1,
+          "clean_eval_mse": 0.94322,
+          "corrupted_eval_mse": 1.1414,
+          "wiring_cable_cost": 9.2435,
+          "composite_pareto_score": 0.6128
+        },
+        "three_factor": {
+          "generation": 1,
+          "clean_eval_mse": 0.43024,
+          "corrupted_eval_mse": 0.47627,
+          "wiring_cable_cost": 2.2939,
+          "composite_pareto_score": 1.7405
+        },
+        "neuromodulated_rl": {
+          "generation": 1,
+          "clean_eval_mse": 0.37715,
+          "corrupted_eval_mse": 0.39022,
+          "wiring_cable_cost": 2.4424,
+          "composite_pareto_score": 2.0694
+        },
+        "bptt": {
+          "generation": 1,
+          "clean_eval_mse": 0.01816,
+          "corrupted_eval_mse": 0.02381,
+          "wiring_cable_cost": 3.4545,
+          "composite_pareto_score": 11.9039
+        },
+        "surrogate_gradient": {
+          "generation": 1,
+          "clean_eval_mse": 0.03114,
+          "corrupted_eval_mse": 0.03575,
+          "wiring_cable_cost": 3.0638,
+          "composite_pareto_score": 10.3888
+        },
+        "contrastive": {
+          "generation": 1,
+          "clean_eval_mse": 1.26762,
+          "corrupted_eval_mse": 1.48922,
+          "wiring_cable_cost": 30.0629,
+          "composite_pareto_score": 0.295
+        },
+        "self_supervised": {
+          "generation": 1,
+          "clean_eval_mse": 0.5103,
+          "corrupted_eval_mse": 0.54153,
+          "wiring_cable_cost": 0.8629,
+          "composite_pareto_score": 1.6341
+        },
+        "predictive_coding": {
+          "generation": 1,
+          "clean_eval_mse": 0.965,
+          "corrupted_eval_mse": 0.9913,
+          "wiring_cable_cost": 8.3626,
+          "composite_pareto_score": 0.7196
+        },
+        "local_error": {
+          "generation": 1,
+          "clean_eval_mse": 0.00987,
+          "corrupted_eval_mse": 0.013,
+          "wiring_cable_cost": 3.7354,
+          "composite_pareto_score": 13.8095
+        },
+        "imitation": {
+          "generation": 1,
+          "clean_eval_mse": 0.01389,
+          "corrupted_eval_mse": 0.02024,
+          "wiring_cable_cost": 3.6476,
+          "composite_pareto_score": 12.4242
+        },
+        "negative_distillation": {
+          "generation": 1,
+          "clean_eval_mse": 0.00574,
+          "corrupted_eval_mse": 0.00871,
+          "wiring_cable_cost": 3.9335,
+          "composite_pareto_score": 14.7169
+        },
+        "evolutionary": {
+          "generation": 1,
+          "clean_eval_mse": 0.7915,
+          "corrupted_eval_mse": 0.9314,
+          "wiring_cable_cost": 4.1663,
+          "composite_pareto_score": 0.8734
+        },
+        "generative_replay": {
+          "generation": 1,
+          "clean_eval_mse": 0.03188,
+          "corrupted_eval_mse": 0.03104,
+          "wiring_cable_cost": 7.5838,
+          "composite_pareto_score": 9.4671
+        },
+        "fast_weights": {
+          "generation": 1,
+          "clean_eval_mse": 1.11256,
+          "corrupted_eval_mse": 1.38406,
+          "wiring_cable_cost": 18.7821,
+          "composite_pareto_score": 0.3982
+        },
+        "population_based": {
+          "generation": 1,
+          "clean_eval_mse": 0.01702,
+          "corrupted_eval_mse": 0.02197,
+          "wiring_cable_cost": 3.4765,
+          "composite_pareto_score": 12.1988
+        },
+        "activity_guided": {
+          "generation": 1,
+          "clean_eval_mse": 0.022,
+          "corrupted_eval_mse": 0.02731,
+          "wiring_cable_cost": 3.5322,
+          "composite_pareto_score": 11.3335
+        },
+        "structural_plasticity": {
+          "generation": 1,
+          "clean_eval_mse": 1.12752,
+          "corrupted_eval_mse": 1.37701,
+          "wiring_cable_cost": 21.9318,
+          "composite_pareto_score": 0.3733
+        },
+        "region_meta_learning": {
+          "generation": 1,
+          "clean_eval_mse": 0.00895,
+          "corrupted_eval_mse": 0.01155,
+          "wiring_cable_cost": 4.0263,
+          "composite_pareto_score": 13.9935
+        },
+        "bcm_sliding_threshold": {
+          "generation": 2,
+          "clean_eval_mse": 0.12476,
+          "corrupted_eval_mse": 0.20561,
+          "wiring_cable_cost": 2.6444,
+          "composite_pareto_score": 3.5379
+        },
+        "eprop_eligibility": {
+          "generation": 2,
+          "clean_eval_mse": 0.15278,
+          "corrupted_eval_mse": 0.25724,
+          "wiring_cable_cost": 4.958,
+          "composite_pareto_score": 2.7162
+        },
+        "btsp_plateau_learning": {
+          "generation": 2,
+          "clean_eval_mse": 1.86273,
+          "corrupted_eval_mse": 1.48043,
+          "wiring_cable_cost": 27.6505,
+          "composite_pareto_score": 0.3103
+        },
+        "burst_ccn_multiplexed": {
+          "generation": 2,
+          "clean_eval_mse": 0.12946,
+          "corrupted_eval_mse": 0.17213,
+          "wiring_cable_cost": 4.1177,
+          "composite_pareto_score": 3.8653
+        },
+        "equilibrium_propagation": {
+          "generation": 2,
+          "clean_eval_mse": 0.01566,
+          "corrupted_eval_mse": 0.01932,
+          "wiring_cable_cost": 3.4512,
+          "composite_pareto_score": 12.6754
+        },
+        "forward_forward_goodness": {
+          "generation": 2,
+          "clean_eval_mse": 0.0399,
+          "corrupted_eval_mse": 0.07373,
+          "wiring_cable_cost": 6.4853,
+          "composite_pareto_score": 6.4173
+        },
+        "dendritic_target_prop": {
+          "generation": 2,
+          "clean_eval_mse": 0.04003,
+          "corrupted_eval_mse": 0.05307,
+          "wiring_cable_cost": 2.6357,
+          "composite_pareto_score": 8.7769
+        },
+        "muon_orthogonal_plasticity": {
+          "generation": 2,
+          "clean_eval_mse": 0.02455,
+          "corrupted_eval_mse": 0.03939,
+          "wiring_cable_cost": 4.3532,
+          "composite_pareto_score": 9.5283
+        },
+        "hodge_curl_free_plasticity": {
+          "generation": 2,
+          "clean_eval_mse": 0.01759,
+          "corrupted_eval_mse": 0.02795,
+          "wiring_cable_cost": 3.6971,
+          "composite_pareto_score": 11.1761
+        },
+        "shy_synaptic_renormalization": {
+          "generation": 2,
+          "clean_eval_mse": 0.00901,
+          "corrupted_eval_mse": 0.01163,
+          "wiring_cable_cost": 3.7347,
+          "composite_pareto_score": 14.1165
+        },
+        "tether_counterfactual_invariance": {
+          "generation": 2,
+          "clean_eval_mse": 0.14113,
+          "corrupted_eval_mse": 0.15028,
+          "wiring_cable_cost": 1.7286,
+          "composite_pareto_score": 4.67
+        },
+        "ghost_efference_credit": {
+          "generation": 2,
+          "clean_eval_mse": 0.00974,
+          "corrupted_eval_mse": 0.01417,
+          "wiring_cable_cost": 3.8185,
+          "composite_pareto_score": 13.5179
+        },
+        "rigl_connectome_rewiring": {
+          "generation": 2,
+          "clean_eval_mse": 0.00923,
+          "corrupted_eval_mse": 0.01207,
+          "wiring_cable_cost": 3.7462,
+          "composite_pareto_score": 14.0123
+        },
+        "morphogen_wiring_economy": {
+          "generation": 2,
+          "clean_eval_mse": 0.04671,
+          "corrupted_eval_mse": 0.07317,
+          "wiring_cable_cost": 2.8019,
+          "composite_pareto_score": 7.3005
+        }
+      }
+    },
+    "developmental_stage_rules": {
+      "experiment": "dynamic_learning_rules_by_developmental_stage",
+      "all_19_algorithms_implemented": [
+        "hebbian",
+        "stdp",
+        "three_factor",
+        "neuromodulated_rl",
+        "bptt",
+        "surrogate_gradient",
+        "contrastive",
+        "self_supervised",
+        "predictive_coding",
+        "local_error",
+        "imitation",
+        "negative_distillation",
+        "evolutionary",
+        "generative_replay",
+        "fast_weights",
+        "population_based",
+        "activity_guided",
+        "structural_plasticity",
+        "region_meta_learning"
+      ],
+      "extended_v2_algorithms": [
+        "bcm_sliding_threshold",
+        "eprop_eligibility",
+        "btsp_plateau_learning",
+        "burst_ccn_multiplexed",
+        "equilibrium_propagation",
+        "forward_forward_goodness",
+        "dendritic_target_prop",
+        "muon_orthogonal_plasticity",
+        "hodge_curl_free_plasticity",
+        "shy_synaptic_renormalization",
+        "tether_counterfactual_invariance",
+        "ghost_efference_credit",
+        "rigl_connectome_rewiring",
+        "morphogen_wiring_economy"
+      ],
+      "total_supported_algorithms": 33,
+      "early_stage_mse": {
+        "hebbian": 0.67154,
+        "stdp": 0.39576,
+        "three_factor": 0.52307,
+        "bptt": 0.37455,
+        "surrogate_gradient": 0.32945,
+        "predictive_coding": 0.61728,
+        "local_error": 0.3543,
+        "fast_weights": 0.78207,
+        "region_meta_learning": 0.35412
+      },
+      "mature_stage_mse": {
+        "hebbian": 1.2366,
+        "stdp": 0.87339,
+        "three_factor": 0.58445,
+        "bptt": 0.04546,
+        "surrogate_gradient": 0.05555,
+        "predictive_coding": 1.21919,
+        "local_error": 0.03332,
+        "fast_weights": 1.36591,
+        "region_meta_learning": 0.03923
+      },
+      "best_early": "surrogate_gradient",
+      "best_mature": "local_error"
+    },
+    "cross_scale_transfer_8_to_128": {
+      "experiment": "architect_cross_scale_transfer_and_expert_calibration",
+      "scales": [
+        8,
+        24,
+        64,
+        128
+      ],
+      "calibration_cycles_executed": 8,
+      "pre_calibration_flagged": 0,
+      "post_calibration_flagged": 0,
+      "post_calibration_details": {
+        "morphology_assessor": {
+          "samples": 40,
+          "prequential_rmse": 0.00031,
+          "signed_bias": -0.00013,
+          "optimism_biased": false,
+          "trusted": true,
+          "status": "calibrated_ok"
+        },
+        "plasticity_assessor": {
+          "samples": 40,
+          "prequential_rmse": 0.00066,
+          "signed_bias": 0.00036,
+          "optimism_biased": false,
+          "trusted": true,
+          "status": "calibrated_ok"
+        },
+        "memory_retention": {
+          "samples": 40,
+          "prequential_rmse": 0.00072,
+          "signed_bias": 0.00025,
+          "optimism_biased": false,
+          "trusted": true,
+          "status": "calibrated_ok"
+        },
+        "stability_assessor": {
+          "samples": 40,
+          "prequential_rmse": 0.00075,
+          "signed_bias": -0.00025,
+          "optimism_biased": false,
+          "trusted": true,
+          "status": "calibrated_ok"
+        },
+        "resource_efficiency": {
+          "samples": 40,
+          "prequential_rmse": 0.00082,
+          "signed_bias": -7e-05,
+          "optimism_biased": false,
+          "trusted": true,
+          "status": "calibrated_ok"
+        },
+        "novelty_detector": {
+          "samples": 40,
+          "prequential_rmse": 0.0001,
+          "signed_bias": -1e-05,
+          "optimism_biased": false,
+          "trusted": true,
+          "status": "calibrated_ok"
+        },
+        "curriculum_selector": {
+          "samples": 40,
+          "prequential_rmse": 0.00062,
+          "signed_bias": 0.00014,
+          "optimism_biased": false,
+          "trusted": true,
+          "status": "calibrated_ok"
+        },
+        "cross_connectome_transfer": {
+          "samples": 40,
+          "prequential_rmse": 0.00057,
+          "signed_bias": 0.00036,
+          "optimism_biased": false,
+          "trusted": true,
+          "status": "calibrated_ok"
+        },
+        "causal_inference": {
+          "samples": 40,
+          "prequential_rmse": 0.00137,
+          "signed_bias": 0.00012,
+          "optimism_biased": false,
+          "trusted": true,
+          "status": "calibrated_ok"
+        },
+        "experimental_design": {
+          "samples": 40,
+          "prequential_rmse": 0.00065,
+          "signed_bias": -0.00013,
+          "optimism_biased": false,
+          "trusted": true,
+          "status": "calibrated_ok"
+        },
+        "scientific_anomaly_detector": {
+          "samples": 40,
+          "prequential_rmse": 0.00049,
+          "signed_bias": -0.00016,
+          "optimism_biased": false,
+          "trusted": true,
+          "status": "calibrated_ok"
+        }
+      },
+      "scale_transfer_laws": [
+        {
+          "operator": "attach_organelle",
+          "per_scale": {
+            "8": {
+              "baseline_mse": 1.00632,
+              "mutated_mse": 1.09448,
+              "gain_mse": -0.08816,
+              "positive_transfer": false
+            },
+            "24": {
+              "baseline_mse": 1.18536,
+              "mutated_mse": 1.18536,
+              "gain_mse": 0.0,
+              "positive_transfer": false
+            },
+            "64": {
+              "baseline_mse": 1.14466,
+              "mutated_mse": 1.14466,
+              "gain_mse": 0.0,
+              "positive_transfer": false
+            },
+            "128": {
+              "baseline_mse": 1.62754,
+              "mutated_mse": 1.62754,
+              "gain_mse": 0.0,
+              "positive_transfer": false
+            }
+          },
+          "micro_gain": -0.08816,
+          "macro_gain": 0.0,
+          "sign_consistent_micro_to_macro": false
+        },
+        {
+          "operator": "insert_circuit_motif",
+          "per_scale": {
+            "8": {
+              "baseline_mse": 1.00632,
+              "mutated_mse": 1.00632,
+              "gain_mse": -0.0,
+              "positive_transfer": false
+            },
+            "24": {
+              "baseline_mse": 1.18536,
+              "mutated_mse": 1.2355,
+              "gain_mse": -0.05014,
+              "positive_transfer": false
+            },
+            "64": {
+              "baseline_mse": 1.14466,
+              "mutated_mse": 1.14466,
+              "gain_mse": 0.0,
+              "positive_transfer": true
+            },
+            "128": {
+              "baseline_mse": 1.62754,
+              "mutated_mse": 1.62746,
+              "gain_mse": 8e-05,
+              "positive_transfer": true
+            }
+          },
+          "micro_gain": -0.0,
+          "macro_gain": 8e-05,
+          "sign_consistent_micro_to_macro": true
+        },
+        {
+          "operator": "specialize_neuron",
+          "per_scale": {
+            "8": {
+              "baseline_mse": 1.00632,
+              "mutated_mse": 1.00011,
+              "gain_mse": 0.0062,
+              "positive_transfer": true
+            },
+            "24": {
+              "baseline_mse": 1.18536,
+              "mutated_mse": 1.26776,
+              "gain_mse": -0.0824,
+              "positive_transfer": false
+            },
+            "64": {
+              "baseline_mse": 1.14466,
+              "mutated_mse": 1.14466,
+              "gain_mse": -0.0,
+              "positive_transfer": false
+            },
+            "128": {
+              "baseline_mse": 1.62754,
+              "mutated_mse": 1.6509,
+              "gain_mse": -0.02335,
+              "positive_transfer": false
+            }
+          },
+          "micro_gain": 0.0062,
+          "macro_gain": -0.02335,
+          "sign_consistent_micro_to_macro": false
+        }
+      ],
+      "wall_ms": 20820.47
+    }
+  },
+  "sha256_digest": "01c63b3146550d5e2185ac49d5d68de6287b6dab78c0d824e298b01dca90f9fa"
+}

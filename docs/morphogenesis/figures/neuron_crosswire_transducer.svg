@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="240" viewBox="0 0 440 240">
+<rect width="100%" height="100%" rx="10" fill="#0f172a"/>
+<text x="14" y="20" fill="#e2e8f0" font-family="monospace" font-size="13" font-weight="bold">Crosswire Mealy Safety Neuron [crosswire_transducer] · F2</text>
+<text x="14" y="230" fill="#94a3b8" font-family="monospace" font-size="10">Compartments: 5 | Edges: 5 | Organelles: 2 | Cost: 4.72</text>
+<line x1="99.0" y1="120.0" x2="187.0" y2="80.2" stroke="#64748b" stroke-width="2" stroke-dasharray="4 3"/>
+<line x1="99.0" y1="120.0" x2="187.0" y2="159.8" stroke="#ef4444" stroke-width="2" stroke-dasharray="4 3"/>
+<line x1="187.0" y1="80.2" x2="266.2" y2="120.0" stroke="#e879f9" stroke-width="2" stroke-dasharray="4 3"/>
+<line x1="187.0" y1="159.8" x2="266.2" y2="120.0" stroke="#e879f9" stroke-width="2" stroke-dasharray="4 3"/>
+<line x1="266.2" y1="120.0" x2="341.0" y2="120.0" stroke="#64748b" stroke-width="2"/>
+<circle cx="99.0" cy="120.0" r="9.7" fill="#22d3ee" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="99.0" y="106.3" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">iface_in</text>
+<circle cx="187.0" cy="80.2" r="10.1" fill="#f59e0b" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="187.0" y="66.1" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">map_pos</text>
+<circle cx="187.0" cy="159.8" r="10.1" fill="#f59e0b" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="187.0" y="145.8" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">map_inv</text>
+<circle cx="266.2" cy="120.0" r="9.3" fill="#f97316" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="266.2" y="106.7" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">contract_hillock</text>
+<text x="266.2" y="139.3" text-anchor="middle" fill="#fde047" font-family="monospace" font-size="8">[crosswirosome,unce]</text>
+<circle cx="341.0" cy="120.0" r="7.0" fill="#fb7185" stroke="#f8fafc" stroke-width="1.3"/>
+<text x="341.0" y="109.0" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9">axon</text>
+</svg>

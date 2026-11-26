@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="240" viewBox="0 0 560 240">
+<rect width="100%" height="100%" rx="8" fill="#0f172a"/>
+<text x="16" y="24" fill="#e2e8f0" font-family="monospace" font-size="13" font-weight="bold">OMNI-MORPHOGENESIS 4-Arm Architectural Ablation (Reward)</text>
+<text x="16" y="60" fill="#cbd5e1" font-family="monospace" font-size="10">full_3tier_omni_max</text>
+<rect x="190" y="50" width="231.5" height="20" rx="3" fill="#38bdf8"/>
+<text x="429.5" y="60" fill="#f8fafc" font-family="monospace" font-size="10">0.3537</text>
+<text x="16" y="88" fill="#cbd5e1" font-family="monospace" font-size="10">no_faultline_uniform_pan</text>
+<rect x="190" y="78" width="218.2" height="20" rx="3" fill="#818cf8"/>
+<text x="416.2" y="88" fill="#f8fafc" font-family="monospace" font-size="10">0.3333</text>
+<text x="16" y="116" fill="#cbd5e1" font-family="monospace" font-size="10">single_hebbian_rule_only</text>
+<rect x="190" y="106" width="44.4" height="20" rx="3" fill="#34d399"/>
+<text x="242.4" y="116" fill="#f8fafc" font-family="monospace" font-size="10">0.0678</text>
+<text x="16" y="144" fill="#cbd5e1" font-family="monospace" font-size="10">uncoupled_no_host_tandem</text>
+<rect x="190" y="134" width="310.0" height="20" rx="3" fill="#818cf8"/>
+<text x="508.0" y="144" fill="#f8fafc" font-family="monospace" font-size="10">0.4736</text>
+</svg>

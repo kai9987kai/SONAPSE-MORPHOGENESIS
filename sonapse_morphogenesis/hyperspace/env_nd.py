@@ -258,3 +258,71 @@ def run_hyperspace_developmental_study(seeds: Sequence[int] = (7, 19), generatio
         "so4_rotation_invariant_polytope_recognition_acc": round(poly_acc, 4),
         "optional_5d_probe_obs_dim": int(HyperspaceEnvironment(dim=5).observe().size),
     }
+
+
+def run_high_dim_5d_6d_study(seeds: Sequence[int] = (7, 19), generations: int = 12) -> Dict[str, Any]:
+    """Resolves Open Question #5: Native 5D & 6D navigation + partially occluded SO(N) polytope reconstruction."""
+    results_by_dim: Dict[str, Any] = {}
+    for dim in (5, 6):
+        env = HyperspaceEnvironment(dim=dim, seed=seeds[0])
+        obs_dim = env.observe().size
+        returns_nd, shortcuts_nd = [], []
+        for seed in seeds:
+            rng = np.random.default_rng(seed + dim * 31)
+            W = rng.normal(0.0, 0.2, size=(dim, obs_dim))
+            obs0 = env.reset(seed + 1)
+            best_r = -1e9
+            for _ in range(generations):
+                for _ in range(8):
+                    cand = W + rng.normal(0.0, 0.24, size=W.shape)
+                    obs = env.reset(seed + 1)
+                    tot = 0.0
+                    for _ in range(48):
+                        obs, r, done, info = env.step(np.tanh(cand @ obs))
+                        tot += r
+                        if done:
+                            break
+                    if tot > best_r:
+                        best_r, W = tot, cand
+            # Held-out seed evaluation
+            obs = env.reset(seed + 888)
+            tot_h = 0.0
+            for _ in range(56):
+                obs, r, done, info = env.step(np.tanh(W @ obs))
+                tot_h += r
+                if done:
+                    break
+            returns_nd.append(tot_h)
+            shortcuts_nd.append(1.0 if info["used_4d_shortcut"] else 0.0)
+
+        # Partially occluded (35% vertices dropped!) SO(dim) polytope classification
+        rng_occ = np.random.default_rng(seeds[0] + dim * 100)
+        kinds = ("hypercube", "orthoplex", "simplex")
+        feats, labels = [], []
+        for k_i, kind in enumerate(kinds):
+            base_v = generate_nd_polytope(kind, dim=dim)
+            for _ in range(28):
+                R = so_nd_rotation(dim, (0, dim - 1), rng_occ.uniform(0, 6.28)) @ so_nd_rotation(dim, (1, dim - 2), rng_occ.uniform(0, 6.28))
+                rot_v = base_v @ R.T + rng_occ.normal(0.0, 0.03, size=base_v.shape)
+                keep_n = max(3, int(round(0.65 * len(rot_v))))
+                keep_idx = rng_occ.choice(len(rot_v), size=keep_n, replace=False)
+                occ_v = rot_v[keep_idx]
+                dmat = np.linalg.norm(occ_v[:, None, :] - occ_v[None, :, :], axis=-1)
+                hist, _ = np.histogram(dmat[dmat > 1e-4], bins=8, range=(0.0, 2.5), density=True)
+                feats.append(np.concatenate([[keep_n / 40.0, float(np.mean(dmat)), float(np.std(dmat))], hist]))
+                labels.append(k_i)
+        X = np.vstack(feats)
+        y = np.asarray(labels)
+        perm = rng_occ.permutation(len(y))
+        X, y = X[perm], y[perm]
+        sp = int(0.65 * len(y))
+        W_c = np.linalg.solve(X[:sp].T @ X[:sp] + 0.08 * np.eye(X.shape[1]), X[:sp].T @ np.eye(3)[y[:sp]])
+        acc_occ = float(np.mean(np.argmax(X[sp:] @ W_c, axis=1) == y[sp:]))
+
+        results_by_dim[f"{dim}D"] = {
+            "obs_dim": int(obs_dim),
+            "mean_heldout_return": round(float(np.mean(returns_nd)), 4),
+            "hyperwall_bypass_rate": round(float(np.mean(shortcuts_nd)), 4),
+            "occluded_35pct_polytope_acc": round(acc_occ, 4),
+        }
+    return {"experiment": "hyperspace_5d_6d_navigation_and_occluded_polytopes", "dimensions": results_by_dim}

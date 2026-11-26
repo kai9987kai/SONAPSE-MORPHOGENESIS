@@ -718,6 +718,388 @@ def _build_holographic_dendrite(nid: str) -> NeuronMorphologySpec:
     )
 
 
+# --- 12 EXTENDED V2 RESEARCH & ECOSYSTEM GRAFT ARCHITECTURES (+12 -> 36 TOTAL) ---
+
+def _build_liquid_cfc(nid: str) -> NeuronMorphologySpec:
+    """25. Closed-Form Continuous-Time Liquid Time-Constant Neuron (Hasani et al.)."""
+    return NeuronMorphologySpec(
+        morphology_id=nid, family="liquid_cfc", name="LiquidCfC Dendritic Neuron",
+        objective_category=ObjectiveCategory.COMPUTATIONAL_USEFULNESS,
+        fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+        compartments=[
+            _node("dend_drive", CompartmentKind.DENDRITE_BASAL, (-2.5, 0.9, 0.0), 36.0, 2.2, tau=5.0),
+            _node("dend_tau", CompartmentKind.DENDRITE_APICAL, (-2.5, -0.9, 0.0), 50.0, 1.8, tau=18.0),
+            _node("cfc_fast", CompartmentKind.INTEGRATION_CENTER, (-0.3, 0.8, 0.0), 20.0, 6.5, tau=4.0),
+            _node("cfc_slow", CompartmentKind.MEMORY_COMPARTMENT, (-0.3, -0.8, 0.0), 28.0, 8.0, tau=32.0),
+            _node("soma", CompartmentKind.SOMA, (1.5, 0.0, 0.0), 24.0, 9.0, tau=7.0),
+            _node("axon", CompartmentKind.AXON_SEGMENT, (3.2, 0.0, 0.0), 90.0, 1.5, myelin=0.7, tau=4.0),
+        ],
+        edges=[
+            _edge("dend_drive", "cfc_fast", 0.90),
+            _edge("dend_drive", "cfc_slow", 0.65),
+            _edge("dend_tau", "cfc_fast", 0.55, "feedback_gated", gated_by="dend_tau"),
+            _edge("dend_tau", "cfc_slow", -0.45, "feedback_gated", gated_by="dend_tau"),
+            _edge("cfc_fast", "soma", 0.80, "feedback_gated", gated_by="dend_tau"),
+            _edge("cfc_slow", "soma", 0.75, "feedback_gated", gated_by="cfc_fast"),
+            _edge("soma", "axon", 0.95),
+        ],
+        organelles=[
+            OrganelleAttachment("lcfc_route", "routosome", "soma"),
+            OrganelleAttachment("lcfc_crit", "criticalosome", "cfc_slow"),
+        ],
+        input_compartments=["dend_drive", "dend_tau"], output_compartments=["axon"],
+        formal_math=r"h(t) = \sigma(-f(x,I)t)\, g(x,I) + (1 - \sigma(-f(x,I)t))\, u(x,I)",
+        hypothesis="Closed-form input-modulated liquid time-constant branches interpolate fast transient and slow persistent attractors without stiff ODE overhead.",
+        description="Liquid continuous-time neuron interpolating fast and slow gated trajectories via input-dependent effective time constants.",
+    )
+
+
+def _build_kan_synapse(nid: str) -> NeuronMorphologySpec:
+    """26. Kolmogorov-Arnold Spline Dendrite Neuron (Liu et al. KAN)."""
+    comps = [
+        _node(f"spline_b{k}", CompartmentKind.DENDRITE_BASAL, (-2.4, 1.5 - 1.0 * k, 0.0), 32.0 + 6.0 * k, 2.0, tau=6.0 + 2.0 * k)
+        for k in range(4)
+    ] + [
+        _node("kan_sum_soma", CompartmentKind.SOMA, (0.4, 0.0, 0.0), 24.0, 9.0, tau=7.0),
+        _node("axon", CompartmentKind.AXON_SEGMENT, (2.7, 0.0, 0.0), 85.0, 1.4, myelin=0.65, tau=4.0),
+    ]
+    edges = [_edge(f"spline_b{k}", "kan_sum_soma", 0.75) for k in range(4)] + [_edge("kan_sum_soma", "axon", 0.95)]
+    orgs = [
+        OrganelleAttachment(f"kan_sp_{k}", "splinosome", f"spline_b{k}", params={"shift": -0.9 + 0.6 * k})
+        for k in range(4)
+    ]
+    return NeuronMorphologySpec(
+        morphology_id=nid, family="kan_synapse", name="KAN-Spline Dendritic Neuron",
+        objective_category=ObjectiveCategory.COMPUTATIONAL_USEFULNESS,
+        fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+        compartments=comps, edges=edges, organelles=orgs,
+        input_compartments=[f"spline_b{k}" for k in range(4)], output_compartments=["axon"],
+        formal_math=r"y = \Phi_{\text{soma}}\!\left(\sum_{p=1}^4 \sum_{m=1}^M c_{p,m}\, B_m(x_p)\right)",
+        hypothesis="Placing learnable univariate radial-basis spline organelles on dendritic branches approximates smooth multivariate functions with fewer compartments.",
+        description="Kolmogorov-Arnold inspired neuron equipped with Splinosome basis nonlinearities on four dendritic branches.",
+    )
+
+
+def _build_burst_ccn(nid: str) -> NeuronMorphologySpec:
+    """27. Burst-Multiplexed Apical Credit Neuron (Payeur, Guerguiev, Zenke, Richards & Naud)."""
+    return NeuronMorphologySpec(
+        morphology_id=nid, family="burst_ccn", name="BurstCCN Multiplexed Neuron",
+        objective_category=ObjectiveCategory.BIOLOGICAL_REALISM,
+        fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+        compartments=[
+            _node("basal_event", CompartmentKind.DENDRITE_BASAL, (-2.5, -1.0, 0.0), 42.0, 2.4, tau=6.0, receptors=ReceptorDistribution(ampa=1.6)),
+            _node("apical_tuft", CompartmentKind.DENDRITE_APICAL, (-2.5, 1.2, 0.0), 95.0, 1.6, tau=18.0, receptors=ReceptorDistribution(nmda=1.6, acetylcholine=1.1)),
+            _node("ca_spike_zone", CompartmentKind.INTEGRATION_CENTER, (-0.2, 0.9, 0.0), 18.0, 6.0, tau=11.0),
+            _node("soma_event", CompartmentKind.SOMA, (0.2, -0.5, 0.0), 24.0, 9.0, tau=7.0),
+            _node("axon_event", CompartmentKind.AXON_SEGMENT, (2.8, -0.6, 0.0), 95.0, 1.5, myelin=0.75, tau=3.5),
+            _node("axon_burst", CompartmentKind.AXON_SEGMENT, (2.8, 0.8, 0.0), 95.0, 1.3, myelin=0.55, tau=6.0),
+        ],
+        edges=[
+            _edge("basal_event", "soma_event", 0.92),
+            _edge("apical_tuft", "ca_spike_zone", 0.88),
+            _edge("soma_event", "ca_spike_zone", 0.55, "feedback_gated", gated_by="apical_tuft"),
+            _edge("ca_spike_zone", "soma_event", 0.48, "feedback_gated", gated_by="soma_event"),
+            _edge("soma_event", "axon_event", 0.95),
+            _edge("ca_spike_zone", "axon_burst", 0.90, "feedback_gated", gated_by="soma_event"),
+        ],
+        organelles=[
+            OrganelleAttachment("bccn_plast", "plasticity_nucleus", "ca_spike_zone"),
+            OrganelleAttachment("bccn_pred", "predicton", "apical_tuft"),
+        ],
+        input_compartments=["basal_event", "apical_tuft"], output_compartments=["axon_event", "axon_burst"],
+        formal_math=r"e_t = \sigma(I_{\text{basal}}),\; p_{\text{burst},t} = \sigma(I_{\text{apical}}),\; b_t = e_t \cdot p_{\text{burst},t},\; \Delta w \propto (p_{\text{burst},t} - \bar{p}) e_{\text{pre}}",
+        hypothesis="Segregating basal event rates from apical burst-probability modulation enables single-phase credit assignment without freezing forward inference.",
+        description="Cortical L5-inspired burst-multiplexing neuron routing separate event and burst-credit axonal channels.",
+    )
+
+
+def _build_btsp_plateau(nid: str) -> NeuronMorphologySpec:
+    """28. Behavioral Time-Scale Synaptic Plasticity CA1 Neuron (Bittner & Magee)."""
+    return NeuronMorphologySpec(
+        morphology_id=nid, family="btsp_plateau", name="BTSP Plateau-Potential Neuron",
+        objective_category=ObjectiveCategory.BIOLOGICAL_REALISM,
+        fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+        compartments=[
+            _node("ca3_proximal", CompartmentKind.DENDRITE_PROXIMAL, (-2.5, -0.8, 0.0), 48.0, 2.2, tau=14.0),
+            _node("ec3_distal_plateau", CompartmentKind.DENDRITE_DISTAL, (-2.5, 1.1, 0.0), 110.0, 1.4, tau=36.0, receptors=ReceptorDistribution(nmda=1.8, dopamine=1.2)),
+            _node("elig_bank", CompartmentKind.MEMORY_COMPARTMENT, (-0.3, -0.4, 0.0), 28.0, 8.5, tau=45.0),
+            _node("soma", CompartmentKind.SOMA, (1.2, 0.0, 0.0), 24.0, 9.0, tau=9.0),
+            _node("axon", CompartmentKind.AXON_SEGMENT, (3.0, 0.0, 0.0), 95.0, 1.4, myelin=0.65, tau=4.0),
+        ],
+        edges=[
+            _edge("ca3_proximal", "elig_bank", 0.85),
+            _edge("ca3_proximal", "soma", 0.75),
+            _edge("ec3_distal_plateau", "elig_bank", 0.90, "feedback_gated", gated_by="ec3_distal_plateau"),
+            _edge("elig_bank", "soma", 0.85, "feedback_gated", gated_by="ec3_distal_plateau"),
+            _edge("soma", "axon", 0.95),
+        ],
+        organelles=[
+            OrganelleAttachment("btsp_chrono", "chronosome", "elig_bank", params={"max_delay": 16, "tap_delay": 6}),
+            OrganelleAttachment("btsp_mnem", "mnemosome", "elig_bank", params={"slots": 10, "slow_decay": 0.995}),
+            OrganelleAttachment("btsp_arb", "arbitrosome", "elig_bank"),
+        ],
+        input_compartments=["ca3_proximal", "ec3_distal_plateau"], output_compartments=["axon"],
+        formal_math=r"\dot{E}_i = -E_i/\tau_E + x_i(t),\; \Delta w_i = \eta_+ (w_{\max}-w_i) f_+(E_i P_t) - \eta_- w_i f_-(E_i P_t)",
+        hypothesis="Distal instructional plateau potentials gate multi-step eligibility traces for rapid few-shot associative binding.",
+        description="Hippocampal CA1-inspired neuron pairing long-horizon eligibility traces with distal plateau gating.",
+    )
+
+
+def _build_mamba_selective(nid: str) -> NeuronMorphologySpec:
+    """29. Selective State-Space Scan Dendritic Neuron (Gu & Dao S6)."""
+    return NeuronMorphologySpec(
+        morphology_id=nid, family="mamba_selective", name="Mamba-S6 Selective Scan Neuron",
+        objective_category=ObjectiveCategory.COMPUTATIONAL_USEFULNESS,
+        fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+        compartments=[
+            _node("dend_x", CompartmentKind.DENDRITE_BASAL, (-2.5, 0.8, 0.0), 35.0, 2.1, tau=6.0),
+            _node("delta_gate", CompartmentKind.INTEGRATION_CENTER, (-0.8, 1.2, 0.0), 18.0, 6.0, tau=5.0),
+            _node("ssm_state", CompartmentKind.MEMORY_COMPARTMENT, (-0.4, -0.6, 0.0), 32.0, 9.5, tau=42.0),
+            _node("soma_proj", CompartmentKind.SOMA, (1.4, 0.0, 0.0), 22.0, 8.5, tau=7.0),
+            _node("axon", CompartmentKind.AXON_SEGMENT, (3.1, 0.0, 0.0), 90.0, 1.5, myelin=0.7, tau=4.0),
+        ],
+        edges=[
+            _edge("dend_x", "delta_gate", 0.90),
+            _edge("dend_x", "ssm_state", 0.85, "feedback_gated", gated_by="delta_gate"),
+            _edge("ssm_state", "ssm_state", 0.82, "electrical_axial"),
+            _edge("ssm_state", "soma_proj", 0.90, "feedback_gated", gated_by="dend_x"),
+            _edge("dend_x", "soma_proj", 0.35),
+            _edge("soma_proj", "axon", 0.95),
+        ],
+        organelles=[
+            OrganelleAttachment("mamba_att", "attentosome", "delta_gate"),
+            OrganelleAttachment("mamba_route", "routosome", "soma_proj"),
+        ],
+        input_compartments=["dend_x"], output_compartments=["axon"],
+        formal_math=r"\Delta_t = \text{softplus}(W_\Delta x_t),\; h_t = \exp(\Delta_t A) h_{t-1} + \Delta_t B(x_t) x_t,\; y_t = C(x_t) h_t",
+        hypothesis="Content-selective step-size gating lets a single state compartment filter irrelevant noise while latching salient tokens indefinitely.",
+        description="Selective state-space cellular architecture implementing input-dependent discretization and retention.",
+    )
+
+
+def _build_hodge_simplicial(nid: str) -> NeuronMorphologySpec:
+    """30. Topological 2-Simplex Hodge-Laplacian Curl/Harmonic Neuron."""
+    return NeuronMorphologySpec(
+        morphology_id=nid, family="hodge_simplicial", name="Hodge-Simplicial Cycle Neuron",
+        objective_category=ObjectiveCategory.COMPUTATIONAL_USEFULNESS,
+        fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+        compartments=[
+            _node("v0", CompartmentKind.DENDRITE_BASAL, (-2.2, 1.4, 0.0), 35.0, 2.0, tau=8.0),
+            _node("v1", CompartmentKind.DENDRITE_BASAL, (-2.2, 0.0, 0.0), 35.0, 2.0, tau=8.0),
+            _node("v2", CompartmentKind.DENDRITE_BASAL, (-2.2, -1.4, 0.0), 35.0, 2.0, tau=8.0),
+            _node("curl_face", CompartmentKind.INTEGRATION_CENTER, (-0.2, 0.8, 0.0), 22.0, 7.5, tau=12.0),
+            _node("div_node", CompartmentKind.INTEGRATION_CENTER, (-0.2, -0.8, 0.0), 22.0, 7.5, tau=7.0),
+            _node("soma", CompartmentKind.SOMA, (1.5, 0.0, 0.0), 24.0, 9.0, tau=8.0),
+            _node("axon", CompartmentKind.AXON_SEGMENT, (3.1, 0.0, 0.0), 90.0, 1.4, myelin=0.65, tau=4.0),
+        ],
+        edges=[
+            _edge("v0", "v1", 0.55, "gap_junction"),
+            _edge("v1", "v2", 0.55, "gap_junction"),
+            _edge("v2", "v0", 0.55, "gap_junction"),
+            _edge("v0", "curl_face", 0.70), _edge("v1", "curl_face", -0.70, "chemical_synapse"), _edge("v2", "curl_face", 0.70),
+            _edge("v0", "div_node", 0.55), _edge("v1", "div_node", 0.55), _edge("v2", "div_node", 0.55),
+            _edge("curl_face", "soma", 0.80), _edge("div_node", "soma", 0.65),
+            _edge("soma", "axon", 0.95),
+        ],
+        organelles=[OrganelleAttachment("hodge_ph", "phase_organelle", "curl_face", params={"omega": 0.42})],
+        input_compartments=["v0", "v1", "v2"], output_compartments=["axon"],
+        formal_math=r"\Delta_1 = B_1^\top B_1 + B_2 B_2^\top,\; y = \phi(w_{\text{div}} B_1 f + w_{\text{curl}} B_2^\top f)",
+        hypothesis="Explicit separation of irrotational divergence from cyclic curl across a 2-simplex dendritic triangle detects higher-order loop motifs.",
+        description="Topological deep-learning neuron decomposing 3-way inputs into boundary divergence and 2-simplex cyclic curl.",
+    )
+
+
+def _build_efference_twin(nid: str) -> NeuronMorphologySpec:
+    """31. Efference-Copy Authorship Comparator Neuron (inspired by GhostInTheMachine v8)."""
+    return NeuronMorphologySpec(
+        morphology_id=nid, family="efference_twin", name="EfferenceTwin Comparator Neuron",
+        objective_category=ObjectiveCategory.COMPUTATIONAL_USEFULNESS,
+        fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+        compartments=[
+            _node("reafferent_in", CompartmentKind.DENDRITE_BASAL, (-2.4, 1.0, 0.0), 40.0, 2.1, tau=7.0),
+            _node("motor_ soma", CompartmentKind.SOMA, (-0.4, -0.9, 0.0), 24.0, 9.0, tau=8.0),
+            _node("efference_pred", CompartmentKind.SECONDARY_SOMA, (-0.2, 0.9, 0.0), 22.0, 8.0, tau=10.0),
+            _node("comparator", CompartmentKind.INTEGRATION_CENTER, (1.4, 0.4, 0.0), 20.0, 7.0, tau=6.0),
+            _node("axon_act", CompartmentKind.AXON_SEGMENT, (3.0, -0.8, 0.0), 90.0, 1.5, myelin=0.75, tau=4.0),
+            _node("axon_exog", CompartmentKind.AXON_SEGMENT, (3.0, 0.8, 0.0), 90.0, 1.3, myelin=0.65, tau=4.0),
+        ],
+        edges=[
+            _edge("reafferent_in", "motor_ soma", 0.80),
+            _edge("motor_ soma", "efference_pred", 0.85, delay=1.0),
+            _edge("reafferent_in", "comparator", 0.95),
+            _edge("efference_pred", "comparator", -0.90, "chemical_synapse"),
+            _edge("comparator", "motor_ soma", -0.30, "feedback_gated", gated_by="efference_pred"),
+            _edge("motor_ soma", "axon_act", 0.95),
+            _edge("comparator", "axon_exog", 0.95),
+        ],
+        organelles=[
+            OrganelleAttachment("eff_org", "efferentosome", "comparator"),
+            OrganelleAttachment("eff_pred", "predicton", "efference_pred"),
+        ],
+        input_compartments=["reafferent_in"], output_compartments=["axon_act", "axon_exog"],
+        formal_math=r"\hat{o}_t = F(s_{t-1}, e_{t-1}),\; m_t = o_t - \hat{o}_t,\; W_{\text{closed}} = gW + \gamma_{\text{cmp}} W_{\text{cmp}} B",
+        hypothesis="Subtracting forward efference predictions from sensory reafference isolates exogenous disturbances and stabilizes closed-loop eigenvalues.",
+        description="GhostInTheMachine-inspired neuron canceling self-caused reafference while stabilizing closed-loop dynamics.",
+    )
+
+
+def _build_crosswire_transducer(nid: str) -> NeuronMorphologySpec:
+    """32. Version-Space Mealy Safety-Contract Neuron (inspired by CROSSWIRE)."""
+    return NeuronMorphologySpec(
+        morphology_id=nid, family="crosswire_transducer", name="Crosswire Mealy Safety Neuron",
+        objective_category=ObjectiveCategory.COMPUTATIONAL_USEFULNESS,
+        fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+        compartments=[
+            _node("iface_in", CompartmentKind.ML_ADAPTER, (-2.5, 0.0, 0.0), 25.0, 6.0, tau=6.0),
+            _node("map_pos", CompartmentKind.INTEGRATION_CENTER, (-0.5, 1.1, 0.0), 20.0, 6.5, tau=8.0),
+            _node("map_inv", CompartmentKind.INTEGRATION_CENTER, (-0.5, -1.1, 0.0), 20.0, 6.5, tau=8.0),
+            _node("contract_hillock", CompartmentKind.AXON_HILLOCK, (1.3, 0.0, 0.0), 18.0, 5.5, tau=5.0),
+            _node("axon", CompartmentKind.AXON_SEGMENT, (3.0, 0.0, 0.0), 90.0, 1.4, myelin=0.7, tau=4.0),
+        ],
+        edges=[
+            _edge("iface_in", "map_pos", 0.90, "ml_bridge"),
+            _edge("iface_in", "map_inv", -0.90, "ml_bridge"),
+            _edge("map_pos", "contract_hillock", 0.80, "feedback_gated", gated_by="iface_in"),
+            _edge("map_inv", "contract_hillock", 0.50, "feedback_gated", gated_by="map_pos"),
+            _edge("contract_hillock", "axon", 0.95),
+        ],
+        organelles=[
+            OrganelleAttachment("cw_org", "crosswirosome", "contract_hillock"),
+            OrganelleAttachment("cw_unc", "uncertaintosome", "contract_hillock"),
+        ],
+        input_compartments=["iface_in"], output_compartments=["axon"],
+        formal_math=r"V(D) = \{h \in \mathcal{H} : h \models D\},\; y = \mathbb{I}[\forall h \in V(D),\, \mathcal{C}_{\text{safe}}(h(x))]\, \bar{h}(x)",
+        hypothesis="Maintaining surviving interface interpretations and gating axonal output on unanimous safety-contract satisfaction prevents catastrophic mis-wiring.",
+        description="CROSSWIRE-inspired transducer neuron preserving multiple candidate adapter hypotheses with abstention safety.",
+    )
+
+
+def _build_tether_reliability(nid: str) -> NeuronMorphologySpec:
+    """33. Dark-Knowledge Specialist Reliability Neuron (inspired by Supermix-Tether v0.2)."""
+    comps = [_node(f"donor_{k}", CompartmentKind.DENDRITE_BASAL, (-2.5, 1.4 - 1.4 * k, 0.0), 38.0, 2.0, tau=7.0) for k in range(3)]
+    comps += [
+        _node("tail_entropy_hub", CompartmentKind.INTEGRATION_CENTER, (-0.2, 0.0, 0.0), 22.0, 8.0, tau=8.0),
+        _node("soma", CompartmentKind.SOMA, (1.5, 0.0, 0.0), 24.0, 9.0, tau=8.0),
+        _node("axon", CompartmentKind.AXON_SEGMENT, (3.1, 0.0, 0.0), 90.0, 1.5, myelin=0.7, tau=4.0),
+    ]
+    edges = [
+        _edge("donor_0", "tail_entropy_hub", 0.75),
+        _edge("donor_1", "tail_entropy_hub", 0.75),
+        _edge("donor_2", "tail_entropy_hub", 0.75),
+        _edge("donor_0", "soma", 0.65, "feedback_gated", gated_by="tail_entropy_hub"),
+        _edge("donor_1", "soma", 0.65, "feedback_gated", gated_by="tail_entropy_hub"),
+        _edge("donor_2", "soma", 0.65, "feedback_gated", gated_by="tail_entropy_hub"),
+        _edge("tail_entropy_hub", "soma", 0.45),
+        _edge("soma", "axon", 0.95),
+    ]
+    orgs = [
+        OrganelleAttachment("teth_unc", "uncertaintosome", "tail_entropy_hub"),
+        OrganelleAttachment("teth_arb", "arbitrosome", "soma"),
+    ]
+    return NeuronMorphologySpec(
+        morphology_id=nid, family="tether_reliability", name="Tether Dark-Knowledge Reliability Neuron",
+        objective_category=ObjectiveCategory.COMPUTATIONAL_USEFULNESS,
+        fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+        compartments=comps, edges=edges, organelles=orgs,
+        input_compartments=["donor_0", "donor_1", "donor_2"], output_compartments=["axon"],
+        formal_math=r"r_k = 1 - H(p_{-1}^{(k)}) / \log(K-1),\; y = \phi\!\left(\sum_k \frac{r_k}{\sum_j r_j} d_k\right)",
+        hypothesis="Intrinsic specialist dispersion/reliability weighting survives majority donor corruption where naive consensus collapses.",
+        description="Supermix-Tether-inspired receiver neuron weighting specialist dendrites by intrinsic reliability rather than majority vote.",
+    )
+
+
+def _build_hyperbolic_poincare(nid: str) -> NeuronMorphologySpec:
+    """34. Poincare Disk Geodesic Hierarchy Neuron."""
+    return NeuronMorphologySpec(
+        morphology_id=nid, family="hyperbolic_poincare", name="Hyperbolic Poincare Hierarchy Neuron",
+        objective_category=ObjectiveCategory.COMPUTATIONAL_USEFULNESS,
+        fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+        compartments=[
+            _node("radial_depth", CompartmentKind.DENDRITE_APICAL, (-2.4, 1.0, 0.0), 65.0, 1.7, tau=16.0),
+            _node("angular_sector", CompartmentKind.DENDRITE_BASAL, (-2.4, -1.0, 0.0), 40.0, 2.2, tau=7.0),
+            _node("mobius_soma", CompartmentKind.SOMA, (0.2, 0.0, 0.0), 25.0, 9.5, tau=9.0),
+            _node("axon", CompartmentKind.AXON_SEGMENT, (2.7, 0.0, 0.0), 90.0, 1.4, myelin=0.65, tau=4.0),
+        ],
+        edges=[
+            _edge("radial_depth", "mobius_soma", 0.85),
+            _edge("angular_sector", "mobius_soma", 0.85, "feedback_gated", gated_by="radial_depth"),
+            _edge("mobius_soma", "axon", 0.95),
+        ],
+        organelles=[
+            OrganelleAttachment("hyp_sp", "splinosome", "radial_depth"),
+            OrganelleAttachment("hyp_ph", "phase_organelle", "angular_sector", params={"omega": 0.3}),
+        ],
+        input_compartments=["radial_depth", "angular_sector"], output_compartments=["axon"],
+        formal_math=r"d_{\mathbb{B}}(u,v) = \operatorname{arcosh}\!\left(1 + \frac{2\|u-v\|^2}{(1-\|u\|^2)(1-\|v\|^2)}\right)",
+        hypothesis="Separating hyperbolic radial depth (abstraction hierarchy) from angular sector embeds exponentially branching trees compactly.",
+        description="Hyperbolic geometry-inspired neuron coupling radial depth scaling with angular phase representation.",
+    )
+
+
+def _build_astrocytic_tripartite(nid: str) -> NeuronMorphologySpec:
+    """35. Astrocytic Tripartite Calcium-Wave & Glymphatic Homeostatic Neuron."""
+    return NeuronMorphologySpec(
+        morphology_id=nid, family="astrocytic_tripartite", name="Astrocytic Tripartite Neuron",
+        objective_category=ObjectiveCategory.BIOLOGICAL_REALISM,
+        fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+        compartments=[
+            _node("presyn_bouton", CompartmentKind.DENDRITE_PROXIMAL, (-2.4, 0.6, 0.0), 28.0, 2.0, tau=6.0),
+            _node("astrocyte_ca", CompartmentKind.METABOLIC_REGULATOR, (-0.3, 1.4, 0.0), 35.0, 9.0, tau=55.0, receptors=ReceptorDistribution(paracrine=2.2, noradrenaline=1.2)),
+            _node("postsyn_soma", CompartmentKind.SOMA, (0.4, -0.4, 0.0), 24.0, 8.5, tau=10.0),
+            _node("axon", CompartmentKind.AXON_SEGMENT, (2.8, -0.2, 0.0), 90.0, 1.4, myelin=0.65, tau=4.0),
+        ],
+        edges=[
+            _edge("presyn_bouton", "postsyn_soma", 0.88),
+            _edge("presyn_bouton", "astrocyte_ca", 0.55, "paracrine"),
+            _edge("postsyn_soma", "astrocyte_ca", 0.45, "paracrine"),
+            _edge("astrocyte_ca", "postsyn_soma", -0.38, "feedback_gated", gated_by="astrocyte_ca"),
+            _edge("postsyn_soma", "axon", 0.95),
+        ],
+        organelles=[
+            OrganelleAttachment("astro_glym", "glymphatosome", "astrocyte_ca"),
+            OrganelleAttachment("astro_res", "resource_regulator", "postsyn_soma"),
+        ],
+        input_compartments=["presyn_bouton"], output_compartments=["axon"],
+        formal_math=r"\tau_{\text{Ca}}\dot{c} = -c + \alpha(|x|+|s|),\; y = \phi((1 - \gamma\sigma(c-\theta)) Wx)",
+        hypothesis="Slow tripartite astrocytic calcium integration and glymphatic downscaling stabilize long-horizon recurrent excitability.",
+        description="Tripartite neuron-glia unit pairing fast synaptic transmission with slow astrocytic Ca2+ clamping and waste clearance.",
+    )
+
+
+def _build_soliton_arbiter(nid: str) -> NeuronMorphologySpec:
+    """36. SolitonArbiter Neuron (Original v2): Resolves Mnemosome+Chronosome interference via Arbitrosome."""
+    return NeuronMorphologySpec(
+        morphology_id=nid, family="soliton_arbiter", name="SolitonArbiter Multi-Organelle Neuron (Original v2)",
+        objective_category=ObjectiveCategory.SPECULATIVE_SYNTHETIC_BIOLOGY,
+        fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+        compartments=[
+            _node("dend_in", CompartmentKind.DENDRITE_BASAL, (-2.6, 0.0, 0.0), 38.0, 2.2, tau=6.0),
+            _node("mnem_lane", CompartmentKind.MEMORY_COMPARTMENT, (-0.4, 1.2, 0.0), 28.0, 8.5, tau=26.0),
+            _node("chrono_lane", CompartmentKind.MEMORY_COMPARTMENT, (-0.4, -1.2, 0.0), 28.0, 8.5, tau=14.0),
+            _node("arbiter_soma", CompartmentKind.SOMA, (1.5, 0.0, 0.0), 25.0, 9.5, tau=8.0),
+            _node("axon", CompartmentKind.AXON_SEGMENT, (3.2, 0.0, 0.0), 95.0, 1.5, myelin=0.7, tau=4.0),
+        ],
+        edges=[
+            _edge("dend_in", "mnem_lane", 0.85),
+            _edge("dend_in", "chrono_lane", 0.85),
+            _edge("dend_in", "arbiter_soma", 0.55),
+            _edge("mnem_lane", "arbiter_soma", 0.70, "feedback_gated", gated_by="arbiter_soma"),
+            _edge("chrono_lane", "arbiter_soma", 0.70, "feedback_gated", gated_by="mnem_lane"),
+            _edge("arbiter_soma", "axon", 0.95),
+        ],
+        organelles=[
+            OrganelleAttachment("sol_mnem", "mnemosome", "mnem_lane", params={"slots": 10}),
+            OrganelleAttachment("sol_chrono", "chronosome", "chrono_lane", params={"tap_delay": 4}),
+            OrganelleAttachment("sol_arb", "arbitrosome", "arbiter_soma"),
+        ],
+        input_compartments=["dend_in"], output_compartments=["axon"],
+        formal_math=r"s_t = \phi\!\left(w_0 x_t + \alpha_1(\pi) m_{\text{mnem}}(t) + \alpha_2(\pi) c_{\text{chrono}}^\perp(t)\right)",
+        hypothesis="Isolating Mnemosome and Chronosome into parallel memory lanes arbitrated by an Arbitrosome converts destructive saturation into constructive temporal synergy.",
+        description="Original v2 architecture designed specifically to resolve multi-organelle memory interference through compartment isolation and precision arbitration.",
+        metadata={"organelle_arbitration": True},
+    )
+
+
 GRAFT_NEURON_BUILDERS: Dict[str, Callable[[str], NeuronMorphologySpec]] = {
     "triarch": _build_triarch,
     "ouroboros": _build_ouroboros,
@@ -740,21 +1122,50 @@ GRAFT_NEURON_BUILDERS: Dict[str, Callable[[str], NeuronMorphologySpec]] = {
     "consensus": _build_consensus,
     "veto": _build_veto,
     "tessera": _build_tessera,
-    # 3 original autonomous designs
+    # 3 original v1 autonomous designs
     "symbiote_echo": _build_symbiote_echo,
     "bifurcation_gate": _build_bifurcation_gate,
     "holographic_dendrite": _build_holographic_dendrite,
 }
 
+EXTENDED_GRAFT_NEURON_BUILDERS: Dict[str, Callable[[str], NeuronMorphologySpec]] = {
+    "liquid_cfc": _build_liquid_cfc,
+    "kan_synapse": _build_kan_synapse,
+    "burst_ccn": _build_burst_ccn,
+    "btsp_plateau": _build_btsp_plateau,
+    "mamba_selective": _build_mamba_selective,
+    "hodge_simplicial": _build_hodge_simplicial,
+    "efference_twin": _build_efference_twin,
+    "crosswire_transducer": _build_crosswire_transducer,
+    "tether_reliability": _build_tether_reliability,
+    "hyperbolic_poincare": _build_hyperbolic_poincare,
+    "astrocytic_tripartite": _build_astrocytic_tripartite,
+    "soliton_arbiter": _build_soliton_arbiter,
+}
+
+ALL_GRAFT_NEURON_BUILDERS: Dict[str, Callable[[str], NeuronMorphologySpec]] = {
+    **GRAFT_NEURON_BUILDERS,
+    **EXTENDED_GRAFT_NEURON_BUILDERS,
+}
+
 GRAFT_NEURON_FAMILIES: Tuple[str, ...] = tuple(GRAFT_NEURON_BUILDERS.keys())
+EXTENDED_GRAFT_NEURON_FAMILIES: Tuple[str, ...] = tuple(EXTENDED_GRAFT_NEURON_BUILDERS.keys())
+ALL_GRAFT_NEURON_FAMILIES: Tuple[str, ...] = tuple(ALL_GRAFT_NEURON_BUILDERS.keys())
 
 
-def build_graft_neuron(family: str, neuron_id: str | None = None, fidelity: FidelityLevel | None = None) -> NeuronMorphologySpec:
-    if family not in GRAFT_NEURON_BUILDERS:
-        raise KeyError(f"Unknown graft neuron family {family!r}. Valid: {sorted(GRAFT_NEURON_BUILDERS)}")
-    spec = GRAFT_NEURON_BUILDERS[family](neuron_id or f"{family}_0")
+def build_graft_neuron(
+    family: str,
+    neuron_id: str | None = None,
+    fidelity: FidelityLevel | None = None,
+    seed: int | None = None,
+) -> NeuronMorphologySpec:
+    if family not in ALL_GRAFT_NEURON_BUILDERS:
+        raise KeyError(f"Unknown graft neuron family {family!r}. Valid: {sorted(ALL_GRAFT_NEURON_BUILDERS)}")
+    spec = ALL_GRAFT_NEURON_BUILDERS[family](neuron_id or f"{family}_0")
     if fidelity is not None:
         spec.fidelity = fidelity
+    if seed is not None:
+        spec.metadata["seed"] = int(seed)
     return spec
 
 

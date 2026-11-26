@@ -1,9 +1,10 @@
 # SONAPSE MORPHOGENESIS
 ## Autonomous Developmental Connectome Intelligence, Synthetic Neuroscience & Neural Architecture Discovery
 
-**Version:** `1.0.0` (`morphogenesis-schema-v1`)  
-**Base Platform:** [`Sonapse-LAB`](README.md) (`synapse-connectome-lab 0.3.0`, branch `feat/sonapse-morphogenesis`)  
-**Runtime Profile:** CPU-first deterministic Python 3.12 / NumPy / SciPy / PyTorch (Windows laptop / Surface Pro verified).
+**Version:** `2.0.0` (`morphogenesis-schema-v1`)  
+**Base Platform:** [`Sonapse-LAB`](README.md) (`synapse-connectome-lab 0.3.0`, branch `main`)  
+**Research Paper:** [`docs/paper/SONAPSE_MORPHOGENESIS_V2_PAPER.md`](docs/paper/SONAPSE_MORPHOGENESIS_V2_PAPER.md)  
+**Runtime Profile:** CPU-first deterministic Python 3.12 / NumPy / SciPy / PyTorch (Windows ARM64 verified).
 
 > **Scientific Epistemic Stance:** SONAPSE MORPHOGENESIS explicitly separates **Biological Realism**, **Computational Usefulness**, and **Speculative Synthetic Biology** across every schema, experiment, and discovery report. Complexity is never assumed to equal intelligence, biological inspiration never establishes biological validity, behavioral imitation never proves subjective experience, and all claims are grounded in measured, reproducible multi-seed runs.
 
@@ -25,6 +26,8 @@
 | **SONAPSE CURIOSITY** | `sonapse_morphogenesis.curiosity` | **12 novel interactive training modalities** (including deterministic safe `RestrictedPythonVM` for Codeception, RLC circuits, spring-mass mechanics, Rule-110 CA, packet routing, propositional proof verifier) + controlled public data catalog & 6-gate Quarantine Pipeline (license, prompt-injection block, dedup, held-out leakage check). |
 | **SONAPSE ARCHITECT** | `sonapse_morphogenesis.architect` | Independent 14-step autonomous research director on isolated clones, **19 experimentally selectable learning algorithms**, autonomous training-pack generator, **11 lightweight non-LLM learned research experts** + independent **Expert Meta-Auditor**, and micro-to-large scale-transfer verification. |
 | **SONAPSE SENTINEL** | `sonapse_morphogenesis.sentinel` | Immutable held-out evaluator, **7 matched-budget baselines** (RNN, GRU, LSTM, Reservoir, LIF, Random, Degree-Shuffled Biological), paired bootstrap CIs, Benjamini–Hochberg FDR correction, **5-stage Discovery Evidence State Machine**, automated Markdown+JSON+SVG Discovery Reports, and **Governance Controller / Emergency Stop**. |
+| **EMERGENCE** | `sonapse_morphogenesis.emergence` | Cross-yoked twin authorship assay, Slow-Mode Analysis (`MAF-1`), Gaussian MMI-PID ($\Phi_R$ & synergy), dynamical closure, and closed-loop efference spectrum. |
+| **MAX MODE** | `sonapse_morphogenesis.max_mode` | **OMNI-MORPHOGENESIS 3-tier nested oscillatory coordinator** (Gamma/Theta/Circadian), 6-lane scheduler, 15-check completeness audit, atomic checkpoints, and continuous campaign runner. |
 | **WORKBENCH UI** | `sonapse_morphogenesis.workbench` | Interactive browser scientific workbench strictly decoupled from simulation, mounted seamlessly as **Tab 08 (`/morphogenesis` & `/api/morphogenesis/*`)** inside `Sonapse-LAB` AND runnable standalone. |
 
 ---
@@ -55,6 +58,13 @@ python -m sonapse_morphogenesis affect --seed 7
 python -m sonapse_morphogenesis curiosity --seed 7
 python -m sonapse_morphogenesis architect --seed 7
 python -m sonapse_morphogenesis sentinel
+python -m sonapse_morphogenesis max-mode --audit-only
+python -u -m sonapse_morphogenesis --seed 7 max-mode --duration-seconds 60 --host-neurons 192 --genesis-pop 256
+```
+
+### Reproduce the v2.0 Timed Section Campaigns
+```powershell
+python -u scripts/run_individual_modes_and_sections.py
 ```
 
 ### Reproduce the Complete End-to-End Experimental Suite (~74s on CPU)

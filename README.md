@@ -13,32 +13,39 @@ tags:
 license: apache-2.0
 ---
 
-# SONAPSE MORPHOGENESIS
-## Autonomous Developmental Connectome Intelligence, Synthetic Neuroscience & Neural Architecture Discovery
+# SONAPSE MORPHOGENESIS v2.0
+## Autonomous Developmental Connectome Intelligence, Synthetic Neuroscience & OMNI Max Mode
 
-> **Unified Platform built on `Sonapse-LAB` (`0.3.0`):** Adds 11 interoperable research packages (`sonapse_morphogenesis/`), a 5-fidelity physically structured multi-compartment neuron engine, 24 custom synthetic graft neuron families (21 specified + 3 original), 15 improved conventional neurons, 14 synthetic organelles, 12 non-neural bio abstractions, 13 ML hybrids (3-variant comparison), 1,024-candidate CPU population funnels, Supermix Antipode failure distillation (instrumenting real `artifacts/tidal_core.pt` & Expanse failure logs), Sonapse Symbiosis cross-connectome coupling, Spectra signal mixer & artificial senses, Hyperspace 4D/N-D worlds, Chimera fusion lab, emergent Affect analysis with ethical guardrails, Curiosity interactive modalities & quarantine, Architect autonomous research director with 11 non-LLM experts, Sentinel matched baselines & discovery reports, and a decoupled Interactive Scientific Workbench (`/morphogenesis` & standalone port `8766`).
+> **Unified Platform v2.0.0 built on `Sonapse-LAB` (`0.3.0`):** Adds 14 interoperable research packages (`sonapse_morphogenesis/`), a vectorized `CompiledConnectomeEngine` (**36.51×** speedup at $N=256$) + 5-fidelity multi-compartment engine, **36 custom synthetic graft neuron families** (24 v1 + 12 v2), **21 conventional neurons**, **20 synthetic organelles** with `OrganelleArbitrationCoordinator`, **16 non-neural bio abstractions**, **18 ML hybrids** (3-variant comparison), **33 learning rules**, **2,048-candidate CPU funnels** (**13,125 cand/s**), Supermix Antipode failure distillation (`artifacts/tidal_core.pt` & Expanse failures), Sonapse Symbiosis (11 couplings), Spectra (32 senses), Hyperspace (4D/5D/6D), Chimera fusion, Affect, Curiosity (12 worlds), Emergence (MMI-PID, MAF, cross-yoked twin), Architect (11 non-LLM experts), Sentinel (CROSSWIRE/FAULTLINE + 7 matched baselines), and **OMNI-MORPHOGENESIS Max Mode** (3-tier nested Gamma/Theta/Circadian coordinator validated over a 2-hour, 1,956-epoch continuous campaign with **Cohen's $d = 3.5463$** and **100% capability coverage**).
 >
-> **Full Morphogenesis Guide & Documentation:**
-> - [README_MORPHOGENESIS.md](README_MORPHOGENESIS.md) — Complete quickstart, CLI reference, workbench launch & module guide
+> **Research Paper & Documentation:**
+> - [docs/paper/SONAPSE_MORPHOGENESIS_V2_PAPER.md](docs/paper/SONAPSE_MORPHOGENESIS_V2_PAPER.md) — **v2.0 Research Paper** (9 timed section campaigns + 2-hour OMNI Max Mode campaign)
+> - [README_MORPHOGENESIS.md](README_MORPHOGENESIS.md) — Complete quickstart, CLI reference, Max Mode & module guide
 > - [docs/morphogenesis/REPOSITORY_AUDIT.md](docs/morphogenesis/REPOSITORY_AUDIT.md) — Verified audit of 25 `kai9987kai` repositories
 > - [docs/morphogenesis/ARCHITECTURE_SPEC.md](docs/morphogenesis/ARCHITECTURE_SPEC.md) — Versioned `morphogenesis-schema-v1` specification
 > - [docs/morphogenesis/COMPATIBILITY_AND_MIGRATION.md](docs/morphogenesis/COMPATIBILITY_AND_MIGRATION.md) — Backward-compatibility & zero-gain contracts
 > - [docs/morphogenesis/NEURON_ORGANELLE_CATALOG.md](docs/morphogenesis/NEURON_ORGANELLE_CATALOG.md) — Measured catalogue of all neuron & organelle families
-> - [docs/morphogenesis/SCIENTIFIC_FINDINGS.md](docs/morphogenesis/SCIENTIFIC_FINDINGS.md) — Actual measured multi-seed CPU experimental findings
+> - [docs/morphogenesis/SCIENTIFIC_FINDINGS.md](docs/morphogenesis/SCIENTIFIC_FINDINGS.md) — Actual measured multi-seed CPU experimental findings (v1.0 & v2.0)
 > - [docs/morphogenesis/LIMITATIONS_AND_OPEN_QUESTIONS.md](docs/morphogenesis/LIMITATIONS_AND_OPEN_QUESTIONS.md) — Scaling limits, caveats & follow-up agenda
 
 ```powershell
+# Audit OMNI-MORPHOGENESIS Max Mode completeness (15/15 checks)
+python -m sonapse_morphogenesis max-mode --audit-only
+
+# Run OMNI-MORPHOGENESIS Max Mode (e.g. 60s quick run or 7200s 2-hour campaign)
+python -u -m sonapse_morphogenesis --seed 7 max-mode --duration-seconds 60 --host-neurons 192 --genesis-pop 256
+
+# Run all 9 v2.0 individual section campaigns
+python -u scripts/run_individual_modes_and_sections.py
+
 # Launch standalone SONAPSE MORPHOGENESIS interactive workbench (http://127.0.0.1:8766/)
 python -m sonapse_morphogenesis serve --port 8766
 
 # Or launch integrated Sonapse-LAB + Tab 08 Morphogenesis Lab (http://127.0.0.1:8765/morphogenesis)
 python -m synapse serve --port 8765
 
-# Run the complete 11-module reproducible CPU experiment suite
-python scripts/run_morphogenesis_experiments.py
-
-# Run Morphogenesis + Sonapse-LAB backward-compatibility tests
-python -m pytest tests/morphogenesis/test_sonapse_morphogenesis.py tests/test_dsag.py tests/test_antigravity_contract_regressions.py -q
+# Run full regression suite (1,892 passed, 4 skipped)
+python -m pytest -q --tb=short
 ```
 
 ---

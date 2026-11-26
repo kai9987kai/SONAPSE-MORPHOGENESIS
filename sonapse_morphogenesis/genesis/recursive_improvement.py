@@ -30,19 +30,28 @@ class ImprovementProposal:
     rationale: str
 
 
-def diagnose_and_propose(genome: DevelopmentalGenome, eval_diagnostics: Dict[str, Any]) -> ImprovementProposal:
-    """Inspect connectome diagnostics and map observed weaknesses to bounded structural operators."""
+def diagnose_and_propose(genome: DevelopmentalGenome, eval_diagnostics: Dict[str, Any], attempt_index: int = 0) -> ImprovementProposal:
+    """Inspect connectome diagnostics and map observed weaknesses to non-repeating bounded structural operators."""
     delay_mse = float(eval_diagnostics.get("delay_mse", 1.0))
     saturation = float(eval_diagnostics.get("mean_saturation", 0.0))
     energy = float(eval_diagnostics.get("total_energy", 0.0))
     sparsity = float(eval_diagnostics.get("synapse_density", 0.2))
 
     if delay_mse > 0.45:
+        temporal_ops = (
+            "rewire_rigl_synapse",
+            "attach_arbitrosome_coordinator",
+            "insert_hodge_simplex_motif",
+            "attach_organelle",
+            "add_axonal_pathway",
+            "specialize_neuron",
+        )
+        chosen = temporal_ops[(len(genome.mutation_history) + int(attempt_index)) % len(temporal_ops)]
         return ImprovementProposal(
             proposer_genome_id=genome.genome_id,
             diagnosed_weakness="high_temporal_delay_error",
-            proposed_operator="add_axonal_pathway" if len(genome.mutation_history) % 2 == 0 else "attach_organelle",
-            rationale="Add delayed axonal feedback or memory/delay organelle to improve multi-step recall.",
+            proposed_operator=chosen,
+            rationale="Target multi-step temporal recall deficit via delayed routing, Hodge cycle motifs, or arbitrated memory organelles.",
         )
     if saturation > 0.78:
         return ImprovementProposal(
@@ -85,7 +94,7 @@ def _evaluate_genome_isolated(genome: DevelopmentalGenome, seed: int, steps: int
     n = len(sim.neuron_ids)
     states = np.zeros((steps, n), dtype=np.float64)
     for k in range(steps):
-        out = sim.step(np.array([cue[k], np.sin(0.3 * t[k]), -cue[k], 0.2]))
+        out = sim.step(np.array([cue[k], np.sin(0.3 * t[k]), -cue[k], 0.2]), collect_telemetry=False)
         states[k] = out["outputs"]
     split = int(0.6 * steps)
     X_tr, y_tr = states[:split], target[:split]
@@ -126,7 +135,7 @@ def run_recursive_vs_evolutionary_comparison(
             # Keep top 2 competing lineages alive
             for l_idx, (parent_score, parent_g, parent_diag) in enumerate(lineages[:2]):
                 if directed:
-                    prop = diagnose_and_propose(parent_g, parent_diag)
+                    prop = diagnose_and_propose(parent_g, parent_diag, attempt_index=gen * 2 + l_idx)
                     op = prop.proposed_operator
                     reason = prop.diagnosed_weakness
                 else:

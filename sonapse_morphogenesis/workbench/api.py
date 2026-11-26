@@ -24,6 +24,7 @@ from ..antipode import (
     load_real_expanse_failure_corpus,
 )
 from ..architect import (
+    ALL_LEARNING_ALGORITHMS,
     EXPERT_ROLES,
     LEARNING_ALGORITHMS,
     AutonomousResearchDirector,
@@ -38,6 +39,10 @@ from ..core import (
 )
 from ..curiosity import NOVEL_MODALITIES, PUBLIC_SOURCE_CATALOG
 from ..foundry import (
+    ALL_BIO_HYBRID_REGISTRY,
+    ALL_CONVENTIONAL_NEURON_FAMILIES,
+    ALL_GRAFT_NEURON_FAMILIES,
+    ALL_ML_HYBRID_MECHANISMS,
     BIO_HYBRID_REGISTRY,
     CONVENTIONAL_NEURON_FAMILIES,
     GRAFT_NEURON_FAMILIES,
@@ -50,6 +55,8 @@ from ..foundry import (
     render_neuron_svg,
 )
 from ..genesis import (
+    ALL_CANDIDATE_ORIGINS,
+    ALL_MUTATION_OPERATORS,
     CANDIDATE_ORIGINS,
     MUTATION_OPERATORS,
     DevelopmentalArchive,
@@ -60,6 +67,7 @@ from ..genesis import (
 from ..hyperspace import HyperspaceEnvironment
 from ..sentinel import GovernanceController
 from ..spectra import (
+    ALL_ARTIFICIAL_SENSORY_MODALITIES,
     ARTIFICIAL_SENSORY_MODALITIES,
     BIO_SENSORY_MODALITIES,
     INJECTION_TARGETS,
@@ -103,6 +111,8 @@ class MorphogenesisWorkbenchAPI:
         self.last_architect_result: Optional[Dict[str, Any]] = None
         self.last_symbiosis_result: Optional[Dict[str, Any]] = None
         self.last_antipode_result: Optional[Dict[str, Any]] = None
+        self.last_max_mode_result: Optional[Dict[str, Any]] = None
+        self.last_emergence_result: Optional[Dict[str, Any]] = None
 
         # Save initial baseline checkpoint so rollback is always ready
         self._save_current_checkpoint("initial_mixed_connectome")
@@ -203,13 +213,23 @@ class MorphogenesisWorkbenchAPI:
                     "novel_modalities": list(NOVEL_MODALITIES),
                     "public_data_sources": sorted(PUBLIC_SOURCE_CATALOG.keys()),
                     "affect_epistemic_tiers": list(AFFECT_EPISTEMIC_TIERS),
+                    # Additive v2 extended catalogs
+                    "all_graft_neurons": list(ALL_GRAFT_NEURON_FAMILIES),
+                    "all_conventional_neurons": list(ALL_CONVENTIONAL_NEURON_FAMILIES),
+                    "all_organelles": list_organelles(include_extended=True),
+                    "all_bio_hybrids": sorted(ALL_BIO_HYBRID_REGISTRY.keys()),
+                    "all_ml_hybrids": list(ALL_ML_HYBRID_MECHANISMS),
+                    "all_candidate_origins": list(ALL_CANDIDATE_ORIGINS),
+                    "all_mutation_operators": list(ALL_MUTATION_OPERATORS),
+                    "all_artificial_senses": list(ALL_ARTIFICIAL_SENSORY_MODALITIES),
+                    "all_learning_algorithms": list(ALL_LEARNING_ALGORITHMS),
                 }
 
             if path.startswith("/api/morphogenesis/neuron/"):
                 fam = path.split("/api/morphogenesis/neuron/", 1)[1].strip("/")
-                if fam in GRAFT_NEURON_FAMILIES:
+                if fam in ALL_GRAFT_NEURON_FAMILIES:
                     spec = build_graft_neuron(fam)
-                elif fam in CONVENTIONAL_NEURON_FAMILIES:
+                elif fam in ALL_CONVENTIONAL_NEURON_FAMILIES:
                     spec = build_conventional_neuron(fam)
                 else:
                     return {"ok": False, "error": f"Unknown neuron family: {fam}"}
@@ -245,6 +265,14 @@ class MorphogenesisWorkbenchAPI:
 
             if path == "/api/morphogenesis/hyperspace":
                 return {"ok": True, "slice": self.hyperspace.slice_3d_at_w(), "steps": self.hyperspace.steps}
+
+            if path == "/api/morphogenesis/max_mode/status":
+                return {
+                    "ok": True,
+                    "has_run": self.last_max_mode_result is not None,
+                    "last_result": self.last_max_mode_result,
+                    "last_emergence": self.last_emergence_result,
+                }
 
             return {"ok": False, "error": f"Unknown Morphogenesis GET route: {path}"}
 
@@ -425,6 +453,37 @@ class MorphogenesisWorkbenchAPI:
             if path == "/api/morphogenesis/architect/cycle":
                 res = self.director.run_research_cycle(mini_neurons=8, scale_neurons=14)
                 self.last_architect_result = res
+                return {"ok": True, "result": res}
+
+            if path == "/api/morphogenesis/emergence/run":
+                from ..emergence import (
+                    run_causal_emergence_and_authorship_suite,
+                    run_crosswire_and_faultline_study,
+                )
+                rng = np.random.default_rng(self.seed)
+                traj = np.zeros((64, max(6, len(self.genome.connectome.neurons))), dtype=np.float64)
+                for t in range(1, 64):
+                    traj[t] = np.tanh(0.8 * traj[t - 1] + 0.15 * np.roll(traj[t - 1], 1) + rng.normal(0.0, 0.12, size=traj.shape[1]))
+                res = {
+                    "causal_emergence": run_causal_emergence_and_authorship_suite(traj, macro_dim=2, seed=self.seed),
+                    "crosswire_and_faultline": run_crosswire_and_faultline_study(seed=self.seed),
+                }
+                self.last_emergence_result = res
+                return {"ok": True, "result": res}
+
+            if path == "/api/morphogenesis/max_mode/run":
+                from ..max_mode import OmniMaxModeConfig, OmniMorphogenesisMaxEngine
+                epochs = int(np.clip(int(data.get("epochs", 2)), 1, 16))
+                enable_host = bool(data.get("enable_host_tandem", True))
+                mm_cfg = OmniMaxModeConfig(
+                    seed=self.seed,
+                    host_total_neurons=96,
+                    genesis_micro_pop=128,
+                    enable_host_tandem=enable_host,
+                )
+                engine = OmniMorphogenesisMaxEngine(config=mm_cfg, output_dir=self.root / "max_mode")
+                res = engine.run_epochs(n_epochs=epochs)
+                self.last_max_mode_result = res
                 return {"ok": True, "result": res}
 
             if path == "/api/morphogenesis/checkpoint/save":

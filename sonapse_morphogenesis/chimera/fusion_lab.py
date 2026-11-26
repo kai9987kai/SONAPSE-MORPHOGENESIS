@@ -82,7 +82,7 @@ def _shared_stimulus_responses(graph: ConnectomeGraph, steps: int = 32, seed: in
     sim = MultiFidelityConnectome(graph, dt_ms=1.0, organelle_factory=create_organelle, seed=seed)
     R = np.zeros((steps, len(sim.neuron_ids)), dtype=np.float64)
     for k in range(steps):
-        R[k] = sim.step(stim[k])["outputs"]
+        R[k] = sim.step(stim[k], collect_telemetry=False)["outputs"]
     return R  # [T, N]
 
 
@@ -91,10 +91,10 @@ def estimate_correspondence(
     graph_b: ConnectomeGraph,
     seed: int = 42,
 ) -> Dict[str, Any]:
-    """Estimate neuron-to-neuron anatomical & functional correspondence using 7 cues + Hungarian matching."""
+    """Estimate neuron-to-neuron anatomical & functional correspondence using vectorized cues + Hungarian matching."""
     na, nb = len(graph_a.neurons), len(graph_b.neurons)
     if na == 0 or nb == 0:
-        return {"pairs": [], "mean_similarity": 0.0, "procrustes_residual": 0.0}
+        return {"pairs": [], "mean_similarity": 0.0, "procrustes_residual": 0.0, "procrustes_Q": []}
 
     Ra = _shared_stimulus_responses(graph_a, steps=28, seed=seed)
     Rb = _shared_stimulus_responses(graph_b, steps=28, seed=seed)
@@ -103,31 +103,32 @@ def estimate_correspondence(
     deg_a = np.sum(np.abs(Wa), axis=0) + np.sum(np.abs(Wa), axis=1)
     deg_b = np.sum(np.abs(Wb), axis=0) + np.sum(np.abs(Wb), axis=1)
 
-    sim_mat = np.zeros((na, nb), dtype=np.float64)
     sens_a, mot_a = set(graph_a.sensory_ids), set(graph_a.motor_ids)
     sens_b, mot_b = set(graph_b.sensory_ids), set(graph_b.motor_ids)
 
-    for i, u in enumerate(graph_a.neurons):
-        pos_a = np.array(u.compartments[0].coords_3d if u.compartments else (0.0, 0.0, 0.0))
-        role_a = 0 if u.morphology_id in sens_a else (2 if u.morphology_id in mot_a else 1)
-        ra_vec = Ra[:, i]
-        ra_nrm = float(np.linalg.norm(ra_vec)) + 1e-8
-        for j, v in enumerate(graph_b.neurons):
-            pos_b = np.array(v.compartments[0].coords_3d if v.compartments else (0.0, 0.0, 0.0))
-            role_b = 0 if v.morphology_id in sens_b else (2 if v.morphology_id in mot_b else 1)
-            rb_vec = Rb[:, j]
-            rb_nrm = float(np.linalg.norm(rb_vec)) + 1e-8
+    # Vectorized similarity matrix computation [na, nb]
+    pos_a = np.array([u.compartments[0].coords_3d if u.compartments else (0.0, 0.0, 0.0) for u in graph_a.neurons], dtype=np.float64)
+    pos_b = np.array([v.compartments[0].coords_3d if v.compartments else (0.0, 0.0, 0.0) for v in graph_b.neurons], dtype=np.float64)
+    role_a = np.array([0 if u.morphology_id in sens_a else (2 if u.morphology_id in mot_a else 1) for u in graph_a.neurons])
+    role_b = np.array([0 if v.morphology_id in sens_b else (2 if v.morphology_id in mot_b else 1) for v in graph_b.neurons])
+    fam_a = np.array([u.family for u in graph_a.neurons], dtype=object)
+    fam_b = np.array([v.family for v in graph_b.neurons], dtype=object)
+    dale_a = np.array([u.dale_sign for u in graph_a.neurons])
+    dale_b = np.array([v.dale_sign for v in graph_b.neurons])
 
-            type_sim = 1.0 if u.family == v.family else (0.5 if u.dale_sign == v.dale_sign else 0.0)
-            pos_sim = float(np.exp(-0.2 * np.linalg.norm(pos_a - pos_b)))
-            deg_sim = float(np.exp(-abs(deg_a[i] - deg_b[j]) / (max(deg_a[i], deg_b[j], 1.0))))
-            act_sim = 0.5 * (1.0 + float(np.dot(ra_vec, rb_vec) / (ra_nrm * rb_nrm)))
-            role_sim = 1.0 if role_a == role_b else 0.2
-            sim_mat[i, j] = 0.22 * type_sim + 0.15 * pos_sim + 0.18 * deg_sim + 0.30 * act_sim + 0.15 * role_sim
+    type_sim = np.where(fam_a[:, None] == fam_b[None, :], 1.0, np.where(dale_a[:, None] == dale_b[None, :], 0.5, 0.0))
+    pos_sim = np.exp(-0.2 * np.linalg.norm(pos_a[:, None, :] - pos_b[None, :, :], axis=-1))
+    max_deg = np.maximum(np.maximum(deg_a[:, None], deg_b[None, :]), 1.0)
+    deg_sim = np.exp(-np.abs(deg_a[:, None] - deg_b[None, :]) / max_deg)
+    Ra_n = Ra / (np.linalg.norm(Ra, axis=0, keepdims=True) + 1e-8)
+    Rb_n = Rb / (np.linalg.norm(Rb, axis=0, keepdims=True) + 1e-8)
+    act_sim = 0.5 * (1.0 + (Ra_n.T @ Rb_n))
+    role_sim = np.where(role_a[:, None] == role_b[None, :], 1.0, 0.2)
+    sim_mat = 0.22 * type_sim + 0.15 * pos_sim + 0.18 * deg_sim + 0.30 * act_sim + 0.15 * role_sim
 
     row_ind, col_ind = linear_sum_assignment(-sim_mat)
     pairs = [(graph_a.neurons[i].morphology_id, graph_b.neurons[j].morphology_id) for i, j in zip(row_ind, col_ind)]
-    mean_sim = float(np.mean([sim_mat[i, j] for i, j in zip(row_ind, col_ind)]))
+    mean_sim = float(np.mean(sim_mat[row_ind, col_ind]))
 
     # Orthogonal Procrustes representation alignment residual on matched subset
     Ra_m = Ra[:, row_ind]
@@ -140,6 +141,7 @@ def estimate_correspondence(
         "pairs": pairs,
         "mean_similarity": round(mean_sim, 5),
         "procrustes_residual": round(proc_res, 5),
+        "procrustes_Q": Q.tolist(),
     }
 
 
@@ -195,20 +197,38 @@ def merge_connectomes(
         mot = [a_map[m] for m in graph_a.motor_ids if m in a_map] + [b_map[m] for m in graph_b.motor_ids if m in b_map]
 
     elif mode in ("structural_averaging", "synaptic_weight_interpolation", "functional_distillation"):
-        # Aligned merging over matched correspondence pairs
+        # Distinct aligned merging across structural, linear weight, and Procrustes functional modes
         neurons = [NeuronMorphologySpec.from_dict(u.to_dict()) for u in graph_a.neurons]
         edge_acc: Dict[Tuple[str, str], float] = {}
-        for e in graph_a.edges:
-            edge_acc[(e.pre_id, e.post_id)] = edge_acc.get((e.pre_id, e.post_id), 0.0) + r_a * e.weight
-        for e in graph_b.edges:
-            if e.pre_id in b_to_a and e.post_id in b_to_a:
-                key = (b_to_a[e.pre_id], b_to_a[e.post_id])
-                edge_acc[key] = edge_acc.get(key, 0.0) + r_b * e.weight
+        edges_a_set = {(e.pre_id, e.post_id) for e in graph_a.edges}
+        edges_b_mapped = {(b_to_a[e.pre_id], b_to_a[e.post_id]) for e in graph_b.edges if e.pre_id in b_to_a and e.post_id in b_to_a}
+        if mode == "functional_distillation" and corr.get("procrustes_Q"):
+            Q = np.asarray(corr["procrustes_Q"], dtype=np.float64)
+            Wa = _adjacency_matrix(graph_a)
+            Wb = _adjacency_matrix(graph_b)
+            r_ind, c_ind = corr["row_ind"], corr["col_ind"]
+            Wb_aligned = Q.T @ Wb[np.ix_(c_ind, c_ind)] @ Q
+            W_f = Wa.copy()
+            W_f[np.ix_(r_ind, r_ind)] = r_a * Wa[np.ix_(r_ind, r_ind)] + r_b * Wb_aligned
+            for i_post in range(len(neurons)):
+                for j_pre in range(len(neurons)):
+                    if abs(W_f[i_post, j_pre]) > 0.03:
+                        edge_acc[(neurons[j_pre].morphology_id, neurons[i_post].morphology_id)] = float(W_f[i_post, j_pre])
+        else:
+            for e in graph_a.edges:
+                edge_acc[(e.pre_id, e.post_id)] = edge_acc.get((e.pre_id, e.post_id), 0.0) + r_a * e.weight
+            for e in graph_b.edges:
+                if e.pre_id in b_to_a and e.post_id in b_to_a:
+                    key = (b_to_a[e.pre_id], b_to_a[e.post_id])
+                    if mode == "structural_averaging" and key not in edges_a_set:
+                        # Structural averaging keeps shared backbone stronger than unilateral edges
+                        edge_acc[key] = edge_acc.get(key, 0.0) + 0.5 * r_b * e.weight
+                    else:
+                        edge_acc[key] = edge_acc.get(key, 0.0) + r_b * e.weight
         id_sign = {n.morphology_id: n.dale_sign for n in neurons}
         edges = []
         for (pre, post), w in edge_acc.items():
             if pre != post and abs(w) > 1e-4:
-                # Preserve Dale sign of presynaptic neuron
                 w_dale = abs(w) if id_sign.get(pre, 1) > 0 else -abs(w)
                 edges.append(ConnectomeEdge(pre, post, float(np.clip(w_dale, -4.0, 4.0)), delay_ms=1.0, provenance=f"chimera_aligned:{mode}"))
         sens, mot = list(graph_a.sensory_ids), list(graph_a.motor_ids)
@@ -300,17 +320,18 @@ def run_chimera_comparative_benchmark(seed: int = 42, n_neurons: int = 8) -> Dic
     target[:3] = 0.0
     split = int(0.6 * steps)
 
-    def _eval_graph(graph: ConnectomeGraph) -> Tuple[float, np.ndarray]:
+    def _eval_graph(graph: ConnectomeGraph) -> Tuple[float, np.ndarray, np.ndarray]:
         sim = MultiFidelityConnectome(graph, dt_ms=1.0, organelle_factory=create_organelle, seed=seed)
         S = np.zeros((steps, len(sim.neuron_ids)), dtype=np.float64)
         for k in range(steps):
-            S[k] = sim.step(u[k])["outputs"]
+            S[k] = sim.step(u[k], collect_telemetry=False)["outputs"]
         w = np.linalg.solve(S[:split].T @ S[:split] + 0.35 * np.eye(S.shape[1]), S[:split].T @ target[:split])
-        preds = S[split:] @ w
-        return round(float(np.mean((preds - target[split:]) ** 2)), 5), preds
+        preds_tr = S[:split] @ w
+        preds_te = S[split:] @ w
+        return round(float(np.mean((preds_te - target[split:]) ** 2)), 5), preds_te, preds_tr
 
-    mse_a, pred_a = _eval_graph(ga)
-    mse_b, pred_b = _eval_graph(gb)
+    mse_a, pred_a, pred_a_tr = _eval_graph(ga)
+    mse_b, pred_b, pred_b_tr = _eval_graph(gb)
     mse_ensemble = round(float(np.mean((0.5 * (pred_a + pred_b) - target[split:]) ** 2)), 5)
 
     # Unaligned naive index-order averaging
@@ -319,22 +340,23 @@ def run_chimera_comparative_benchmark(seed: int = 42, n_neurons: int = 8) -> Dic
     for e in ga_d.edges:
         k = (e.pre_id.replace("n", ""), e.post_id.replace("n", ""))
         e.weight = 0.5 * e.weight + 0.5 * b_edges_by_idx.get(k, 0.0)
-    mse_direct_avg, _ = _eval_graph(ga_d)
+    mse_direct_avg, _, _ = _eval_graph(ga_d)
 
     # Aligned weight merging
     g_aligned, rec_al = merge_connectomes(ga, gb, mode="synaptic_weight_interpolation", ratio_a=0.5, seed=seed)
-    mse_aligned, _ = _eval_graph(g_aligned)
+    mse_aligned, _, _ = _eval_graph(g_aligned)
 
     # Anatomical grafting
     g_graft, _ = merge_connectomes(ga, gb, mode="anatomical_grafting", ratio_a=0.5, seed=seed)
-    mse_graft, _ = _eval_graph(g_graft)
+    mse_graft, _, _ = _eval_graph(g_graft)
 
-    # Behavioral distillation: train a compact student readout on ensemble soft predictions
+    # Genuine behavioral distillation: train student readout on 50% teacher ensemble soft predictions + 50% target
     sim_s = MultiFidelityConnectome(g_aligned, dt_ms=1.0, organelle_factory=create_organelle, seed=seed)
     Ss = np.zeros((steps, len(sim_s.neuron_ids)), dtype=np.float64)
     for k in range(steps):
-        Ss[k] = sim_s.step(u[k])["outputs"]
-    soft_tr = target[:split]  # oracle + teacher blend
+        Ss[k] = sim_s.step(u[k], collect_telemetry=False)["outputs"]
+    teacher_soft_tr = 0.5 * (pred_a_tr + pred_b_tr)
+    soft_tr = 0.5 * target[:split] + 0.5 * teacher_soft_tr
     w_dist = np.linalg.solve(Ss[:split].T @ Ss[:split] + 0.25 * np.eye(Ss.shape[1]), Ss[:split].T @ soft_tr)
     mse_distill = round(float(np.mean((Ss[split:] @ w_dist - target[split:]) ** 2)), 5)
 
@@ -355,4 +377,46 @@ def run_chimera_comparative_benchmark(seed: int = 42, n_neurons: int = 8) -> Dic
         "test_mse_by_method": methods,
         "best_method": min(methods, key=methods.get),  # type: ignore[arg-type]
         "reversible_rollback_verified": rec_al.rollback_parents()[0].digest() == ga.digest(),
+    }
+
+
+def audit_connectome_symmetry_and_fingerprints(graph_a: ConnectomeGraph, graph_b: ConnectomeGraph) -> Dict[str, Any]:
+    """SYNAPSE-ATLAS v4.0 inspired connectome observatory metrics:
+    1. Bilateral left/right mirror-wiring symmetry overlap.
+    2. Partner-weight incoming/outgoing cosine wiring fingerprints.
+    3. Normalized-weight Jensen-Shannon distance (JSD) between two connectomes.
+    """
+    Wa = np.abs(_adjacency_matrix(graph_a))
+    Wb = np.abs(_adjacency_matrix(graph_b))
+    n = min(Wa.shape[0], Wb.shape[0])
+    if n < 2:
+        return {"bilateral_mirror_overlap": 0.0, "mean_fingerprint_cosine": 0.0, "normalized_weight_jsd": 0.0}
+
+    half = n // 2
+    left_block = Wa[:half, :half]
+    right_block = Wa[half : 2 * half, half : 2 * half]
+    mirror_overlap = float(np.sum(np.minimum(left_block, right_block)) / (np.sum(np.maximum(left_block, right_block)) + 1e-8))
+
+    # Partner-weight profile fingerprints [incoming || outgoing]
+    prof_a = np.hstack([Wa[:n, :n], Wa[:n, :n].T])
+    prof_b = np.hstack([Wb[:n, :n], Wb[:n, :n].T])
+    na_nrm = np.linalg.norm(prof_a, axis=1) + 1e-8
+    nb_nrm = np.linalg.norm(prof_b, axis=1) + 1e-8
+    cos_diag = np.sum(prof_a * prof_b, axis=1) / (na_nrm * nb_nrm)
+
+    # Normalized-weight Jensen-Shannon distance (raw counts vs normalized fractions separated)
+    pa = Wa[:n, :n].ravel() + 1e-12
+    pb = Wb[:n, :n].ravel() + 1e-12
+    pa = pa / np.sum(pa)
+    pb = pb / np.sum(pb)
+    pm = 0.5 * (pa + pb)
+    js_div = 0.5 * float(np.sum(pa * np.log(pa / pm)) + np.sum(pb * np.log(pb / pm)))
+    js_dist = float(np.sqrt(max(0.0, js_div / np.log(2.0))))
+    return {
+        "common_scope_nodes": int(n),
+        "bilateral_mirror_overlap": round(mirror_overlap, 5),
+        "mean_fingerprint_cosine": round(float(np.mean(cos_diag)), 5),
+        "normalized_weight_jsd": round(js_dist, 5),
+        "raw_total_weight_a": round(float(np.sum(Wa)), 4),
+        "raw_total_weight_b": round(float(np.sum(Wb)), 4),
     }

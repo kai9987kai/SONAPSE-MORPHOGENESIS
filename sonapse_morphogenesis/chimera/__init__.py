@@ -2,6 +2,7 @@
 from .fusion_lab import (
     CHIMERA_MODES,
     ChimeraMergeReceipt,
+    audit_connectome_symmetry_and_fingerprints,
     estimate_correspondence,
     merge_connectomes,
     run_chimera_comparative_benchmark,
@@ -13,4 +14,5 @@ __all__ = [
     "estimate_correspondence",
     "merge_connectomes",
     "run_chimera_comparative_benchmark",
+    "audit_connectome_symmetry_and_fingerprints",
 ]

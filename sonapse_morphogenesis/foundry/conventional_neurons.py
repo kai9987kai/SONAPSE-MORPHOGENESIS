@@ -19,7 +19,7 @@ Implements standard & improved conventional neurons independently of exotic graf
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Sequence
+from typing import Any, Callable, Dict, List, Sequence, Tuple
 import numpy as np
 
 from ..core.compartment_engine import MultiFidelityConnectome, StructuredNeuronInstance
@@ -47,8 +47,13 @@ def _c(cid: str, kind: CompartmentKind, length: float = 20.0, radius: float = 6.
     )
 
 
-def build_conventional_neuron(family: str, neuron_id: str = "conv_0") -> NeuronMorphologySpec:
-    """Factory constructing any of the 15 conventional neuron families."""
+def build_conventional_neuron(
+    family: str,
+    neuron_id: str = "conv_0",
+    fidelity: FidelityLevel | None = None,
+    seed: int | None = None,
+) -> NeuronMorphologySpec:
+    """Factory constructing any of the 21 conventional neuron families."""
     builders: Dict[str, Callable[[str], NeuronMorphologySpec]] = {
         "lif_reference": lambda nid: NeuronMorphologySpec(
             morphology_id=nid, family="lif_reference", name="LIF Reference Neuron",
@@ -253,10 +258,125 @@ def build_conventional_neuron(family: str, neuron_id: str = "conv_0") -> NeuronM
             formal_math=r"y_t = \tanh(x_t) / (1 + \lambda \hat{\sigma}_t)",
             hypothesis="Down-weights volatile noisy inputs via local variance tracking.",
         ),
+        # --- 6 Extended V2 Biophysical & Conventional Families (+6 -> 21 Total) ---
+        "adex_bursting": lambda nid: NeuronMorphologySpec(
+            morphology_id=nid, family="adex_bursting", name="Brette-Gerstner AdEx Bursting Neuron",
+            objective_category=ObjectiveCategory.BIOLOGICAL_REALISM, fidelity=FidelityLevel.SPIKING,
+            compartments=[
+                _c("dend", CompartmentKind.DENDRITE_BASAL, 38.0, 2.2, tau=9.0, coords=(-1.2, 0.0, 0.0)),
+                _c("soma", CompartmentKind.SOMA, 23.0, 8.5, tau=7.0, thresh=-49.0, coords=(0.0, 0.0, 0.0)),
+                _c("axon", CompartmentKind.AXON_SEGMENT, 95.0, 1.4, myelin=0.65, tau=4.0, coords=(1.8, 0.0, 0.0)),
+            ],
+            edges=[
+                CompartmentEdge("dend", "soma", weight=0.9, coupling_type="electrical_axial"),
+                CompartmentEdge("soma", "axon", weight=0.95, coupling_type="electrical_axial"),
+            ],
+            input_compartments=["dend"], output_compartments=["axon"],
+            formal_math=r"C\dot{V} = -g_L(V-E_L) + g_L\Delta_T e^{(V-V_T)/\Delta_T} - w + I,\; \tau_w\dot{w} = a(V-E_L) - w",
+            hypothesis="Exponential spike-initiation slope paired with subthreshold adaptation reproduces regular, adapting, and phasic bursting.",
+        ),
+        "theta_phase_precession": lambda nid: NeuronMorphologySpec(
+            morphology_id=nid, family="theta_phase_precession", name="Hippocampal Theta Phase-Precession Cell",
+            objective_category=ObjectiveCategory.BIOLOGICAL_REALISM, fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+            compartments=[
+                _c("dend_place", CompartmentKind.DENDRITE_APICAL, 65.0, 1.9, tau=12.0, coords=(-1.5, 0.8, 0.0)),
+                _c("soma_theta", CompartmentKind.SOMA, 22.0, 8.5, tau=9.0, coords=(0.0, 0.0, 0.0)),
+            ],
+            edges=[CompartmentEdge("dend_place", "soma_theta", weight=0.88, coupling_type="electrical_axial")],
+            organelles=[OrganelleAttachment("th_ph", "phase_organelle", "soma_theta", params={"omega": 0.52})],
+            input_compartments=["dend_place"], output_compartments=["soma_theta"],
+            formal_math=r"r(t) = \phi(I_{\text{place}}(t) + \cos(\omega_\theta t + \kappa I_{\text{place}}(t)))",
+            hypothesis="Dual-oscillator interference encodes sequential spatial/temporal order within individual theta cycles.",
+        ),
+        "chandelier_axonic_inhibitor": lambda nid: NeuronMorphologySpec(
+            morphology_id=nid, family="chandelier_axonic_inhibitor", name="Chandelier Axo-Axonic Inhibitory Interneuron",
+            objective_category=ObjectiveCategory.BIOLOGICAL_REALISM, fidelity=FidelityLevel.SPIKING,
+            dale_sign=-1,
+            compartments=[
+                _c("dend", CompartmentKind.DENDRITE_PROXIMAL, 28.0, 2.0, tau=4.5, coords=(-1.2, 0.0, 0.0)),
+                _c("soma_fs", CompartmentKind.LOCAL_INHIBITORY, 18.0, 6.5, tau=4.0, thresh=-51.0, coords=(0.0, 0.0, 0.0)),
+                _c("cartridge_axon", CompartmentKind.AXON_SEGMENT, 70.0, 1.5, myelin=0.8, tau=2.8, coords=(1.6, 0.0, 0.0)),
+            ],
+            edges=[
+                CompartmentEdge("dend", "soma_fs", weight=0.95, coupling_type="electrical_axial"),
+                CompartmentEdge("soma_fs", "cartridge_axon", weight=1.0, coupling_type="electrical_axial"),
+            ],
+            input_compartments=["dend"], output_compartments=["cartridge_axon"],
+            formal_math=r"I_{\text{AIS}} = -g_{\text{GABA,A}}(V_{\text{AIS}} - E_{\text{Cl}})",
+            hypothesis="Ultra-fast perisomatic/axon-initial-segment shunting synchronizes population spike windows and prevents runaway excitation.",
+        ),
+        "thalamocortical_relay": lambda nid: NeuronMorphologySpec(
+            morphology_id=nid, family="thalamocortical_relay", name="Thalamocortical Tonic/Burst Relay Neuron",
+            objective_category=ObjectiveCategory.BIOLOGICAL_REALISM, fidelity=FidelityLevel.CONDUCTANCE,
+            compartments=[
+                _c("sensory_dend", CompartmentKind.DENDRITE_PROXIMAL, 36.0, 2.4, tau=8.0, coords=(-1.6, 0.6, 0.0)),
+                _c("cortical_fb", CompartmentKind.DENDRITE_DISTAL, 55.0, 1.6, tau=18.0, coords=(-1.6, -0.6, 0.0)),
+                _c("relay_soma", CompartmentKind.SOMA, 24.0, 9.5, tau=9.0, coords=(0.0, 0.0, 0.0)),
+                _c("tc_axon", CompartmentKind.AXON_SEGMENT, 120.0, 1.6, myelin=0.75, tau=3.5, coords=(2.0, 0.0, 0.0)),
+            ],
+            edges=[
+                CompartmentEdge("sensory_dend", "relay_soma", weight=0.92, coupling_type="electrical_axial"),
+                CompartmentEdge("cortical_fb", "relay_soma", weight=0.55, coupling_type="feedback_gated", gated_by="cortical_fb"),
+                CompartmentEdge("relay_soma", "tc_axon", weight=0.98, coupling_type="electrical_axial"),
+            ],
+            organelles=[OrganelleAttachment("tc_route", "routosome", "relay_soma")],
+            input_compartments=["sensory_dend", "cortical_fb"], output_compartments=["tc_axon"],
+            formal_math=r"y_{\text{TC}} = g_{\text{tonic}}(V_m) I_{\text{sens}} + (1 - g_{\text{tonic}}(V_m)) B_{\text{rebound}}(I_{\text{cort}})",
+            hypothesis="Corticothalamic membrane polarization switches thalamic relay cells between linear sensory transmission and wake-up burst detection.",
+        ),
+        "cerebellar_purkinje_arbor": lambda nid: NeuronMorphologySpec(
+            morphology_id=nid, family="cerebellar_purkinje_arbor", name="Cerebellar Purkinje Planar Dendritic Neuron",
+            objective_category=ObjectiveCategory.BIOLOGICAL_REALISM, fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+            dale_sign=-1,
+            compartments=[
+                _c("pf_branch_0", CompartmentKind.DENDRITE_DISTAL, 70.0, 1.5, tau=12.0, coords=(-2.0, 1.2, 0.0)),
+                _c("pf_branch_1", CompartmentKind.DENDRITE_DISTAL, 70.0, 1.5, tau=12.0, coords=(-2.0, 0.0, 0.0)),
+                _c("pf_branch_2", CompartmentKind.DENDRITE_DISTAL, 70.0, 1.5, tau=12.0, coords=(-2.0, -1.2, 0.0)),
+                _c("climbing_error", CompartmentKind.DENDRITE_PROXIMAL, 30.0, 2.8, tau=6.0, coords=(-0.8, 1.5, 0.0)),
+                _c("purkinje_soma", CompartmentKind.SOMA, 28.0, 11.0, tau=7.0, coords=(0.4, 0.0, 0.0)),
+                _c("dcn_axon", CompartmentKind.AXON_SEGMENT, 110.0, 1.6, myelin=0.75, tau=3.5, coords=(2.4, 0.0, 0.0)),
+            ],
+            edges=[
+                CompartmentEdge("pf_branch_0", "purkinje_soma", weight=0.65, plasticity_rule="local_error"),
+                CompartmentEdge("pf_branch_1", "purkinje_soma", weight=0.65, plasticity_rule="local_error"),
+                CompartmentEdge("pf_branch_2", "purkinje_soma", weight=0.65, plasticity_rule="local_error"),
+                CompartmentEdge("climbing_error", "purkinje_soma", weight=1.20, coupling_type="chemical_synapse"),
+                CompartmentEdge("purkinje_soma", "dcn_axon", weight=0.95),
+            ],
+            organelles=[OrganelleAttachment("pkj_cont", "contraston", "purkinje_soma")],
+            input_compartments=["pf_branch_0", "pf_branch_1", "pf_branch_2", "climbing_error"], output_compartments=["dcn_axon"],
+            formal_math=r"\Delta w_{\text{PF},i} = -\eta\, I_{\text{CF}}(t)\, r_{\text{PF},i}(t-\delta)",
+            hypothesis="High-fan-in parallel-fiber branches supervised by climbing-fiber error pulses learn millisecond forward motor timing.",
+        ),
+        "neuromodulatory_pacemaker": lambda nid: NeuronMorphologySpec(
+            morphology_id=nid, family="neuromodulatory_pacemaker", name="Tonic-Phasic Neuromodulatory Pacemaker Neuron",
+            objective_category=ObjectiveCategory.BIOLOGICAL_REALISM, fidelity=FidelityLevel.MULTI_COMPARTMENT_RECURRENT,
+            compartments=[
+                _c("rpe_dend", CompartmentKind.DENDRITE_BASAL, 40.0, 2.0, tau=10.0, coords=(-1.6, 0.0, 0.0)),
+                _c("pacemaker_soma", CompartmentKind.METABOLIC_REGULATOR, 24.0, 9.0, tau=18.0, coords=(0.0, 0.0, 0.0), receptors=ReceptorDistribution(dopamine=1.8, paracrine=2.0)),
+                _c("diffuse_axon", CompartmentKind.AXON_SEGMENT, 150.0, 1.2, myelin=0.2, tau=14.0, coords=(2.2, 0.0, 0.0)),
+            ],
+            edges=[
+                CompartmentEdge("rpe_dend", "pacemaker_soma", weight=0.85),
+                CompartmentEdge("pacemaker_soma", "diffuse_axon", weight=0.90, coupling_type="paracrine"),
+            ],
+            organelles=[
+                OrganelleAttachment("nmp_ph", "phase_organelle", "pacemaker_soma", params={"omega": 0.22}),
+                OrganelleAttachment("nmp_plast", "plasticity_nucleus", "pacemaker_soma"),
+            ],
+            input_compartments=["rpe_dend"], output_compartments=["diffuse_axon"],
+            formal_math=r"m(t) = m_{\text{tonic}} + \phi_{\text{phasic}}(r_t - \hat{V}_t)",
+            hypothesis="Combines autonomous tonic baseline firing with phasic surprise bursts for global three-factor plasticity gating.",
+        ),
     }
     if family not in builders:
         raise KeyError(f"Unknown conventional neuron family {family!r}. Valid: {sorted(builders)}")
-    return builders[family](neuron_id)
+    spec = builders[family](neuron_id)
+    if fidelity is not None:
+        spec.fidelity = fidelity
+    if seed is not None:
+        spec.metadata["seed"] = int(seed)
+    return spec
 
 
 CONVENTIONAL_NEURON_FAMILIES: Tuple[str, ...] = (
@@ -276,6 +396,17 @@ CONVENTIONAL_NEURON_FAMILIES: Tuple[str, ...] = (
     "recovery_compensatory",
     "reliability_sensitive",
 )
+
+EXTENDED_CONVENTIONAL_NEURON_FAMILIES: Tuple[str, ...] = (
+    "adex_bursting",
+    "theta_phase_precession",
+    "chandelier_axonic_inhibitor",
+    "thalamocortical_relay",
+    "cerebellar_purkinje_arbor",
+    "neuromodulatory_pacemaker",
+)
+
+ALL_CONVENTIONAL_NEURON_FAMILIES: Tuple[str, ...] = CONVENTIONAL_NEURON_FAMILIES + EXTENDED_CONVENTIONAL_NEURON_FAMILIES
 
 
 def run_heterogeneous_vs_homogeneous_experiment(

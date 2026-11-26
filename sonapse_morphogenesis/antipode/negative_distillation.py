@@ -319,3 +319,105 @@ def run_antipode_six_way_study(
         "arms": summary,
         "best_arm": best_arm,
     }
+
+
+def run_sparse_label_verifier_antipode_study(
+    seeds: Sequence[int] = (7, 19, 31),
+    labeled_fraction: float = 0.20,
+    epochs: int = 35,
+    n_train: int = 160,
+    n_test: int = 120,
+) -> Dict[str, Any]:
+    """Resolves Open Question #6: Sparse-label regime where 80% of ground-truth class labels
+    are withheld; for unlabeled samples ONLY binary verifier pass/fail flags, teacher wrong
+    predictions, and teacher hidden activations are available.
+    """
+    in_dim, h_dim, n_cls = 12, 24, 4
+    arms = ("sparse_supervised_only", "verifier_unlikelihood_only", "causally_patched_verifier_antipode")
+    accs: Dict[str, List[float]] = {a: [] for a in arms}
+
+    for seed in seeds:
+        rng = np.random.default_rng(seed)
+        torch.manual_seed(seed)
+        W_true = rng.normal(0.0, 1.0, size=(in_dim, n_cls))
+        X_all = rng.normal(0.0, 1.0, size=(n_train + n_test, in_dim)).astype(np.float32)
+        y_all = np.argmax(X_all @ W_true, axis=1).astype(np.int64)
+        X_tr, y_tr = torch.from_numpy(X_all[:n_train]), torch.from_numpy(y_all[:n_train])
+        X_te, y_te = torch.from_numpy(X_all[n_train:]), torch.from_numpy(y_all[n_train:])
+
+        n_lab = max(8, int(round(labeled_fraction * n_train)))
+        has_gt = torch.zeros(n_train, dtype=torch.bool)
+        has_gt[:n_lab] = True
+
+        teacher_enc = nn.Linear(in_dim, h_dim)
+        teacher_head = nn.Linear(h_dim, n_cls)
+        opt_t = torch.optim.Adam(list(teacher_enc.parameters()) + list(teacher_head.parameters()), lr=0.03)
+        for _ in range(25):
+            loss_t = F.cross_entropy(teacher_head(torch.tanh(teacher_enc(X_tr))), y_tr)
+            opt_t.zero_grad()
+            loss_t.backward()
+            opt_t.step()
+
+        with torch.no_grad():
+            h_tr = torch.tanh(teacher_enc(X_tr))
+            trig = X_tr[:, 0] > 0.25
+            h_tr[trig, 16:] = -2.2
+            teacher_head.weight[:, 16:] *= 1.8
+            t_logits = teacher_head(h_tr)
+            t_pred = t_logits.argmax(dim=-1)
+            # Binary verifier tells whether t_pred passed or failed, WITHOUT revealing y_tr on unlabeled rows!
+            ver_pass = t_pred == y_tr
+            ver_fail = ~ver_pass
+            healthy_mask = torch.ones(h_dim)
+            healthy_mask[16:] = 0.0
+            faulty_mask = 1.0 - healthy_mask
+
+        for arm in arms:
+            student = _DevelopingConnectomeStudent(in_dim, h_dim, n_cls, seed=seed + 11)
+            adapter = CrossArchitectureAdapter(h_dim, h_dim)
+            opt = torch.optim.Adam(list(student.parameters()) + list(adapter.parameters()), lr=0.025)
+            for _ in range(epochs):
+                logits, h_s = student(X_tr)
+                h_al = adapter(h_tr.detach())
+                loss = F.cross_entropy(logits[has_gt], y_tr[has_gt])
+                if arm == "verifier_unlikelihood_only" and ver_fail.any():
+                    loss = loss + 0.45 * compute_negative_objective(
+                        "negative_example", logits[ver_fail], h_s[ver_fail], t_pred[ver_fail], t_pred[ver_fail]
+                    )
+                    if ver_pass.any():
+                        loss = loss + 0.45 * F.cross_entropy(logits[ver_pass], t_pred[ver_pass])
+                elif arm == "causally_patched_verifier_antipode":
+                    if ver_pass.any():
+                        loss = loss + 0.55 * F.cross_entropy(logits[ver_pass], t_pred[ver_pass])
+                        loss = loss + 0.25 * F.mse_loss(h_s[ver_pass] * healthy_mask, h_al[ver_pass] * healthy_mask)
+                    if ver_fail.any():
+                        loss = loss + 0.50 * compute_negative_objective(
+                            "negative_example", logits[ver_fail], h_s[ver_fail], t_pred[ver_fail], t_pred[ver_fail]
+                        )
+                        repel = ((h_s[ver_fail] - h_al[ver_fail]) * faulty_mask).pow(2).mean()
+                        loss = loss - 0.15 * torch.clamp(repel, max=1.5)
+                opt.zero_grad()
+                loss.backward()
+                opt.step()
+
+            with torch.no_grad():
+                te_logits, _ = student(X_te)
+                accs[arm].append(float((te_logits.argmax(dim=-1) == y_te).float().mean().item()))
+
+    summary = {
+        a: {
+            "mean_test_accuracy": round(float(np.mean(accs[a])), 4),
+            "std_test_accuracy": round(float(np.std(accs[a])), 4),
+        }
+        for a in arms
+    }
+    return {
+        "experiment": "sparse_label_verifier_only_antipode_distillation",
+        "labeled_fraction": labeled_fraction,
+        "seeds": list(seeds),
+        "arms": summary,
+        "antipode_gain_over_sparse_supervised": round(
+            summary["causally_patched_verifier_antipode"]["mean_test_accuracy"] - summary["sparse_supervised_only"]["mean_test_accuracy"],
+            4,
+        ),
+    }

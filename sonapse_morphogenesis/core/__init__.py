@@ -8,8 +8,10 @@ from .bridge import (
     get_tidal_core_path,
     load_malecns_subgraph,
     normalize_saved_morphogenesis,
+    run_morphogenesis_laboratory,
 )
 from .compartment_engine import MultiFidelityConnectome, StructuredNeuronInstance
+from .compiled_engine import CompiledConnectomeEngine, benchmark_compiled_vs_object_engine
 from .interchange import (
     SCHEMA_NAME,
     SCHEMA_VERSION,
@@ -68,6 +70,8 @@ __all__ = [
     "ExperimentReceipt",
     "StructuredNeuronInstance",
     "MultiFidelityConnectome",
+    "CompiledConnectomeEngine",
+    "benchmark_compiled_vs_object_engine",
     "ExperimentRegistry",
     "ResourceBudget",
     "SCALE_TARGETS",
@@ -80,6 +84,7 @@ __all__ = [
     "build_zero_impact_subconnectome",
     "load_malecns_subgraph",
     "get_tidal_core_path",
+    "run_morphogenesis_laboratory",
     "canonical_json",
     "content_digest",
     "export_json_schemas",

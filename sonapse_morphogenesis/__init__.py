@@ -8,7 +8,7 @@ cross-connectome symbiosis, autonomous scientific direction, and independent ove
 """
 from __future__ import annotations
 
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 SCHEMA_VERSION = "morphogenesis-schema-v1"
 
 from .core.interchange import (

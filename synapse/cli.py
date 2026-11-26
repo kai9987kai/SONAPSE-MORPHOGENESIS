@@ -20,6 +20,8 @@ def main(argv=None):
     parser.add_argument('--dsag-config',type=Path,help='load an explicit DSAGSpecV1 YAML/JSON configuration')
     parser.add_argument('--neuroweave',dest='neuroweave_enabled',action=argparse.BooleanOptionalAction,default=None,help='opt in to the NEUROWEAVE residual channel for run, train and serve (off by default)')
     parser.add_argument('--neuroweave-config',dest='neuroweave_config',type=Path,help='load an explicit NeuroWeaveSpecV1 JSON configuration (sets SynapseConfig.neuroweave)')
+    parser.add_argument('--morphogenesis',dest='morphogenesis_enabled',action=argparse.BooleanOptionalAction,default=None,help='opt in to the SONAPSE MORPHOGENESIS structured multi-compartment graft channel (off by default)')
+    parser.add_argument('--morphogenesis-gain',dest='morphogenesis_gain',type=float,default=0.02,help='Morphogenesis residual gain when enabled')
     from .frontier.cli_commands import register_frontier_cli
     register_frontier_cli(parser)
     parser.add_argument('--programmed-connectome',action='store_true',help='bind the verified 128-neuron MaleCNS sparse prior')
@@ -145,7 +147,17 @@ def main(argv=None):
     p.add_argument('--steps',type=int,default=12)
     p.add_argument('--learn',action='store_true',default=False)
     p.add_argument('--arms',nargs='+',default=None)
+    morph_p=sub.add_parser('morphogenesis',help='SONAPSE MORPHOGENESIS research platform & Omni Max Mode (delegates to sonapse_morphogenesis CLI)')
+    morph_p.add_argument('morph_args',nargs=argparse.REMAINDER,help='Arguments forwarded to sonapse_morphogenesis CLI')
     args=parser.parse_args(argv)
+    if args.command == 'morphogenesis':
+        from sonapse_morphogenesis.cli import main as morph_main
+        forwarded = list(args.morph_args or [])
+        if forwarded and forwarded[0] == '--':
+            forwarded = forwarded[1:]
+        if not forwarded:
+            forwarded = ['status']
+        return morph_main(forwarded)
     try:
         total=args.total_neurons if args.total_neurons is not None else (9000 if args.nodes is None else None)
         if getattr(args, 'frontier_all', False):
@@ -169,6 +181,18 @@ def main(argv=None):
         if args.neuroweave_enabled is not None or args.neuroweave_config is not None:
             from .neuroweave.cli_commands import cli_neuroweave_spec
             config=replace(config,neuroweave=cli_neuroweave_spec(args.neuroweave_enabled,args.neuroweave_config,args.seed))
+        if getattr(args, 'morphogenesis_enabled', None) is not None:
+            from sonapse_morphogenesis.core.bridge import MorphogenesisSpecV1
+            if args.morphogenesis_enabled:
+                config=replace(config,morphogenesis=MorphogenesisSpecV1(
+                    enabled=True,
+                    gain=float(args.morphogenesis_gain),
+                    max_gain=max(float(args.morphogenesis_gain), 0.15),
+                    observe_only=(float(args.morphogenesis_gain) == 0.0),
+                    seed=args.seed,
+                ))
+            else:
+                config=replace(config,morphogenesis=None)
         if (args.frontier_enabled is not None or args.frontier_config is not None
                 or args.frontier_modules is not None or args.frontier_graft_optimizer is not None):
             from .frontier.cli_commands import cli_frontier_spec

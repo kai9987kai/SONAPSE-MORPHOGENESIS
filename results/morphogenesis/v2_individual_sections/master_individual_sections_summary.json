@@ -1,0 +1,82 @@
+{
+  "version": "2.0.0",
+  "schema": "morphogenesis-schema-v1",
+  "hardware": {
+    "cpu_logical_cores": 8,
+    "torch_version": "2.11.0+cpu",
+    "torch_threads": 4,
+    "cuda_available": false,
+    "mps_available": false,
+    "selected_device": "cpu",
+    "scale_targets": {
+      "cellular_experiment": [
+        1,
+        32
+      ],
+      "micro_connectome": [
+        32,
+        256
+      ],
+      "small_connectome": [
+        256,
+        2048
+      ],
+      "medium_connectome": [
+        2048,
+        16384
+      ],
+      "large_connectome": [
+        16384,
+        150000
+      ]
+    }
+  },
+  "total_wallclock_seconds": 1296.89,
+  "section_timings": {
+    "01_performance_and_scaling": {
+      "wall_s": 38.947,
+      "cpu_s": 33.891,
+      "sha256": "5bc9f23371fcb27fd2957fdba69ca1c32db03ed712dfc630e9e731f3df5a0ccd"
+    },
+    "02_foundry_v2_complete": {
+      "wall_s": 21.242,
+      "cpu_s": 18.672,
+      "sha256": "c5dd6392c7d950e8ca78b0368735b15b600052273372352f73077333af2c2b05"
+    },
+    "03_genesis_v2_evolution": {
+      "wall_s": 6.684,
+      "cpu_s": 6.312,
+      "sha256": "05544d509704854a1a45103f6fea144039811b28b7562b4e3f67722f435e9830"
+    },
+    "04_architect_33_learning_rules": {
+      "wall_s": 21.074,
+      "cpu_s": 23.906,
+      "sha256": "01c63b3146550d5e2185ac49d5d68de6287b6dab78c0d824e298b01dca90f9fa"
+    },
+    "05_antipode_v2_distillation": {
+      "wall_s": 5.562,
+      "cpu_s": 4.547,
+      "sha256": "a54e3dfd27c128bece4d24adde895f37fe36c743d5aa2e3fa9842e1ee4ccf7cf"
+    },
+    "06_symbiosis_v2_mutual": {
+      "wall_s": 39.129,
+      "cpu_s": 35.953,
+      "sha256": "3eb508b35567a76942715852df109f8bd876b3f922a4c56f3215b91ea2f3e643"
+    },
+    "07_spectra_hyperspace_chimera_curiosity_affect": {
+      "wall_s": 106.695,
+      "cpu_s": 97.328,
+      "sha256": "3ddf06250719ec995aa1068e7ba621e2f5cd0ad00b15669e4d0917448a7d741e"
+    },
+    "08_emergence_and_sentinel": {
+      "wall_s": 12.851,
+      "cpu_s": 11.75,
+      "sha256": "f6873d78a9fcac4cb64c92fea72062c798f822f645ef29cdbb087c2da50317ea"
+    },
+    "09_host_tandem_max_and_omni_ablation": {
+      "wall_s": 1044.663,
+      "cpu_s": 1422.328,
+      "sha256": "821e7ebfb7def5b516a2c772b547bbd16c03eec6aa6ff95918ae5ed89165703e"
+    }
+  }
+}

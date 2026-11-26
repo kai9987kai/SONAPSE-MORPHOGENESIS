@@ -1,0 +1,91 @@
+{
+  "section": "05_antipode_v2_distillation",
+  "wallclock_seconds": 5.562,
+  "cpu_seconds": 4.547,
+  "result": {
+    "tidal_probes_total": 28,
+    "tidal_failures_detected": 23,
+    "expanse_verified_failures": 164,
+    "expanse_verified_successes": 46,
+    "six_way_study": {
+      "experiment": "supermix_antipode_6way_distillation_study",
+      "seeds": [
+        7,
+        11,
+        19
+      ],
+      "epochs": 40,
+      "available_objectives": [
+        "negative_example",
+        "unlikelihood",
+        "contrastive",
+        "preference_dpo",
+        "corrective_supervision",
+        "counterfactual_activation",
+        "negative_rl",
+        "causal_activation_reg",
+        "local_neuromodulated_plasticity",
+        "teacher_assisted_correction"
+      ],
+      "causal_bug_localization_share": 0.81,
+      "arms": {
+        "positive_only": {
+          "mean_test_accuracy": 0.8083,
+          "std_test_accuracy": 0.0068,
+          "spurious_failure_avoidance_acc": 0.7929
+        },
+        "pos_neg_output": {
+          "mean_test_accuracy": 0.8833,
+          "std_test_accuracy": 0.0068,
+          "spurious_failure_avoidance_acc": 0.8922
+        },
+        "pos_internal_guidance": {
+          "mean_test_accuracy": 0.8028,
+          "std_test_accuracy": 0.0157,
+          "spurious_failure_avoidance_acc": 0.7993
+        },
+        "failure_activation_guidance": {
+          "mean_test_accuracy": 0.8806,
+          "std_test_accuracy": 0.0171,
+          "spurious_failure_avoidance_acc": 0.8915
+        },
+        "causally_filtered_pos_neg_distillation": {
+          "mean_test_accuracy": 0.8611,
+          "std_test_accuracy": 0.0208,
+          "spurious_failure_avoidance_acc": 0.863
+        },
+        "equal_budget_task_baseline": {
+          "mean_test_accuracy": 0.8778,
+          "std_test_accuracy": 0.0219,
+          "spurious_failure_avoidance_acc": 0.8766
+        }
+      },
+      "best_arm": "pos_neg_output"
+    },
+    "sparse_label_verifier_study": {
+      "experiment": "sparse_label_verifier_only_antipode_distillation",
+      "labeled_fraction": 0.2,
+      "seeds": [
+        7,
+        11,
+        19
+      ],
+      "arms": {
+        "sparse_supervised_only": {
+          "mean_test_accuracy": 0.7194,
+          "std_test_accuracy": 0.0492
+        },
+        "verifier_unlikelihood_only": {
+          "mean_test_accuracy": 0.8528,
+          "std_test_accuracy": 0.0157
+        },
+        "causally_patched_verifier_antipode": {
+          "mean_test_accuracy": 0.8611,
+          "std_test_accuracy": 0.0349
+        }
+      },
+      "antipode_gain_over_sparse_supervised": 0.1417
+    }
+  },
+  "sha256_digest": "a54e3dfd27c128bece4d24adde895f37fe36c743d5aa2e3fa9842e1ee4ccf7cf"
+}

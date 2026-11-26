@@ -36,7 +36,7 @@ from ..foundry.organelles import create_organelle
 from ..genesis.genome_evolution import apply_genome_mutation
 from ..genesis.population import generate_candidate_genome
 from .experts import InternalExpertPanel
-from .learning_rules import DynamicLearningEngine
+from .learning_rules import ALL_LEARNING_ALGORITHMS, DynamicLearningEngine
 
 
 @dataclass
@@ -83,14 +83,32 @@ class AutonomousResearchDirector:
         self.learning_engine = DynamicLearningEngine(seed=seed)
         self.research_log: List[Dict[str, Any]] = []
 
-    def _eval_connectome_on_pack(self, genome: DevelopmentalGenome, pack: CandidateTrainingPack, seed: int) -> Tuple[float, float]:
+    def _eval_connectome_on_pack(
+        self,
+        genome: DevelopmentalGenome,
+        pack: CandidateTrainingPack,
+        seed: int,
+        learning_rule: Optional[str] = None,
+    ) -> Tuple[float, float]:
         sim = MultiFidelityConnectome(genome.connectome, dt_ms=1.0, organelle_factory=create_organelle, seed=seed)
         T = pack.X.shape[0]
+        sp = int(0.6 * T)
         n = len(sim.neuron_ids)
         S = np.zeros((T, n), dtype=np.float64)
         for k in range(T):
-            S[k] = sim.step(pack.X[k])["outputs"]
-        sp = int(0.6 * T)
+            # Online co-adaptation only during training split [0..sp-1]; held-out [sp..T-1] is strictly frozen!
+            do_adapt = bool(learning_rule is not None and k < sp)
+            rew = float(-abs(pack.y[k])) if do_adapt else 0.0
+            res = sim.step(pack.X[k], reward_signal=rew, adapt=do_adapt, collect_telemetry=False)
+            S[k] = res["outputs"]
+            if do_adapt and learning_rule is not None and k > 0 and sim._synapses:
+                W_mat = sim.export_weight_matrix()
+                dW = self.learning_engine.compute_weight_delta(
+                    learning_rule, W_mat, S[k - 1], S[k],
+                    reward=float(0.25 - 0.5 * (pack.y[k] - float(np.mean(S[k]))) ** 2),
+                    lr=0.025,
+                )
+                sim.apply_weight_delta(dW)
         w = np.linalg.solve(S[:sp].T @ S[:sp] + 0.35 * np.eye(n), S[:sp].T @ pack.y[:sp])
         mse = float(np.mean((S[sp:] @ w - pack.y[sp:]) ** 2))
         return mse, sim.total_energy
@@ -120,17 +138,19 @@ class AutonomousResearchDirector:
 
         # Step 7-10: Screen candidate morphological + organelle + rule proposals, consulting non-LLM experts
         candidate_ops = ("attach_organelle", "add_axonal_pathway", "specialize_neuron", "insert_circuit_motif", "add_secondary_soma")
+        candidate_rules = ("eprop_eligibility", "btsp_plateau_learning", "predictive_coding", "hodge_curl_free_plasticity", "ghost_efference_credit")
         trials: List[Dict[str, Any]] = []
         best_trial: Optional[Dict[str, Any]] = None
         best_genome: Optional[DevelopmentalGenome] = None
         rejected_trials: List[Dict[str, Any]] = []
 
         for idx, op in enumerate(candidate_ops):
+            paired_rule = candidate_rules[idx % len(candidate_rules)]
             feat = [float(idx) / 5.0, base_mse, base_ret_mse, float(mini_neurons) / 32.0, pack.difficulty, 1.0, 0.5, 0.2]
             advice = self.expert_panel.consult(feat)
             cand_g, tx = apply_genome_mutation(base_mini, operator=op, seed=self.seed + 200 + idx)
-            cand_mse, cand_eng = self._eval_connectome_on_pack(cand_g, pack, seed=self.seed + 1)
-            cand_ret_mse, _ = self._eval_connectome_on_pack(cand_g, retention_pack, seed=self.seed + 2)
+            cand_mse, cand_eng = self._eval_connectome_on_pack(cand_g, pack, seed=self.seed + 1, learning_rule=paired_rule)
+            cand_ret_mse, _ = self._eval_connectome_on_pack(cand_g, retention_pack, seed=self.seed + 2, learning_rule=None)
 
             benefit = base_mse - cand_mse
             forgetting_increase = max(0.0, cand_ret_mse - base_ret_mse)
@@ -143,6 +163,7 @@ class AutonomousResearchDirector:
             accepted = bool(benefit > 0.002 and forgetting_increase < 0.05)
             rec = {
                 "operator": op,
+                "paired_learning_rule": paired_rule,
                 "mini_mse": round(cand_mse, 5),
                 "benefit_delta_mse": round(benefit, 5),
                 "forgetting_delta": round(forgetting_increase, 5),
@@ -157,7 +178,7 @@ class AutonomousResearchDirector:
             else:
                 rejected_trials.append(rec)
                 if self.registry is not None:
-                    self.registry.record_failed_hypothesis("architect", f"{op} on {weakness}", "no_gain_or_forgetting_exceeded", rec)
+                    self.registry.record_failed_hypothesis("architect", f"{op}+{paired_rule} on {weakness}", "no_gain_or_forgetting_exceeded", rec)
 
         # Step 11-12: Scale-transfer verification on larger connectome (never trust micro scale alone!)
         scale_transfer: Dict[str, Any] = {"tested": False, "transferred": False}
@@ -165,12 +186,15 @@ class AutonomousResearchDirector:
             base_large = generate_candidate_genome("mixed_custom_standard", n_neurons=scale_neurons, seed=self.seed + 50)
             large_base_mse, _ = self._eval_connectome_on_pack(base_large, pack, seed=self.seed + 51)
             large_mut, _ = apply_genome_mutation(base_large, operator=best_trial["operator"], seed=self.seed + 52)
-            large_mut_mse, _ = self._eval_connectome_on_pack(large_mut, pack, seed=self.seed + 51)
+            large_mut_mse, _ = self._eval_connectome_on_pack(
+                large_mut, pack, seed=self.seed + 51, learning_rule=best_trial.get("paired_learning_rule")
+            )
             scale_gain = large_base_mse - large_mut_mse
             scale_transfer = {
                 "tested": True,
                 "scale_neurons": scale_neurons,
                 "operator": best_trial["operator"],
+                "paired_learning_rule": best_trial.get("paired_learning_rule"),
                 "large_baseline_mse": round(large_base_mse, 5),
                 "large_mutated_mse": round(large_mut_mse, 5),
                 "scale_gain_mse": round(scale_gain, 5),
@@ -223,3 +247,75 @@ class AutonomousResearchDirector:
 
         self.research_log.append(cycle_result)
         return cycle_result
+
+    def run_cross_scale_transfer_study(
+        self,
+        scales: Sequence[int] = (8, 24, 64, 128),
+        cycles_for_expert_calibration: int = 8,
+    ) -> Dict[str, Any]:
+        """Empirically characterize micro-to-macro transfer survival across 4 connectome scales
+        and evaluate non-LLM expert panel calibration across repeated research cycles.
+        """
+        from ..core.compiled_engine import CompiledConnectomeEngine
+
+        t0 = time.perf_counter()
+        pre_cal = self.expert_panel.meta_auditor.audit_panel(self.expert_panel.experts)
+        for cyc in range(cycles_for_expert_calibration):
+            diag = {
+                "delay_mse": 0.60 - 0.02 * (cyc % 3),
+                "math_mse": 0.48 + 0.03 * ((cyc + 1) % 3),
+                "forgetting": 0.02,
+            }
+            self.run_research_cycle(observed_diagnostics=diag, mini_neurons=8, scale_neurons=16)
+        post_cal = self.expert_panel.meta_auditor.audit_panel(self.expert_panel.experts)
+
+        pack = construct_training_pack("temporal_delay_deficit", steps=64, seed=self.seed + 303)
+        scale_rows: List[Dict[str, Any]] = []
+        operators_tested = ("attach_organelle", "insert_circuit_motif", "specialize_neuron")
+
+        for op in operators_tested:
+            per_scale: Dict[int, Dict[str, float]] = {}
+            for sc in scales:
+                base_g = generate_candidate_genome("mixed_custom_standard", n_neurons=sc, seed=self.seed + sc)
+                mut_g, _ = apply_genome_mutation(base_g, operator=op, seed=self.seed + sc + 17)
+                # Use fast CompiledConnectomeEngine for scales >= 24
+                if sc >= 24:
+                    eng_b = CompiledConnectomeEngine(base_g.connectome, dt_ms=1.0, seed=self.seed)
+                    eng_m = CompiledConnectomeEngine(mut_g.connectome, dt_ms=1.0, seed=self.seed)
+                    Sb = eng_b.rollout(pack.X)
+                    Sm = eng_m.rollout(pack.X)
+                else:
+                    sim_b = MultiFidelityConnectome(base_g.connectome, dt_ms=1.0, organelle_factory=create_organelle, seed=self.seed)
+                    sim_m = MultiFidelityConnectome(mut_g.connectome, dt_ms=1.0, organelle_factory=create_organelle, seed=self.seed)
+                    Sb = np.stack([sim_b.step(pack.X[k], collect_telemetry=False)["outputs"] for k in range(len(pack.X))])
+                    Sm = np.stack([sim_m.step(pack.X[k], collect_telemetry=False)["outputs"] for k in range(len(pack.X))])
+                sp = int(0.6 * len(pack.X))
+                wb = np.linalg.solve(Sb[:sp].T @ Sb[:sp] + 0.35 * np.eye(Sb.shape[1]), Sb[:sp].T @ pack.y[:sp])
+                wm = np.linalg.solve(Sm[:sp].T @ Sm[:sp] + 0.35 * np.eye(Sm.shape[1]), Sm[:sp].T @ pack.y[:sp])
+                mse_b = float(np.mean((Sb[sp:] @ wb - pack.y[sp:]) ** 2))
+                mse_m = float(np.mean((Sm[sp:] @ wm - pack.y[sp:]) ** 2))
+                per_scale[int(sc)] = {
+                    "baseline_mse": round(mse_b, 5),
+                    "mutated_mse": round(mse_m, 5),
+                    "gain_mse": round(mse_b - mse_m, 5),
+                    "positive_transfer": bool(mse_b - mse_m > 0.0),
+                }
+            gains = [per_scale[int(s)]["gain_mse"] for s in scales]
+            scale_rows.append({
+                "operator": op,
+                "per_scale": {str(k): v for k, v in per_scale.items()},
+                "micro_gain": gains[0],
+                "macro_gain": gains[-1],
+                "sign_consistent_micro_to_macro": bool((gains[0] >= 0) == (gains[-1] >= 0)),
+            })
+
+        return {
+            "experiment": "architect_cross_scale_transfer_and_expert_calibration",
+            "scales": list(scales),
+            "calibration_cycles_executed": cycles_for_expert_calibration,
+            "pre_calibration_flagged": len(pre_cal["flagged_experts"]),
+            "post_calibration_flagged": len(post_cal["flagged_experts"]),
+            "post_calibration_details": post_cal["details"],
+            "scale_transfer_laws": scale_rows,
+            "wall_ms": round((time.perf_counter() - t0) * 1000.0, 2),
+        }

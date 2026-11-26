@@ -149,6 +149,7 @@ class IntegratedAgent:
         self.neurowave_x2=None
         self.dsag_channel=None
         self.neuroweave_channel=None
+        self.morphogenesis_channel=None
         self.sensory_fabric=None
         self.wpac=None
         self.wpac_programmer=None
@@ -348,6 +349,12 @@ class IntegratedAgent:
                 from .neuroweave.bridge import NeuroWeaveBusChannel
                 self.neuroweave_channel = NeuroWeaveBusChannel(neuroweave_spec, input_dim=int(self.brain.n))
                 self.graft_bus.register_channel("neuroweave", self.neuroweave_channel, gain=1.0)
+
+            morph_spec = getattr(self.config, 'morphogenesis', None)
+            if morph_spec is not None and morph_spec.enabled and self.morphogenesis_channel is None:
+                from sonapse_morphogenesis.core.bridge import MorphogenesisBusChannel
+                self.morphogenesis_channel = MorphogenesisBusChannel(host_dim=int(self.brain.n), spec=morph_spec)
+                self.graft_bus.register_channel("morphogenesis", self.morphogenesis_channel, gain=1.0)
 
             # Route unified communication fabric
             if self.graft_bus.enabled:
@@ -975,6 +982,8 @@ class IntegratedAgent:
         if getattr(self, 'neuroweave_channel', None) is not None:
             # No wall-clock: exact-replay receipts compare telemetry byte-for-byte.
             self.last_telemetry['neuroweave'] = self.neuroweave_channel.get_telemetry_dict(include_timing=False)
+        if getattr(self, 'morphogenesis_channel', None) is not None:
+            self.last_telemetry['morphogenesis'] = self.morphogenesis_channel.get_telemetry_dict(include_timing=False)
         if getattr(self, 'frontier_hub', None) is not None and self.frontier_hub.enabled:
             from .frontier.bridge import step_agent_frontier
             step_agent_frontier(self)
@@ -1509,6 +1518,14 @@ class IntegratedAgent:
                     channels = fabric_state.get('channels')
                     if isinstance(channels, dict):
                         channels.pop('neuroweave', None)
+        if getattr(self, 'morphogenesis_channel', None) is not None:
+            state['morphogenesis_v1'] = self.morphogenesis_channel.export_state()
+            for fabric_key in ('graft_bus', 'comm_fabric'):
+                fabric_state = state.get(fabric_key)
+                if isinstance(fabric_state, dict):
+                    channels = fabric_state.get('channels')
+                    if isinstance(channels, dict):
+                        channels.pop('morphogenesis', None)
         if getattr(self, 'frontier_hub', None) is not None and self.frontier_hub.enabled:
             state['frontier_v1'] = self.frontier_hub.export_state()
         state['neurowave_x2']=self.neurowave_x2.export_state() if getattr(self,'neurowave_x2',None) is not None else None
@@ -1576,6 +1593,18 @@ class IntegratedAgent:
                 raise ValueError('checkpoint contains NEUROWEAVE state but this agent has no NEUROWEAVE configuration')
         elif saved_neuroweave_enabled and getattr(self, 'neuroweave_channel', None) is not None:
             raise ValueError('NEUROWEAVE-enabled checkpoint is missing its NEUROWEAVE namespace')
+        saved_morph = saved_config.get('morphogenesis') if isinstance(saved_config, dict) else None
+        saved_morph_enabled = (isinstance(saved_morph, dict)
+                               and saved_morph.get('enabled') is True)
+        additive_legacy_morph = (getattr(self, 'morphogenesis_channel', None) is not None
+                                 and not saved_morph_enabled)
+        if state.get('morphogenesis_v1') is not None:
+            if not saved_morph_enabled:
+                raise ValueError('checkpoint contains Morphogenesis state but its saved config does not enable Morphogenesis')
+            if getattr(self, 'morphogenesis_channel', None) is None:
+                raise ValueError('checkpoint contains Morphogenesis state but this agent has no Morphogenesis configuration')
+        elif saved_morph_enabled and getattr(self, 'morphogenesis_channel', None) is not None:
+            raise ValueError('Morphogenesis-enabled checkpoint is missing its Morphogenesis namespace')
         for k,v in state['modules'].items():
             if k == 'brain':
                 for buf_name in ('r', 'activity_ema', 'elig', 'heb', 'graft_pre', 'graft_post', 'base_pre', 'base_post', 'base_w', 'graft_site', 'bias', 'sensory_idx', 'motor_idx', 'probe_idx'):
@@ -1587,7 +1616,7 @@ class IntegratedAgent:
                 self.brain.n = len(v['r'])
             if k in self.modules:
                 module_state = v
-                if k == 'graft_bus' and (additive_legacy_dsag or additive_legacy_neuroweave) and isinstance(v, dict):
+                if k == 'graft_bus' and (additive_legacy_dsag or additive_legacy_neuroweave or additive_legacy_morph) and isinstance(v, dict):
                     # The old bus has no context-gate parameters for the new
                     # channel. Carry only those fresh parameters forward; all
                     # other missing or unexpected tensors still fail strictly.
@@ -1595,7 +1624,8 @@ class IntegratedAgent:
                     current_state = self.modules[k].state_dict()
                     additive_prefixes = tuple(prefix for prefix, on in (
                         ('context_gates.dsag.', additive_legacy_dsag),
-                        ('context_gates.neuroweave.', additive_legacy_neuroweave)) if on)
+                        ('context_gates.neuroweave.', additive_legacy_neuroweave),
+                        ('context_gates.morphogenesis.', additive_legacy_morph)) if on)
                     for key, value in current_state.items():
                         if key.startswith(additive_prefixes) and key not in module_state:
                             module_state[key] = value.detach().clone()
@@ -1712,6 +1742,8 @@ class IntegratedAgent:
         if state.get('neuroweave_v1') is not None:
             # Presence/config agreement was checked before any module was touched.
             self.neuroweave_channel.import_state(state['neuroweave_v1'])
+        if state.get('morphogenesis_v1') is not None:
+            self.morphogenesis_channel.import_state(state['morphogenesis_v1'])
         if state.get('frontier_v1') is not None or getattr(self, 'frontier_hub', None) is not None:
             from .frontier.bridge import import_agent_frontier
             import_agent_frontier(self, state)

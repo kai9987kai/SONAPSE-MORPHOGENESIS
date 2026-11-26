@@ -1066,6 +1066,20 @@ def run_tandem_max_orchestration(workbench, data: Optional[Dict[str, Any]] = Non
         section_07 = {'section': '07 · Frontier Pack Laboratory', 'skipped': 'frontier not configured'}
 
     # -------------------------------------------------------------------
+    # SECTION 08 (additive, isolated): SONAPSE MORPHOGENESIS laboratory
+    # -------------------------------------------------------------------
+    if getattr(max_cfg, 'morphogenesis', None) is not None and max_cfg.morphogenesis.enabled:
+        from sonapse_morphogenesis.core.bridge import run_morphogenesis_laboratory
+        section_08 = run_morphogenesis_laboratory(
+            max_cfg.morphogenesis,
+            channel=getattr(runtime.agent, 'morphogenesis_channel', None),
+            steps=8,
+            seed=seed,
+        )
+    else:
+        section_08 = {'section': '08 · SONAPSE MORPHOGENESIS Laboratory', 'skipped': 'morphogenesis not configured'}
+
+    # -------------------------------------------------------------------
     # SECTION 05: Exact Mid-Episode Checkpoint & Cryptographic Digest
     # -------------------------------------------------------------------
     with workbench.lock:
@@ -1117,6 +1131,7 @@ def run_tandem_max_orchestration(workbench, data: Optional[Dict[str, Any]] = Non
         # Additive: sections_completed keeps its historical five entries.
         'section_06': section_06,
         'section_07': section_07,
+        'section_08': section_08,
         'state': final_state,
     }
     workbench.last_tandem_receipt = receipt

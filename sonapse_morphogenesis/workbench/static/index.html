@@ -90,7 +90,7 @@
 <body>
   <aside>
     <div class="brand">SONAPSE MORPHOGENESIS</div>
-    <div class="subtitle">Autonomous Developmental Connectome Lab v1.0</div>
+    <div class="subtitle">Autonomous Developmental Connectome Lab v2.0</div>
     <nav aria-label="Morphogenesis Modules">
       <button class="active" data-pane="pane-connectome">01 · 3D Connectome &amp; Live Sim</button>
       <button data-pane="pane-foundry">02 · Neuron Foundry &amp; Organelles</button>
@@ -100,6 +100,7 @@
       <button data-pane="pane-affect">06 · Affect &amp; Physiology</button>
       <button data-pane="pane-antipode">07 · Antipode &amp; Symbiosis</button>
       <button data-pane="pane-architect">08 · Architect, Genesis &amp; Archive</button>
+      <button data-pane="pane-maxmode">09 · Omni Max Mode &amp; Emergence</button>
     </nav>
     <div style="margin-top:auto; padding-top:12px; border-top:1px solid var(--border);">
       <div id="hw-info" class="subtitle">Connecting to local CPU engine…</div>
@@ -303,6 +304,31 @@
         <div class="card">
           <h2>Persistent Experiment Registry &amp; Discovery Archive</h2>
           <pre id="out-registry"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 OMNI MAX MODE & EMERGENCE -->
+    <section id="pane-maxmode" class="tab-pane">
+      <div class="notice">
+        <strong>OMNI-MORPHOGENESIS v2.0 Max Mode:</strong> Coordinates all 57 neuron families (36 graft + 21 conventional),
+        20 organelles (via Arbitrosome gating), 33 learning rules, 18 ML + 16 Bio hybrids, 32 sensory modalities,
+        4D/5D/6D Hyperspace, 12 Curiosity worlds, coupled Sonapse-LAB Tandem Max, and GhostInTheMachine/CROSSWIRE/FAULTLINE
+        on a 3-tier nested Gamma/Theta/Circadian schedule.
+      </div>
+      <div class="toolbar">
+        <label>Macro-Epochs: <input id="inp-mm-epochs" type="number" min="1" max="16" value="2" style="width:66px;"></label>
+        <button id="btn-mm-run" class="btn primary">⚡ Run Omni Max Mode</button>
+        <button id="btn-em-run" class="btn">🔬 Run Causal Emergence &amp; Safety Suite</button>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h2>Omni Max Mode Completeness &amp; Campaign Telemetry</h2>
+          <pre id="out-maxmode">Click "Run Omni Max Mode" to execute a 3-tier pan-catalog cycle.</pre>
+        </div>
+        <div class="card">
+          <h2>GhostInTheMachine Emergence · CROSSWIRE · FAULTLINE</h2>
+          <pre id="out-emergence">Click "Run Causal Emergence &amp; Safety Suite" to compute MAF, MMI-PID Φ_R, Twin Authorship &amp; Safety bounds.</pre>
         </div>
       </div>
     </section>
@@ -518,12 +544,12 @@
       state.catalog = cat;
       document.getElementById('status-line').textContent = `READY · ${st.neuron_count} neurons · ${st.synapse_count} synapses · CPU (${st.hardware.cpu_logical_cores}T)`;
       document.getElementById('hw-info').textContent = `Device: ${st.hardware.selected_device.toUpperCase()} · PyTorch ${st.hardware.torch_version}`;
-      fillSelect('sel-origin', cat.candidate_origins);
-      fillSelect('sel-mut', cat.mutation_operators);
-      fillSelect('sel-live-org', cat.organelles);
-      fillSelect('sel-foundry-fam', [...cat.graft_neurons, ...cat.conventional_neurons]);
-      fillSelect('sel-chim-a', cat.candidate_origins);
-      fillSelect('sel-chim-b', [...cat.candidate_origins].reverse());
+      fillSelect('sel-origin', cat.all_candidate_origins || cat.candidate_origins);
+      fillSelect('sel-mut', cat.all_mutation_operators || cat.mutation_operators);
+      fillSelect('sel-live-org', cat.all_organelles || cat.organelles);
+      fillSelect('sel-foundry-fam', [...(cat.all_graft_neurons || cat.graft_neurons), ...(cat.all_conventional_neurons || cat.conventional_neurons)]);
+      fillSelect('sel-chim-a', cat.all_candidate_origins || cat.candidate_origins);
+      fillSelect('sel-chim-b', [...(cat.all_candidate_origins || cat.candidate_origins)].reverse());
       fillSelect('sel-chim-mode', cat.chimera_modes);
       fillSelect('sel-sp-op', cat.spectra_mixing_operators);
       fillSelect('sel-sp-enc', cat.spectra_encodings);
@@ -680,6 +706,17 @@
     document.getElementById('btn-gen-screen').onclick = async () => {
       const r = await apiPost('/api/morphogenesis/genesis/screen', { population_size: 512 });
       document.getElementById('out-architect').textContent = JSON.stringify(r.result, null, 2);
+    };
+    document.getElementById('btn-mm-run').onclick = async () => {
+      const epochs = Number(document.getElementById('inp-mm-epochs').value || 2);
+      document.getElementById('out-maxmode').textContent = 'Running 3-tier Omni Max Mode cycle…';
+      const r = await apiPost('/api/morphogenesis/max_mode/run', { epochs, enable_host_tandem: true });
+      document.getElementById('out-maxmode').textContent = JSON.stringify(r.result || r, null, 2);
+      refreshRegistry();
+    };
+    document.getElementById('btn-em-run').onclick = async () => {
+      const r = await apiPost('/api/morphogenesis/emergence/run', {});
+      document.getElementById('out-emergence').textContent = JSON.stringify(r.result || r, null, 2);
     };
     document.getElementById('btn-reg-refresh').onclick = refreshRegistry;
     document.getElementById('btn-save-ckpt').onclick = async () => {

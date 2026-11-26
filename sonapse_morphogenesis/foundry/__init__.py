@@ -1,45 +1,83 @@
 """SONAPSE FOUNDRY — Neuron Morphology, Organelles, Bio-Hybrids, and ML-Hybrids."""
 from .benchmarks import evaluate_single_neuron_spec, run_foundry_benchmark_suite
-from .bio_hybrids import BIO_HYBRID_REGISTRY, BaseBioHybrid, run_bio_hybrid_assays
+from .bio_hybrids import (
+    ALL_BIO_HYBRID_REGISTRY,
+    BIO_HYBRID_REGISTRY,
+    EXTENDED_BIO_HYBRID_REGISTRY,
+    BaseBioHybrid,
+    create_bio_hybrid,
+    run_bio_hybrid_assays,
+)
 from .conventional_neurons import (
+    ALL_CONVENTIONAL_NEURON_FAMILIES,
     CONVENTIONAL_NEURON_FAMILIES,
+    EXTENDED_CONVENTIONAL_NEURON_FAMILIES,
     build_conventional_neuron,
     run_heterogeneous_vs_homogeneous_experiment,
 )
 from .graft_neurons import (
+    ALL_GRAFT_NEURON_BUILDERS,
+    ALL_GRAFT_NEURON_FAMILIES,
+    EXTENDED_GRAFT_NEURON_BUILDERS,
+    EXTENDED_GRAFT_NEURON_FAMILIES,
     GRAFT_NEURON_BUILDERS,
     GRAFT_NEURON_FAMILIES,
     build_ablation_variants,
     build_graft_neuron,
     render_neuron_svg,
 )
-from .ml_hybrids import ML_HYBRID_MECHANISMS, MLHybridMechanism, compare_three_variants
+from .ml_hybrids import (
+    ALL_ML_HYBRID_MECHANISMS,
+    EXTENDED_ML_HYBRID_MECHANISMS,
+    ML_HYBRID_MECHANISMS,
+    MLHybridMechanism,
+    compare_three_variants,
+)
 from .organelles import (
+    ALL_ORGANELLE_REGISTRY,
+    EXTENDED_ORGANELLE_REGISTRY,
     ORGANELLE_REGISTRY,
     BaseOrganelle,
+    OrganelleArbitrationCoordinator,
     create_organelle,
+    evaluate_gated_organelle_interaction,
     evaluate_organelle_interaction,
     list_organelles,
 )
 
 __all__ = [
     "ORGANELLE_REGISTRY",
+    "EXTENDED_ORGANELLE_REGISTRY",
+    "ALL_ORGANELLE_REGISTRY",
     "BaseOrganelle",
+    "OrganelleArbitrationCoordinator",
     "create_organelle",
     "list_organelles",
     "evaluate_organelle_interaction",
+    "evaluate_gated_organelle_interaction",
     "CONVENTIONAL_NEURON_FAMILIES",
+    "EXTENDED_CONVENTIONAL_NEURON_FAMILIES",
+    "ALL_CONVENTIONAL_NEURON_FAMILIES",
     "build_conventional_neuron",
     "run_heterogeneous_vs_homogeneous_experiment",
     "GRAFT_NEURON_BUILDERS",
+    "EXTENDED_GRAFT_NEURON_BUILDERS",
+    "ALL_GRAFT_NEURON_BUILDERS",
     "GRAFT_NEURON_FAMILIES",
+    "EXTENDED_GRAFT_NEURON_FAMILIES",
+    "ALL_GRAFT_NEURON_FAMILIES",
     "build_graft_neuron",
     "build_ablation_variants",
     "render_neuron_svg",
     "BIO_HYBRID_REGISTRY",
+    "EXTENDED_BIO_HYBRID_REGISTRY",
+    "ALL_BIO_HYBRID_REGISTRY",
     "BaseBioHybrid",
+    "create_bio_hybrid",
     "run_bio_hybrid_assays",
     "ML_HYBRID_MECHANISMS",
+    "EXTENDED_ML_HYBRID_MECHANISMS",
+    "ALL_ML_HYBRID_MECHANISMS",
     "MLHybridMechanism",
     "compare_three_variants",
     "evaluate_single_neuron_spec",

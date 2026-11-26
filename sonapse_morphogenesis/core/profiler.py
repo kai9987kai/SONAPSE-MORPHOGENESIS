@@ -84,16 +84,18 @@ class VectorizedMicroBatchSimulator:
         self.batch_size, self.n_neurons, _ = self.weights.shape
 
     def rollout(self, stimulus_seq: np.ndarray) -> np.ndarray:
-        """Roll out all B candidates over stimulus sequence [T, D_in] -> [T, B, N]."""
+        """Roll out all B candidates over stimulus sequence [T, D_in] -> [T, B, N] via BLAS matmul."""
         T = stimulus_seq.shape[0]
-        stim = np.asarray(stimulus_seq, dtype=np.float32)
+        stim = np.ascontiguousarray(stimulus_seq, dtype=np.float32)
         states = np.zeros((T, self.batch_size, self.n_neurons), dtype=np.float32)
         h = np.zeros((self.batch_size, self.n_neurons), dtype=np.float32)
         one_minus = 1.0 - self.decays
-        # Precompute external drive [T, B, N]
-        ext = np.einsum("td,bnd->tbn", stim, self.input_proj)
+        # Precompute external drive [T, B, N] using BLAS matmul
+        ip_flat = self.input_proj.reshape(self.batch_size * self.n_neurons, -1)
+        ext = (stim @ ip_flat.T).reshape(T, self.batch_size, self.n_neurons)
+        w_contig = np.ascontiguousarray(self.weights, dtype=np.float32)
         for t in range(T):
-            rec = np.einsum("bij,bj->bi", self.weights, h)
+            rec = (w_contig @ h[..., None])[..., 0]
             h = self.decays * h + one_minus * np.tanh(rec + ext[t])
             states[t] = h
         return states

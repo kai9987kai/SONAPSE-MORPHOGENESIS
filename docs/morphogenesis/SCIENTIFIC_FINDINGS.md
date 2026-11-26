@@ -1,5 +1,21 @@
 # SONAPSE MORPHOGENESIS — Actual Measured Scientific Findings
 
+## v2.0 & 2-Hour OMNI-MORPHOGENESIS Max Mode Campaign (2026-11-26)
+
+- **Full Research Paper:** [`docs/paper/SONAPSE_MORPHOGENESIS_V2_PAPER.md`](../paper/SONAPSE_MORPHOGENESIS_V2_PAPER.md)
+- **9 Timed Section Campaigns (`1,296.89 s`):** [`results/morphogenesis/v2_individual_sections/master_individual_sections_summary.json`](../../results/morphogenesis/v2_individual_sections/master_individual_sections_summary.json)
+- **2-Hour Max Mode Campaign (`7,200.67 s`, `1,956` epochs, `46,944` Gamma ticks, `7,824` Theta cycles):** [`results/morphogenesis/max_mode_2h_campaign/max_mode_campaign_report.json`](../../results/morphogenesis/max_mode_2h_campaign/max_mode_campaign_report.json) | Discovery Report [`disc-3cda5e1f74`](../../results/morphogenesis/max_mode_2h_campaign/discoveries/disc-3cda5e1f74_report.md)
+- **Key v2.0 Highlights:**
+  - `CompiledConnectomeEngine` achieved **36.51×** speedup at $N=256$ neurons (`897` compartments); `Sonapse-LAB` host scaled to **60,920.9 neuron-steps/sec** at $N=1,200$.
+  - Across **39 benchmarked neuron families**, `hyperbolic_poincare` (`0.80240` MSE), `chameleon` (`0.81731`), `burst_ccn` (`0.82003`), and `btsp_plateau` (`0.85289`) outperformed `baseline:lif_reference` (`0.85552`) and `baseline:recurrent_rate` (`0.86310`).
+  - `OrganelleArbitrationCoordinator` resolved `mnemosome + chronosome` interference (`0.16831` $\rightarrow$ `0.06305` MSE, `+0.10526` gain).
+  - Across **33 learning rules**, `negative_distillation` (`0.00871` corrupted MSE, `14.7169` Pareto score), `region_meta_learning` (`0.01155`), and `shy_synaptic_renormalization` (`0.01163`) led.
+  - **2-Hour Max Mode:** `100%` coverage across all `13` capability categories, advantage **`+0.38322`** over random control (95% CI `[+0.37671, +0.39013]`, Cohen's **$d = 3.5463$**, win rate `99.28%`), `0` safety interventions, `0` CROSSWIRE abstentions, and `0/327` accepted Architect mutations (honest null under `temporal_delay_deficit`).
+
+---
+
+## v1.0 Baseline Suite (2026-11-24)
+
 **Run Date:** 2026-11-24  
 **Hardware:** Snapdragon X Plus (8C/8T @ 3.30 GHz), 15.61 GB RAM, Windows ARM64, CPU-only PyTorch 2.11.0+cpu  
 **Full Execution Time:** `73.58 seconds` (`python scripts/run_morphogenesis_experiments.py`)  

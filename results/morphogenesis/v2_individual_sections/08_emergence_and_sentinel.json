@@ -1,0 +1,370 @@
+{
+  "section": "08_emergence_and_sentinel",
+  "wallclock_seconds": 12.851,
+  "cpu_seconds": 11.75,
+  "result": {
+    "cross_yoked_twin_multi_seed": [
+      {
+        "experiment": "ghost_in_the_machine_causal_emergence_and_cross_yoked_twin",
+        "n_neurons": 32,
+        "steps": 160,
+        "seed": 7,
+        "subjective_experience_claimed": false,
+        "cross_yoked_authorship": {
+          "master_oos_r2": 0.02999,
+          "yoked_twin_oos_r2": -0.81938,
+          "causal_authorship_gap": 0.84937,
+          "master_exceeds_yoked_twin": true
+        },
+        "maf_slow_subspace": {
+          "maf1_lag1_autocorr": 0.99895,
+          "pc1_lag1_autocorr": 0.97781,
+          "slow_mode_advantage_over_pca": 0.02114
+        },
+        "dynamical_independence": {
+          "mi_macro_self": 2.91501,
+          "mi_macro_from_micro": 3.32364,
+          "dynamical_dependence": 0.40863,
+          "dynamical_closure_ratio": 0.87705
+        },
+        "gaussian_mmi_pid": {
+          "total_tdmi": 12.93784,
+          "redundancy": 6.70818,
+          "unique_a": 4.00336,
+          "unique_b": 0.0,
+          "synergy": 2.22631,
+          "double_redundancy_rtr": 4.51495,
+          "phi_r": 4.41954
+        },
+        "closed_loop_efference_spectrum": {
+          "max_re_lambda_open": 0.5225,
+          "max_re_lambda_closed": 0.52838,
+          "delta_max_re_lambda": 0.00588,
+          "stabilized": false
+        }
+      },
+      {
+        "experiment": "ghost_in_the_machine_causal_emergence_and_cross_yoked_twin",
+        "n_neurons": 32,
+        "steps": 160,
+        "seed": 11,
+        "subjective_experience_claimed": false,
+        "cross_yoked_authorship": {
+          "master_oos_r2": -1.0,
+          "yoked_twin_oos_r2": -0.83221,
+          "causal_authorship_gap": -0.16779,
+          "master_exceeds_yoked_twin": false
+        },
+        "maf_slow_subspace": {
+          "maf1_lag1_autocorr": 0.98789,
+          "pc1_lag1_autocorr": 0.89407,
+          "slow_mode_advantage_over_pca": 0.09383
+        },
+        "dynamical_independence": {
+          "mi_macro_self": 2.30716,
+          "mi_macro_from_micro": 2.47936,
+          "dynamical_dependence": 0.1722,
+          "dynamical_closure_ratio": 0.93055
+        },
+        "gaussian_mmi_pid": {
+          "total_tdmi": 7.55701,
+          "redundancy": 4.91271,
+          "unique_a": 0.0,
+          "unique_b": 0.30259,
+          "synergy": 2.34172,
+          "double_redundancy_rtr": 2.7821,
+          "phi_r": 4.47232
+        },
+        "closed_loop_efference_spectrum": {
+          "max_re_lambda_open": 0.5225,
+          "max_re_lambda_closed": 0.5225,
+          "delta_max_re_lambda": 0.0,
+          "stabilized": false
+        }
+      },
+      {
+        "experiment": "ghost_in_the_machine_causal_emergence_and_cross_yoked_twin",
+        "n_neurons": 32,
+        "steps": 160,
+        "seed": 19,
+        "subjective_experience_claimed": false,
+        "cross_yoked_authorship": {
+          "master_oos_r2": 0.05143,
+          "yoked_twin_oos_r2": 0.17243,
+          "causal_authorship_gap": -0.121,
+          "master_exceeds_yoked_twin": false
+        },
+        "maf_slow_subspace": {
+          "maf1_lag1_autocorr": 0.97918,
+          "pc1_lag1_autocorr": 0.78038,
+          "slow_mode_advantage_over_pca": 0.1988
+        },
+        "dynamical_independence": {
+          "mi_macro_self": 2.44506,
+          "mi_macro_from_micro": 2.98212,
+          "dynamical_dependence": 0.53707,
+          "dynamical_closure_ratio": 0.8199
+        },
+        "gaussian_mmi_pid": {
+          "total_tdmi": 10.56196,
+          "redundancy": 6.04468,
+          "unique_a": 0.0,
+          "unique_b": 1.83835,
+          "synergy": 2.67893,
+          "double_redundancy_rtr": 3.54425,
+          "phi_r": 5.17936
+        },
+        "closed_loop_efference_spectrum": {
+          "max_re_lambda_open": 0.5225,
+          "max_re_lambda_closed": 0.5225,
+          "delta_max_re_lambda": 0.0,
+          "stabilized": false
+        }
+      }
+    ],
+    "crosswire_and_faultline_multi_seed": [
+      {
+        "experiment": "crosswire_safety_and_faultline_joint_failure_study",
+        "crosswire": {
+          "initial_hypotheses": 48,
+          "surviving_after_3_probes": 1,
+          "abstained_under_ambiguity": true,
+          "admitted_after_identification": true,
+          "unsafe_deployments_prevented": 1
+        },
+        "faultline": {
+          "calibration_selection": {
+            "panels": {
+              "accuracy": [
+                1,
+                0,
+                2
+              ],
+              "pairwise": [
+                1,
+                4,
+                5
+              ],
+              "joint": [
+                0,
+                4,
+                5
+              ]
+            },
+            "worst_condition_error": {
+              "accuracy": 0.925,
+              "pairwise": 0.2,
+              "joint": 0.2
+            },
+            "mean_condition_error": {
+              "accuracy": 0.11563,
+              "pairwise": 0.05938,
+              "joint": 0.05938
+            },
+            "joint_worst_case_reduction_vs_accuracy": 0.725
+          },
+          "heldout_worst_condition_error_accuracy_panel": 0.9,
+          "heldout_worst_condition_error_joint_panel": 0.2,
+          "heldout_worst_case_reduction": 0.7
+        }
+      },
+      {
+        "experiment": "crosswire_safety_and_faultline_joint_failure_study",
+        "crosswire": {
+          "initial_hypotheses": 48,
+          "surviving_after_3_probes": 1,
+          "abstained_under_ambiguity": true,
+          "admitted_after_identification": true,
+          "unsafe_deployments_prevented": 1
+        },
+        "faultline": {
+          "calibration_selection": {
+            "panels": {
+              "accuracy": [
+                0,
+                2,
+                1
+              ],
+              "pairwise": [
+                0,
+                3,
+                4
+              ],
+              "joint": [
+                3,
+                4,
+                5
+              ]
+            },
+            "worst_condition_error": {
+              "accuracy": 0.9,
+              "pairwise": 0.3,
+              "joint": 0.1
+            },
+            "mean_condition_error": {
+              "accuracy": 0.1125,
+              "pairwise": 0.05937,
+              "joint": 0.07188
+            },
+            "joint_worst_case_reduction_vs_accuracy": 0.8
+          },
+          "heldout_worst_condition_error_accuracy_panel": 0.95,
+          "heldout_worst_condition_error_joint_panel": 0.15,
+          "heldout_worst_case_reduction": 0.8
+        }
+      },
+      {
+        "experiment": "crosswire_safety_and_faultline_joint_failure_study",
+        "crosswire": {
+          "initial_hypotheses": 48,
+          "surviving_after_3_probes": 1,
+          "abstained_under_ambiguity": true,
+          "admitted_after_identification": true,
+          "unsafe_deployments_prevented": 1
+        },
+        "faultline": {
+          "calibration_selection": {
+            "panels": {
+              "accuracy": [
+                0,
+                1,
+                2
+              ],
+              "pairwise": [
+                0,
+                3,
+                5
+              ],
+              "joint": [
+                3,
+                4,
+                5
+              ]
+            },
+            "worst_condition_error": {
+              "accuracy": 0.875,
+              "pairwise": 0.3,
+              "joint": 0.175
+            },
+            "mean_condition_error": {
+              "accuracy": 0.10938,
+              "pairwise": 0.05,
+              "joint": 0.0875
+            },
+            "joint_worst_case_reduction_vs_accuracy": 0.7
+          },
+          "heldout_worst_condition_error_accuracy_panel": 0.85,
+          "heldout_worst_condition_error_joint_panel": 0.15,
+          "heldout_worst_case_reduction": 0.7
+        }
+      }
+    ],
+    "sentinel_matched_baselines_5seeds": {
+      "experiment": "sentinel_matched_budget_baselines",
+      "heldout_seeds": [
+        1009,
+        1013,
+        1019,
+        1021,
+        1031
+      ],
+      "hidden_dim": 16,
+      "steps": 90,
+      "baselines": {
+        "conventional_rnn": {
+          "mean_heldout_mse": 0.31485,
+          "std_heldout_mse": 0.1085,
+          "per_seed_mse": [
+            0.48691,
+            0.3341,
+            0.25967,
+            0.33782,
+            0.15575
+          ],
+          "trainable_params": 353,
+          "mean_wall_ms": 502.035
+        },
+        "gru": {
+          "mean_heldout_mse": 0.54333,
+          "std_heldout_mse": 0.1186,
+          "per_seed_mse": [
+            0.50616,
+            0.51665,
+            0.44221,
+            0.77482,
+            0.4768
+          ],
+          "trainable_params": 1025,
+          "mean_wall_ms": 1363.619
+        },
+        "lstm": {
+          "mean_heldout_mse": 0.4975,
+          "std_heldout_mse": 0.10259,
+          "per_seed_mse": [
+            0.554,
+            0.65386,
+            0.46692,
+            0.34541,
+            0.4673
+          ],
+          "trainable_params": 1361,
+          "mean_wall_ms": 194.826
+        },
+        "point_reservoir": {
+          "mean_heldout_mse": 0.51241,
+          "std_heldout_mse": 0.07338,
+          "per_seed_mse": [
+            0.58819,
+            0.54957,
+            0.4627,
+            0.39324,
+            0.56834
+          ],
+          "trainable_params": 16,
+          "mean_wall_ms": 2.64
+        },
+        "lif_spiking": {
+          "mean_heldout_mse": 0.58848,
+          "std_heldout_mse": 0.08742,
+          "per_seed_mse": [
+            0.55124,
+            0.61309,
+            0.52499,
+            0.50553,
+            0.74755
+          ],
+          "trainable_params": 16,
+          "mean_wall_ms": 4.074
+        },
+        "random_connectome": {
+          "mean_heldout_mse": 0.48622,
+          "std_heldout_mse": 0.0765,
+          "per_seed_mse": [
+            0.52102,
+            0.56025,
+            0.48163,
+            0.34159,
+            0.52663
+          ],
+          "trainable_params": 16,
+          "mean_wall_ms": 2.259
+        },
+        "degree_shuffled_biological": {
+          "mean_heldout_mse": 0.47039,
+          "std_heldout_mse": 0.08107,
+          "per_seed_mse": [
+            0.53493,
+            0.54821,
+            0.41907,
+            0.33581,
+            0.51393
+          ],
+          "trainable_params": 16,
+          "mean_wall_ms": 2.148
+        }
+      },
+      "budget_note": "RNN/GRU/LSTM train all recurrent weights via BPTT; reservoirs/connectomes train readout only (trainable_params explicitly reported)."
+    }
+  },
+  "sha256_digest": "f6873d78a9fcac4cb64c92fea72062c798f822f645ef29cdbb087c2da50317ea"
+}

@@ -1,0 +1,1840 @@
+{
+  "section": "02_foundry_v2_complete",
+  "wallclock_seconds": 21.242,
+  "cpu_seconds": 18.672,
+  "result": {
+    "cellular_benchmark_all_v2": {
+      "experiment": "sonapse_foundry_cellular_benchmark",
+      "seeds": [
+        7,
+        11,
+        19
+      ],
+      "steps": 90,
+      "caveat": "Linear readout dimensionality scales with compartment count; compare both raw MSE and energy/FLOP cost.",
+      "baseline_rate_mse": 0.8631,
+      "ranking_top5": [
+        [
+          "hyperbolic_poincare",
+          0.8024,
+          73.3552
+        ],
+        [
+          "chameleon",
+          0.81731,
+          73.791
+        ],
+        [
+          "burst_ccn",
+          0.82003,
+          103.5469
+        ],
+        [
+          "btsp_plateau",
+          0.85289,
+          101.9937
+        ],
+        [
+          "baseline:lif_reference",
+          0.85552,
+          29.0149
+        ]
+      ],
+      "results": {
+        "baseline:recurrent_rate": {
+          "name": "Conventional Recurrent Rate Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 1,
+          "n_organelles": 0,
+          "mean_test_mse": 0.8631,
+          "std_test_mse": 0.03153,
+          "delta_vs_rate_baseline": 0.0,
+          "per_task_mse": {
+            "delayed_recall_4": 0.94643,
+            "temporal_xor": 1.05738,
+            "spectral_discrimination": 1.09264,
+            "anomaly_suppression": 0.35592
+          },
+          "mean_flops": 4320,
+          "mean_energy": 13.5562,
+          "mean_wall_ms": 50.47,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": null
+        },
+        "baseline:lif_reference": {
+          "name": "LIF Reference Neuron",
+          "objective_category": "biological_realism",
+          "n_compartments": 1,
+          "n_organelles": 0,
+          "mean_test_mse": 0.85552,
+          "std_test_mse": 0.01922,
+          "delta_vs_rate_baseline": 0.00758,
+          "per_task_mse": {
+            "delayed_recall_4": 1.00207,
+            "temporal_xor": 0.97239,
+            "spectral_discrimination": 1.01703,
+            "anomaly_suppression": 0.43058
+          },
+          "mean_flops": 10080,
+          "mean_energy": 29.0149,
+          "mean_wall_ms": 56.331,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": null
+        },
+        "baseline:adaptive_pyramidal": {
+          "name": "Adaptive Pyramidal Neuron",
+          "objective_category": "biological_realism",
+          "n_compartments": 4,
+          "n_organelles": 0,
+          "mean_test_mse": 0.92683,
+          "std_test_mse": 0.05614,
+          "delta_vs_rate_baseline": -0.06373,
+          "per_task_mse": {
+            "delayed_recall_4": 0.95512,
+            "temporal_xor": 1.11112,
+            "spectral_discrimination": 1.3651,
+            "anomaly_suppression": 0.27598
+          },
+          "mean_flops": 29520,
+          "mean_energy": 61.2245,
+          "mean_wall_ms": 57.346,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": null
+        },
+        "triarch": {
+          "name": "Triarch Neuron",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 6,
+          "n_organelles": 3,
+          "mean_test_mse": 0.8847,
+          "std_test_mse": 0.02985,
+          "delta_vs_rate_baseline": -0.0216,
+          "per_task_mse": {
+            "delayed_recall_4": 0.95359,
+            "temporal_xor": 1.0236,
+            "spectral_discrimination": 1.43942,
+            "anomaly_suppression": 0.12218
+          },
+          "mean_flops": 51840,
+          "mean_energy": 115.2665,
+          "mean_wall_ms": 87.991,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.84735,
+            "no_feedback": 0.84528,
+            "point_control": 0.82222
+          }
+        },
+        "ouroboros": {
+          "name": "Ouroboros Neuron",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 6,
+          "n_organelles": 1,
+          "mean_test_mse": 0.89501,
+          "std_test_mse": 0.02668,
+          "delta_vs_rate_baseline": -0.03192,
+          "per_task_mse": {
+            "delayed_recall_4": 0.95998,
+            "temporal_xor": 1.02512,
+            "spectral_discrimination": 1.37798,
+            "anomaly_suppression": 0.21698
+          },
+          "mean_flops": 49680,
+          "mean_energy": 93.6825,
+          "mean_wall_ms": 77.215,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.85996,
+            "no_feedback": 0.8594,
+            "point_control": 0.82222
+          }
+        },
+        "hydra": {
+          "name": "Hydra Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 7,
+          "n_organelles": 5,
+          "mean_test_mse": 0.95617,
+          "std_test_mse": 0.11129,
+          "delta_vs_rate_baseline": -0.09307,
+          "per_task_mse": {
+            "delayed_recall_4": 0.927,
+            "temporal_xor": 1.18985,
+            "spectral_discrimination": 1.63507,
+            "anomaly_suppression": 0.07273
+          },
+          "mean_flops": 53280,
+          "mean_energy": 141.2441,
+          "mean_wall_ms": 121.803,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.86931,
+            "no_feedback": 0.83609,
+            "point_control": 0.82222
+          }
+        },
+        "mnemosome_neuron": {
+          "name": "Mnemosome Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 4,
+          "n_organelles": 2,
+          "mean_test_mse": 0.8924,
+          "std_test_mse": 0.02682,
+          "delta_vs_rate_baseline": -0.02931,
+          "per_task_mse": {
+            "delayed_recall_4": 0.95549,
+            "temporal_xor": 1.03063,
+            "spectral_discrimination": 1.32993,
+            "anomaly_suppression": 0.25356
+          },
+          "mean_flops": 33840,
+          "mean_energy": 78.0469,
+          "mean_wall_ms": 94.516,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.85882,
+            "no_feedback": 0.85773,
+            "point_control": 0.82222
+          }
+        },
+        "chameleon": {
+          "name": "Chameleon Neuron",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 4,
+          "n_organelles": 2,
+          "mean_test_mse": 0.81731,
+          "std_test_mse": 0.04748,
+          "delta_vs_rate_baseline": 0.04578,
+          "per_task_mse": {
+            "delayed_recall_4": 0.97076,
+            "temporal_xor": 1.08226,
+            "spectral_discrimination": 1.14876,
+            "anomaly_suppression": 0.06747
+          },
+          "mean_flops": 29520,
+          "mean_energy": 73.791,
+          "mean_wall_ms": 87.744,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.77516,
+            "no_feedback": 0.79199,
+            "point_control": 0.82222
+          }
+        },
+        "janus": {
+          "name": "Janus Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 6,
+          "n_organelles": 2,
+          "mean_test_mse": 0.88412,
+          "std_test_mse": 0.02837,
+          "delta_vs_rate_baseline": -0.02102,
+          "per_task_mse": {
+            "delayed_recall_4": 0.95414,
+            "temporal_xor": 1.03662,
+            "spectral_discrimination": 1.31493,
+            "anomaly_suppression": 0.23081
+          },
+          "mean_flops": 45360,
+          "mean_energy": 92.3628,
+          "mean_wall_ms": 108.298,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.84935,
+            "no_feedback": 0.84911,
+            "point_control": 0.82222
+          }
+        },
+        "chronos": {
+          "name": "Chronos Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 6,
+          "n_organelles": 2,
+          "mean_test_mse": 0.89412,
+          "std_test_mse": 0.03053,
+          "delta_vs_rate_baseline": -0.03103,
+          "per_task_mse": {
+            "delayed_recall_4": 0.95385,
+            "temporal_xor": 1.01051,
+            "spectral_discrimination": 1.50984,
+            "anomaly_suppression": 0.1023
+          },
+          "mean_flops": 49680,
+          "mean_energy": 117.8925,
+          "mean_wall_ms": 112.473,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.85294,
+            "no_feedback": 0.8523,
+            "point_control": 0.82222
+          }
+        },
+        "nexus": {
+          "name": "Nexus Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 2,
+          "mean_test_mse": 0.88633,
+          "std_test_mse": 0.05075,
+          "delta_vs_rate_baseline": -0.02323,
+          "per_task_mse": {
+            "delayed_recall_4": 0.94989,
+            "temporal_xor": 1.09029,
+            "spectral_discrimination": 1.29252,
+            "anomaly_suppression": 0.2126
+          },
+          "mean_flops": 41760,
+          "mean_energy": 86.5068,
+          "mean_wall_ms": 81.497,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.83824,
+            "no_feedback": 0.83632,
+            "point_control": 0.82222
+          }
+        },
+        "paracrine_broadcast": {
+          "name": "Paracrine Broadcast Neuron",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 3,
+          "n_organelles": 1,
+          "mean_test_mse": 0.92588,
+          "std_test_mse": 0.01883,
+          "delta_vs_rate_baseline": -0.06278,
+          "per_task_mse": {
+            "delayed_recall_4": 0.9492,
+            "temporal_xor": 1.0445,
+            "spectral_discrimination": 1.22906,
+            "anomaly_suppression": 0.48076
+          },
+          "mean_flops": 21600,
+          "mean_energy": 55.381,
+          "mean_wall_ms": 67.524,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.93444,
+            "no_feedback": 0.93281,
+            "point_control": 0.82222
+          }
+        },
+        "mosaic": {
+          "name": "Mosaic Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 2,
+          "mean_test_mse": 0.92244,
+          "std_test_mse": 0.02993,
+          "delta_vs_rate_baseline": -0.05934,
+          "per_task_mse": {
+            "delayed_recall_4": 0.93424,
+            "temporal_xor": 1.03932,
+            "spectral_discrimination": 1.50197,
+            "anomaly_suppression": 0.21423
+          },
+          "mean_flops": 39600,
+          "mean_energy": 86.137,
+          "mean_wall_ms": 95.196,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.84803,
+            "no_feedback": 0.88519,
+            "point_control": 0.82222
+          }
+        },
+        "sentinel_neuron": {
+          "name": "Sentinel Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 4,
+          "n_organelles": 2,
+          "mean_test_mse": 0.88369,
+          "std_test_mse": 0.02922,
+          "delta_vs_rate_baseline": -0.02059,
+          "per_task_mse": {
+            "delayed_recall_4": 0.95849,
+            "temporal_xor": 1.01934,
+            "spectral_discrimination": 1.46749,
+            "anomaly_suppression": 0.08945
+          },
+          "mean_flops": 31680,
+          "mean_energy": 70.3884,
+          "mean_wall_ms": 70.376,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.85026,
+            "no_feedback": 0.84438,
+            "point_control": 0.82222
+          }
+        },
+        "frontier_neuron": {
+          "name": "Frontier Neuron",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 3,
+          "n_organelles": 2,
+          "mean_test_mse": 0.89709,
+          "std_test_mse": 0.03171,
+          "delta_vs_rate_baseline": -0.03399,
+          "per_task_mse": {
+            "delayed_recall_4": 0.94887,
+            "temporal_xor": 1.0444,
+            "spectral_discrimination": 1.22708,
+            "anomaly_suppression": 0.36801
+          },
+          "mean_flops": 21600,
+          "mean_energy": 55.2746,
+          "mean_wall_ms": 154.099,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.868,
+            "no_feedback": 0.8659,
+            "point_control": 0.82222
+          }
+        },
+        "bifrost": {
+          "name": "Bifrost Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 1,
+          "mean_test_mse": 0.99756,
+          "std_test_mse": 0.07831,
+          "delta_vs_rate_baseline": -0.13447,
+          "per_task_mse": {
+            "delayed_recall_4": 0.95702,
+            "temporal_xor": 1.14447,
+            "spectral_discrimination": 1.77693,
+            "anomaly_suppression": 0.11183
+          },
+          "mean_flops": 37440,
+          "mean_energy": 81.0764,
+          "mean_wall_ms": 68.514,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.90711,
+            "no_feedback": 0.92577,
+            "point_control": 0.82222
+          }
+        },
+        "resonator": {
+          "name": "Resonator Neuron",
+          "objective_category": "biological_realism",
+          "n_compartments": 4,
+          "n_organelles": 2,
+          "mean_test_mse": 0.93581,
+          "std_test_mse": 0.0307,
+          "delta_vs_rate_baseline": -0.07271,
+          "per_task_mse": {
+            "delayed_recall_4": 0.93105,
+            "temporal_xor": 1.03285,
+            "spectral_discrimination": 1.60554,
+            "anomaly_suppression": 0.1738
+          },
+          "mean_flops": 31680,
+          "mean_energy": 70.2486,
+          "mean_wall_ms": 69.231,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.8637,
+            "no_feedback": 0.89406,
+            "point_control": 0.82222
+          }
+        },
+        "palimpsest": {
+          "name": "Palimpsest Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 2,
+          "mean_test_mse": 0.89538,
+          "std_test_mse": 0.02791,
+          "delta_vs_rate_baseline": -0.03228,
+          "per_task_mse": {
+            "delayed_recall_4": 0.96553,
+            "temporal_xor": 1.01568,
+            "spectral_discrimination": 1.46403,
+            "anomaly_suppression": 0.13627
+          },
+          "mean_flops": 39600,
+          "mean_energy": 95.49,
+          "mean_wall_ms": 111.195,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.85823,
+            "no_feedback": 0.85703,
+            "point_control": 0.82222
+          }
+        },
+        "counterpoint": {
+          "name": "Counterpoint Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 0,
+          "mean_test_mse": 0.89487,
+          "std_test_mse": 0.02807,
+          "delta_vs_rate_baseline": -0.03178,
+          "per_task_mse": {
+            "delayed_recall_4": 0.96258,
+            "temporal_xor": 1.01544,
+            "spectral_discrimination": 1.4718,
+            "anomaly_suppression": 0.12968
+          },
+          "mean_flops": 43920,
+          "mean_energy": 73.9399,
+          "mean_wall_ms": 69.64,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.8564,
+            "no_feedback": 0.8564,
+            "point_control": 0.82222
+          }
+        },
+        "compass": {
+          "name": "Compass Neuron",
+          "objective_category": "biological_realism",
+          "n_compartments": 7,
+          "n_organelles": 0,
+          "mean_test_mse": 0.87201,
+          "std_test_mse": 0.03357,
+          "delta_vs_rate_baseline": -0.00891,
+          "per_task_mse": {
+            "delayed_recall_4": 0.97155,
+            "temporal_xor": 1.04947,
+            "spectral_discrimination": 1.31681,
+            "anomaly_suppression": 0.1502
+          },
+          "mean_flops": 92160,
+          "mean_energy": 101.4408,
+          "mean_wall_ms": 67.87,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.83317,
+            "no_feedback": 0.83317,
+            "point_control": 0.82222
+          }
+        },
+        "prism": {
+          "name": "Prism Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 3,
+          "mean_test_mse": 0.89605,
+          "std_test_mse": 0.05056,
+          "delta_vs_rate_baseline": -0.03296,
+          "per_task_mse": {
+            "delayed_recall_4": 0.89858,
+            "temporal_xor": 1.0966,
+            "spectral_discrimination": 1.55919,
+            "anomaly_suppression": 0.02983
+          },
+          "mean_flops": 37440,
+          "mean_energy": 96.1855,
+          "mean_wall_ms": 83.293,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.76076,
+            "no_feedback": 0.8374,
+            "point_control": 0.82222
+          }
+        },
+        "consensus": {
+          "name": "Consensus Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 1,
+          "mean_test_mse": 0.8802,
+          "std_test_mse": 0.07322,
+          "delta_vs_rate_baseline": -0.0171,
+          "per_task_mse": {
+            "delayed_recall_4": 0.94037,
+            "temporal_xor": 1.12723,
+            "spectral_discrimination": 1.37134,
+            "anomaly_suppression": 0.08186
+          },
+          "mean_flops": 37440,
+          "mean_energy": 74.5845,
+          "mean_wall_ms": 77.743,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.8103,
+            "no_feedback": 0.85275,
+            "point_control": 0.82222
+          }
+        },
+        "veto": {
+          "name": "Veto Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 4,
+          "n_organelles": 2,
+          "mean_test_mse": 0.94824,
+          "std_test_mse": 0.07,
+          "delta_vs_rate_baseline": -0.08515,
+          "per_task_mse": {
+            "delayed_recall_4": 0.9616,
+            "temporal_xor": 1.13983,
+            "spectral_discrimination": 1.56101,
+            "anomaly_suppression": 0.13052
+          },
+          "mean_flops": 29520,
+          "mean_energy": 71.1049,
+          "mean_wall_ms": 87.619,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.89542,
+            "no_feedback": 0.88981,
+            "point_control": 0.82222
+          }
+        },
+        "tessera": {
+          "name": "Tessera Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 1,
+          "mean_test_mse": 0.8839,
+          "std_test_mse": 0.02909,
+          "delta_vs_rate_baseline": -0.0208,
+          "per_task_mse": {
+            "delayed_recall_4": 0.95417,
+            "temporal_xor": 1.03729,
+            "spectral_discrimination": 1.32657,
+            "anomaly_suppression": 0.21759
+          },
+          "mean_flops": 37440,
+          "mean_energy": 78.9235,
+          "mean_wall_ms": 102.247,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.84787,
+            "no_feedback": 0.8491,
+            "point_control": 0.82222
+          }
+        },
+        "symbiote_echo": {
+          "name": "SymbioteEcho Neuron (Original)",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 5,
+          "n_organelles": 2,
+          "mean_test_mse": 0.95656,
+          "std_test_mse": 0.06835,
+          "delta_vs_rate_baseline": -0.09346,
+          "per_task_mse": {
+            "delayed_recall_4": 0.95712,
+            "temporal_xor": 1.12123,
+            "spectral_discrimination": 1.54778,
+            "anomaly_suppression": 0.20011
+          },
+          "mean_flops": 39600,
+          "mean_energy": 86.9062,
+          "mean_wall_ms": 94.35,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.87999,
+            "no_feedback": 0.88356,
+            "point_control": 0.82222
+          }
+        },
+        "bifurcation_gate": {
+          "name": "BifurcationGate Neuron (Original)",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 4,
+          "n_organelles": 0,
+          "mean_test_mse": 0.91942,
+          "std_test_mse": 0.03531,
+          "delta_vs_rate_baseline": -0.05632,
+          "per_task_mse": {
+            "delayed_recall_4": 0.97557,
+            "temporal_xor": 1.03457,
+            "spectral_discrimination": 1.49548,
+            "anomaly_suppression": 0.17204
+          },
+          "mean_flops": 40320,
+          "mean_energy": 58.3031,
+          "mean_wall_ms": 67.899,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.87358,
+            "no_feedback": 0.87358,
+            "point_control": 0.82222
+          }
+        },
+        "holographic_dendrite": {
+          "name": "HolographicDendrite Neuron (Original)",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 4,
+          "n_organelles": 3,
+          "mean_test_mse": 0.87602,
+          "std_test_mse": 0.03436,
+          "delta_vs_rate_baseline": -0.01292,
+          "per_task_mse": {
+            "delayed_recall_4": 0.95906,
+            "temporal_xor": 1.03627,
+            "spectral_discrimination": 1.25232,
+            "anomaly_suppression": 0.25642
+          },
+          "mean_flops": 31680,
+          "mean_energy": 79.4612,
+          "mean_wall_ms": 116.748,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.82459,
+            "no_feedback": 0.83661,
+            "point_control": 0.82222
+          }
+        },
+        "liquid_cfc": {
+          "name": "LiquidCfC Dendritic Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 6,
+          "n_organelles": 2,
+          "mean_test_mse": 0.89888,
+          "std_test_mse": 0.05598,
+          "delta_vs_rate_baseline": -0.03579,
+          "per_task_mse": {
+            "delayed_recall_4": 0.95539,
+            "temporal_xor": 1.08994,
+            "spectral_discrimination": 1.46624,
+            "anomaly_suppression": 0.08398
+          },
+          "mean_flops": 49680,
+          "mean_energy": 105.4646,
+          "mean_wall_ms": 98.173,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.84295,
+            "no_feedback": 0.85742,
+            "point_control": 0.82222
+          }
+        },
+        "kan_synapse": {
+          "name": "KAN-Spline Dendritic Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 6,
+          "n_organelles": 4,
+          "mean_test_mse": 0.8914,
+          "std_test_mse": 0.06384,
+          "delta_vs_rate_baseline": -0.0283,
+          "per_task_mse": {
+            "delayed_recall_4": 0.94425,
+            "temporal_xor": 1.10535,
+            "spectral_discrimination": 1.45088,
+            "anomaly_suppression": 0.0651
+          },
+          "mean_flops": 45360,
+          "mean_energy": 111.3906,
+          "mean_wall_ms": 93.302,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.82666,
+            "no_feedback": 0.82643,
+            "point_control": 0.82222
+          }
+        },
+        "burst_ccn": {
+          "name": "BurstCCN Multiplexed Neuron",
+          "objective_category": "biological_realism",
+          "n_compartments": 6,
+          "n_organelles": 2,
+          "mean_test_mse": 0.82003,
+          "std_test_mse": 0.05341,
+          "delta_vs_rate_baseline": 0.04306,
+          "per_task_mse": {
+            "delayed_recall_4": 0.96711,
+            "temporal_xor": 1.10255,
+            "spectral_discrimination": 1.07547,
+            "anomaly_suppression": 0.13501
+          },
+          "mean_flops": 47520,
+          "mean_energy": 103.5469,
+          "mean_wall_ms": 89.683,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "temporal_xor",
+          "ablations_seed0": {
+            "no_organelles": 0.77841,
+            "no_feedback": 0.7759,
+            "point_control": 0.82222
+          }
+        },
+        "btsp_plateau": {
+          "name": "BTSP Plateau-Potential Neuron",
+          "objective_category": "biological_realism",
+          "n_compartments": 5,
+          "n_organelles": 3,
+          "mean_test_mse": 0.85289,
+          "std_test_mse": 0.05475,
+          "delta_vs_rate_baseline": 0.01021,
+          "per_task_mse": {
+            "delayed_recall_4": 0.94726,
+            "temporal_xor": 1.11717,
+            "spectral_discrimination": 0.99006,
+            "anomaly_suppression": 0.35708
+          },
+          "mean_flops": 39600,
+          "mean_energy": 101.9937,
+          "mean_wall_ms": 127.637,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "temporal_xor",
+          "ablations_seed0": {
+            "no_organelles": 0.80468,
+            "no_feedback": 0.8042,
+            "point_control": 0.82222
+          }
+        },
+        "mamba_selective": {
+          "name": "Mamba-S6 Selective Scan Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 2,
+          "mean_test_mse": 0.89213,
+          "std_test_mse": 0.03199,
+          "delta_vs_rate_baseline": -0.02903,
+          "per_task_mse": {
+            "delayed_recall_4": 0.95759,
+            "temporal_xor": 1.02636,
+            "spectral_discrimination": 1.46095,
+            "anomaly_suppression": 0.12362
+          },
+          "mean_flops": 41760,
+          "mean_energy": 91.9745,
+          "mean_wall_ms": 98.104,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.85143,
+            "no_feedback": 0.8523,
+            "point_control": 0.82222
+          }
+        },
+        "hodge_simplicial": {
+          "name": "Hodge-Simplicial Cycle Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 7,
+          "n_organelles": 1,
+          "mean_test_mse": 0.90167,
+          "std_test_mse": 0.03322,
+          "delta_vs_rate_baseline": -0.03858,
+          "per_task_mse": {
+            "delayed_recall_4": 0.96385,
+            "temporal_xor": 1.05861,
+            "spectral_discrimination": 1.35496,
+            "anomaly_suppression": 0.22927
+          },
+          "mean_flops": 66240,
+          "mean_energy": 108.4686,
+          "mean_wall_ms": 76.973,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.88559,
+            "no_feedback": 0.8693,
+            "point_control": 0.82222
+          }
+        },
+        "efference_twin": {
+          "name": "EfferenceTwin Comparator Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 6,
+          "n_organelles": 2,
+          "mean_test_mse": 0.88303,
+          "std_test_mse": 0.02805,
+          "delta_vs_rate_baseline": -0.01994,
+          "per_task_mse": {
+            "delayed_recall_4": 0.955,
+            "temporal_xor": 1.02616,
+            "spectral_discrimination": 1.38525,
+            "anomaly_suppression": 0.16571
+          },
+          "mean_flops": 49680,
+          "mean_energy": 102.0899,
+          "mean_wall_ms": 100.142,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.84594,
+            "no_feedback": 0.84511,
+            "point_control": 0.82222
+          }
+        },
+        "crosswire_transducer": {
+          "name": "Crosswire Mealy Safety Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 5,
+          "n_organelles": 2,
+          "mean_test_mse": 0.88682,
+          "std_test_mse": 0.06762,
+          "delta_vs_rate_baseline": -0.02372,
+          "per_task_mse": {
+            "delayed_recall_4": 0.93574,
+            "temporal_xor": 1.12823,
+            "spectral_discrimination": 1.45755,
+            "anomaly_suppression": 0.02577
+          },
+          "mean_flops": 39600,
+          "mean_energy": 86.8458,
+          "mean_wall_ms": 116.447,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.83598,
+            "no_feedback": 0.83507,
+            "point_control": 0.82222
+          }
+        },
+        "tether_reliability": {
+          "name": "Tether Dark-Knowledge Reliability Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 6,
+          "n_organelles": 2,
+          "mean_test_mse": 0.88699,
+          "std_test_mse": 0.05264,
+          "delta_vs_rate_baseline": -0.02389,
+          "per_task_mse": {
+            "delayed_recall_4": 0.93353,
+            "temporal_xor": 1.08924,
+            "spectral_discrimination": 1.41633,
+            "anomaly_suppression": 0.10886
+          },
+          "mean_flops": 51840,
+          "mean_energy": 100.332,
+          "mean_wall_ms": 111.311,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.83521,
+            "no_feedback": 0.8546,
+            "point_control": 0.82222
+          }
+        },
+        "hyperbolic_poincare": {
+          "name": "Hyperbolic Poincare Hierarchy Neuron",
+          "objective_category": "computational_usefulness",
+          "n_compartments": 4,
+          "n_organelles": 2,
+          "mean_test_mse": 0.8024,
+          "std_test_mse": 0.05072,
+          "delta_vs_rate_baseline": 0.0607,
+          "per_task_mse": {
+            "delayed_recall_4": 0.9333,
+            "temporal_xor": 1.12933,
+            "spectral_discrimination": 0.96996,
+            "anomaly_suppression": 0.17701
+          },
+          "mean_flops": 29520,
+          "mean_energy": 73.3552,
+          "mean_wall_ms": 86.719,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "temporal_xor",
+          "ablations_seed0": {
+            "no_organelles": 0.80784,
+            "no_feedback": 0.74969,
+            "point_control": 0.82222
+          }
+        },
+        "astrocytic_tripartite": {
+          "name": "Astrocytic Tripartite Neuron",
+          "objective_category": "biological_realism",
+          "n_compartments": 4,
+          "n_organelles": 2,
+          "mean_test_mse": 0.90653,
+          "std_test_mse": 0.03131,
+          "delta_vs_rate_baseline": -0.04343,
+          "per_task_mse": {
+            "delayed_recall_4": 0.97247,
+            "temporal_xor": 1.02338,
+            "spectral_discrimination": 1.49904,
+            "anomaly_suppression": 0.13123
+          },
+          "mean_flops": 33840,
+          "mean_energy": 77.4147,
+          "mean_wall_ms": 95.64,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.86584,
+            "no_feedback": 0.86478,
+            "point_control": 0.82222
+          }
+        },
+        "soliton_arbiter": {
+          "name": "SolitonArbiter Multi-Organelle Neuron (Original v2)",
+          "objective_category": "speculative_synthetic_biology",
+          "n_compartments": 5,
+          "n_organelles": 3,
+          "mean_test_mse": 0.90233,
+          "std_test_mse": 0.03096,
+          "delta_vs_rate_baseline": -0.03924,
+          "per_task_mse": {
+            "delayed_recall_4": 0.9684,
+            "temporal_xor": 1.02923,
+            "spectral_discrimination": 1.45326,
+            "anomaly_suppression": 0.15845
+          },
+          "mean_flops": 41760,
+          "mean_energy": 104.4948,
+          "mean_wall_ms": 110.53,
+          "strongest_task": "anomaly_suppression",
+          "weakest_task": "spectral_discrimination",
+          "ablations_seed0": {
+            "no_organelles": 0.86259,
+            "no_feedback": 0.86139,
+            "point_control": 0.82222
+          }
+        }
+      }
+    },
+    "gated_organelle_interactions": [
+      {
+        "org_a": "mnemosome",
+        "org_b": "chronosome",
+        "mse_baseline": 0.22922,
+        "mse_a": 0.080717,
+        "mse_b": 0.098955,
+        "mse_ab": 0.16831,
+        "synergy_delta_mse": -0.087593,
+        "interaction_label": "interfering",
+        "combined_resource_cost": 0.75,
+        "mse_gated_ab": 0.063048,
+        "gated_synergy_delta_mse": 0.017669,
+        "interference_resolved_gain": 0.105262,
+        "gated_interaction_label": "synergistic"
+      },
+      {
+        "org_a": "predicton",
+        "org_b": "contraston",
+        "mse_baseline": 0.22922,
+        "mse_a": 0.207685,
+        "mse_b": 0.177446,
+        "mse_ab": 0.136271,
+        "synergy_delta_mse": 0.041175,
+        "interaction_label": "synergistic",
+        "combined_resource_cost": 0.5,
+        "mse_gated_ab": 0.098664,
+        "gated_synergy_delta_mse": 0.078782,
+        "interference_resolved_gain": 0.037607,
+        "gated_interaction_label": "synergistic"
+      },
+      {
+        "org_a": "efferentosome",
+        "org_b": "crosswirosome",
+        "mse_baseline": 0.22922,
+        "mse_a": 0.176775,
+        "mse_b": 0.253122,
+        "mse_ab": 0.193454,
+        "synergy_delta_mse": -0.016679,
+        "interaction_label": "interfering",
+        "combined_resource_cost": 0.54,
+        "mse_gated_ab": 0.160845,
+        "gated_synergy_delta_mse": 0.01593,
+        "interference_resolved_gain": 0.032609,
+        "gated_interaction_label": "synergistic"
+      },
+      {
+        "org_a": "criticalosome",
+        "org_b": "glymphatosome",
+        "mse_baseline": 0.22922,
+        "mse_a": 0.372129,
+        "mse_b": 0.257681,
+        "mse_ab": 0.380517,
+        "synergy_delta_mse": -0.122836,
+        "interaction_label": "interfering",
+        "combined_resource_cost": 0.38,
+        "mse_gated_ab": 0.265916,
+        "gated_synergy_delta_mse": -0.008235,
+        "interference_resolved_gain": 0.114601,
+        "gated_interaction_label": "interfering"
+      }
+    ],
+    "heterogeneous_vs_homogeneous": {
+      "experiment": "heterogeneous_vs_homogeneous_conventional_populations",
+      "n_neurons": 16,
+      "seeds": [
+        7,
+        11,
+        19
+      ],
+      "steps": 90,
+      "arms": {
+        "homogeneous_rate": {
+          "mean_test_mse": 0.268589,
+          "std_test_mse": 0.074671,
+          "mean_energy": 54.2246,
+          "per_seed_mse": [
+            0.192488,
+            0.243236,
+            0.370043
+          ]
+        },
+        "homogeneous_lif": {
+          "mean_test_mse": 0.328299,
+          "std_test_mse": 0.046741,
+          "mean_energy": 112.4205,
+          "per_seed_mse": [
+            0.268678,
+            0.38283,
+            0.333388
+          ]
+        },
+        "heterogeneous_mixed": {
+          "mean_test_mse": 0.307092,
+          "std_test_mse": 0.026504,
+          "mean_energy": 161.2426,
+          "per_seed_mse": [
+            0.312283,
+            0.336645,
+            0.272349
+          ]
+        }
+      },
+      "lowest_mse_arm": "homogeneous_rate"
+    },
+    "bio_hybrid_core_assays": {
+      "objective_category": "speculative_synthetic_biology",
+      "registered_hybrids": [
+        "cardiac_pacemaker",
+        "immune_recognition",
+        "endocrine_signalling",
+        "astrocytic_regulation",
+        "cochlear_mechanics",
+        "retinal_processing",
+        "muscle_adaptation",
+        "vascular_resource_distribution",
+        "cellular_repair",
+        "developmental_differentiation",
+        "chemical_gradient_sensing",
+        "intracellular_signalling_cascade"
+      ],
+      "cardiac_pacemaker_assay": {
+        "steps": 120,
+        "beat_steps": 77,
+        "v_min": -1.5725,
+        "v_max": 1.9497,
+        "oscillatory": true
+      },
+      "immune_recognition_assay": {
+        "accuracy": 1.0,
+        "tp": 30,
+        "fp": 0,
+        "tn": 30,
+        "fn": 0,
+        "memory_cells_formed": 1
+      }
+    },
+    "all_16_bio_hybrids_smoke": {
+      "cardiac_pacemaker": {
+        "output": [
+          -0.37220000000000003,
+          -0.37220000000000003,
+          -0.37220000000000003,
+          -0.37220000000000003,
+          -0.37220000000000003,
+          -0.37220000000000003,
+          -0.37220000000000003,
+          -0.37220000000000003
+        ],
+        "pacemaker_v": -0.7444,
+        "beat": 0.0,
+        "phase": -2.5535
+      },
+      "immune_recognition": {
+        "output": [
+          0.6,
+          -0.3,
+          0.8,
+          0.2,
+          -0.5,
+          0.4
+        ],
+        "anomaly_score": 0.0,
+        "flagged_abnormal": false,
+        "memory_cells": 0
+      },
+      "endocrine_signalling": {
+        "output": [
+          0.5425675249530287,
+          -0.2948717011959791,
+          0.669801396107662,
+          0.1998686249663335,
+          -0.4672053007571143,
+          0.3843821563326475
+        ],
+        "hormones": [
+          0.2067,
+          0.2099,
+          0.2
+        ],
+        "gain": 1.013
+      },
+      "astrocytic_regulation": {
+        "output": [
+          0.6,
+          -0.3,
+          0.8,
+          0.2,
+          -0.5,
+          0.4
+        ],
+        "ca2": 0.162,
+        "clearance_gain": 1.0
+      },
+      "cochlear_mechanics": {
+        "output": [
+          0.03000000000000001,
+          0.03000000000000001,
+          0.03000000000000001,
+          0.03000000000000001,
+          0.03000000000000001,
+          0.03000000000000001,
+          0.03000000000000001,
+          0.03000000000000001
+        ],
+        "dominant_band": 0
+      },
+      "retinal_processing": {
+        "output": [
+          0.6612322061319625,
+          -0.6381224136957159,
+          0.6818161045714362,
+          0.10214253861468392,
+          -0.6011844863026631,
+          0.35180305545188145,
+          0.5135209012396211,
+          -0.5979820004989412
+        ],
+        "contrast_energy": 0.41523
+      },
+      "muscle_adaptation": {
+        "output": [
+          0.21491479327414637,
+          -0.11657655778989619,
+          0.2657321297292261,
+          0.07898502996783698,
+          -0.1849285790809222,
+          0.15204677127708557,
+          0.21491479327414637,
+          -0.11657655778989619
+        ],
+        "strength": 1.004,
+        "fatigue": 0.0051
+      },
+      "vascular_resource_distribution": {
+        "output": [
+          0.6289756097560976,
+          -0.2828780487804878,
+          0.894829268292683,
+          0.1815609756097561,
+          -0.5065853658536585,
+          0.39121951219512197,
+          0.6289756097560976,
+          -0.2828780487804878
+        ],
+        "flow_entropy": 2.0773
+      },
+      "cellular_repair": {
+        "output": [
+          0.6,
+          -0.3,
+          0.8,
+          0.2,
+          -0.5,
+          0.4,
+          0.6,
+          -0.3
+        ],
+        "repair_count": 0
+      },
+      "developmental_differentiation": {
+        "output": [
+          -0.11715909622823045,
+          -0.11584802166496411,
+          -0.033041279332575224,
+          -0.014634385895165136,
+          -0.0012639164764082222,
+          0.08846855833642087,
+          0.12281228027946361,
+          0.12389726288707287
+        ],
+        "polarization": 0.0771
+      },
+      "chemical_gradient_sensing": {
+        "output": [
+          0.5370495669980352,
+          -0.2913126124515909,
+          0.664036770267849,
+          0.197375320224904,
+          -0.46211715726000974,
+          0.3799489622552249,
+          0.5370495669980352,
+          -0.2913126124515909
+        ],
+        "mean_gradient": 0.15884
+      },
+      "intracellular_signalling_cascade": {
+        "output": [
+          5.8986350002030566e-05,
+          -3.731261389734961e-07,
+          0.00014220803588385966,
+          1.2872773907971052e-09,
+          -2.5214091319283755e-05,
+          5.826724292764088e-06,
+          5.8986350002030566e-05,
+          -3.731261389734961e-07
+        ],
+        "cascade_gain": 0.0
+      },
+      "mycelial_nutrient_network": {
+        "output": [
+          0.5630165874095433,
+          -0.28885276763314155,
+          0.7013748790255073,
+          0.18847538465792987,
+          -0.4792499233993588,
+          0.38705550617712775,
+          0.5630165874095433,
+          -0.28885276763314155
+        ],
+        "mean_conductance": 1.0265
+      },
+      "quorum_sensing_collective": {
+        "output": [
+          0.26362483547220333,
+          -0.13418580993090867,
+          0.34521403413552093,
+          0.08975778474716012,
+          -0.22127846789844396,
+          0.1780808681173302,
+          0.26362483547220333,
+          -0.13418580993090867
+        ],
+        "autoinducer": 0.2225,
+        "quorum_active": false
+      },
+      "epigenetic_chromatin_memory": {
+        "output": [
+          0.3072,
+          -0.14865,
+          0.41280000000000006,
+          0.1008,
+          -0.24625,
+          0.20320000000000002,
+          0.3072,
+          -0.14865
+        ],
+        "mean_accessibility": 0.5044
+      },
+      "circadian_kaiabc_clock": {
+        "output": [
+          0.42937098596588447,
+          -0.21468549298294223,
+          0.5724946479545127,
+          0.14312366198862816,
+          -0.3578091549715704,
+          0.28624732397725633,
+          0.42937098596588447,
+          -0.21468549298294223
+        ],
+        "circadian_gate": 0.7156
+      }
+    },
+    "all_18_ml_hybrids_three_variants": {
+      "experiment": "ml_hybrid_three_variant_comparison",
+      "dim": 8,
+      "steps": 80,
+      "seed": 7,
+      "mechanisms": {
+        "dendritic_attention": {
+          "exact_software": {
+            "clean_test_mse": 0.42474,
+            "noisy_test_mse": 0.423017,
+            "noise_degradation": -0.001724,
+            "wall_ms": 15.7,
+            "flops": 30720,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.341719,
+            "noisy_test_mse": 0.352076,
+            "noise_degradation": 0.010357,
+            "wall_ms": 1.896,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 1.5099
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.48081,
+            "noisy_test_mse": 0.511333,
+            "noise_degradation": 0.030522,
+            "wall_ms": 2.138,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 1.61432
+          }
+        },
+        "moe_branch_specialisation": {
+          "exact_software": {
+            "clean_test_mse": 0.412806,
+            "noisy_test_mse": 0.425461,
+            "noise_degradation": 0.012655,
+            "wall_ms": 14.761,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.450765,
+            "noisy_test_mse": 0.458423,
+            "noise_degradation": 0.007658,
+            "wall_ms": 13.935,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.86827
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.413526,
+            "noisy_test_mse": 0.431532,
+            "noise_degradation": 0.018005,
+            "wall_ms": 8.291,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 1.02964
+          }
+        },
+        "state_space_compartment": {
+          "exact_software": {
+            "clean_test_mse": 0.410284,
+            "noisy_test_mse": 0.411397,
+            "noise_degradation": 0.001113,
+            "wall_ms": 4.951,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.451412,
+            "noisy_test_mse": 0.464705,
+            "noise_degradation": 0.013293,
+            "wall_ms": 5.501,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 2.34235
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.400306,
+            "noisy_test_mse": 0.403235,
+            "noise_degradation": 0.002929,
+            "wall_ms": 3.124,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 2.07541
+          }
+        },
+        "reservoir_organelle": {
+          "exact_software": {
+            "clean_test_mse": 0.473201,
+            "noisy_test_mse": 0.494167,
+            "noise_degradation": 0.020966,
+            "wall_ms": 1.982,
+            "flops": 10240,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.473201,
+            "noisy_test_mse": 0.494167,
+            "noise_degradation": 0.020966,
+            "wall_ms": 7.149,
+            "flops": 10240,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.454706,
+            "noisy_test_mse": 0.472823,
+            "noise_degradation": 0.018118,
+            "wall_ms": 1.764,
+            "flops": 10240,
+            "relative_approx_error_vs_exact": 0.2713
+          }
+        },
+        "fast_weight_memory": {
+          "exact_software": {
+            "clean_test_mse": 0.369944,
+            "noisy_test_mse": 0.37363,
+            "noise_degradation": 0.003686,
+            "wall_ms": 2.066,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.384148,
+            "noisy_test_mse": 0.388073,
+            "noise_degradation": 0.003925,
+            "wall_ms": 2.381,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.30074
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.413055,
+            "noisy_test_mse": 0.414008,
+            "noise_degradation": 0.000953,
+            "wall_ms": 3.279,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 1.08135
+          }
+        },
+        "recurrent_gating": {
+          "exact_software": {
+            "clean_test_mse": 0.42997,
+            "noisy_test_mse": 0.414927,
+            "noise_degradation": -0.015043,
+            "wall_ms": 2.579,
+            "flops": 30720,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.46619,
+            "noisy_test_mse": 0.485535,
+            "noise_degradation": 0.019345,
+            "wall_ms": 4.477,
+            "flops": 30720,
+            "relative_approx_error_vs_exact": 1.47502
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.407141,
+            "noisy_test_mse": 0.40143,
+            "noise_degradation": -0.00571,
+            "wall_ms": 3.574,
+            "flops": 30720,
+            "relative_approx_error_vs_exact": 1.60792
+          }
+        },
+        "memristive_synapse": {
+          "exact_software": {
+            "clean_test_mse": 0.373904,
+            "noisy_test_mse": 0.396218,
+            "noise_degradation": 0.022314,
+            "wall_ms": 1.998,
+            "flops": 3840,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.373904,
+            "noisy_test_mse": 0.396218,
+            "noise_degradation": 0.022314,
+            "wall_ms": 2.109,
+            "flops": 3840,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.373904,
+            "noisy_test_mse": 0.396218,
+            "noise_degradation": 0.022314,
+            "wall_ms": 2.114,
+            "flops": 3840,
+            "relative_approx_error_vs_exact": 0.0
+          }
+        },
+        "error_correcting_pathway": {
+          "exact_software": {
+            "clean_test_mse": 0.341671,
+            "noisy_test_mse": 0.386042,
+            "noise_degradation": 0.044371,
+            "wall_ms": 4.498,
+            "flops": 15360,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.341671,
+            "noisy_test_mse": 0.386042,
+            "noise_degradation": 0.044371,
+            "wall_ms": 4.293,
+            "flops": 15360,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.341671,
+            "noisy_test_mse": 0.386042,
+            "noise_degradation": 0.044371,
+            "wall_ms": 4.293,
+            "flops": 15360,
+            "relative_approx_error_vs_exact": 0.0
+          }
+        },
+        "wave_photonic_abstraction": {
+          "exact_software": {
+            "clean_test_mse": 0.421008,
+            "noisy_test_mse": 0.396124,
+            "noise_degradation": -0.024885,
+            "wall_ms": 6.234,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.421008,
+            "noisy_test_mse": 0.396124,
+            "noise_degradation": -0.024885,
+            "wall_ms": 2.592,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.421008,
+            "noisy_test_mse": 0.396124,
+            "noise_degradation": -0.024885,
+            "wall_ms": 2.349,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 0.0
+          }
+        },
+        "local_predictive_coding": {
+          "exact_software": {
+            "clean_test_mse": 0.360096,
+            "noisy_test_mse": 0.382531,
+            "noise_degradation": 0.022435,
+            "wall_ms": 2.976,
+            "flops": 15360,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.380114,
+            "noisy_test_mse": 0.385944,
+            "noise_degradation": 0.00583,
+            "wall_ms": 1.605,
+            "flops": 15360,
+            "relative_approx_error_vs_exact": 1.10267
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.380114,
+            "noisy_test_mse": 0.385944,
+            "noise_degradation": 0.00583,
+            "wall_ms": 1.593,
+            "flops": 15360,
+            "relative_approx_error_vs_exact": 1.10267
+          }
+        },
+        "differentiable_routing": {
+          "exact_software": {
+            "clean_test_mse": 0.409008,
+            "noisy_test_mse": 0.40727,
+            "noise_degradation": -0.001738,
+            "wall_ms": 2.287,
+            "flops": 15360,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.409008,
+            "noisy_test_mse": 0.40727,
+            "noise_degradation": -0.001738,
+            "wall_ms": 2.405,
+            "flops": 15360,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.409008,
+            "noisy_test_mse": 0.40727,
+            "noise_degradation": -0.001738,
+            "wall_ms": 2.239,
+            "flops": 15360,
+            "relative_approx_error_vs_exact": 0.0
+          }
+        },
+        "associative_hopfield_memory": {
+          "exact_software": {
+            "clean_test_mse": 0.390604,
+            "noisy_test_mse": 0.438915,
+            "noise_degradation": 0.048311,
+            "wall_ms": 2.193,
+            "flops": 7680,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.386205,
+            "noisy_test_mse": 0.432127,
+            "noise_degradation": 0.045921,
+            "wall_ms": 3.704,
+            "flops": 7680,
+            "relative_approx_error_vs_exact": 0.13664
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.380454,
+            "noisy_test_mse": 0.436263,
+            "noise_degradation": 0.055809,
+            "wall_ms": 4.204,
+            "flops": 7680,
+            "relative_approx_error_vs_exact": 0.32828
+          }
+        },
+        "external_ai_adapter": {
+          "exact_software": {
+            "clean_test_mse": 0.362444,
+            "noisy_test_mse": 0.381612,
+            "noise_degradation": 0.019169,
+            "wall_ms": 2.974,
+            "flops": 10240,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.362444,
+            "noisy_test_mse": 0.381612,
+            "noise_degradation": 0.019169,
+            "wall_ms": 2.076,
+            "flops": 10240,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.362444,
+            "noisy_test_mse": 0.381612,
+            "noise_degradation": 0.019169,
+            "wall_ms": 1.98,
+            "flops": 10240,
+            "relative_approx_error_vs_exact": 0.0
+          }
+        },
+        "kan_spline_synapse": {
+          "exact_software": {
+            "clean_test_mse": 0.436075,
+            "noisy_test_mse": 0.456685,
+            "noise_degradation": 0.02061,
+            "wall_ms": 8.068,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.452356,
+            "noisy_test_mse": 0.465589,
+            "noise_degradation": 0.013233,
+            "wall_ms": 2.222,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.54955
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.487647,
+            "noisy_test_mse": 0.515883,
+            "noise_degradation": 0.028236,
+            "wall_ms": 2.346,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 1.63141
+          }
+        },
+        "liquid_cfc_gate": {
+          "exact_software": {
+            "clean_test_mse": 0.464472,
+            "noisy_test_mse": 0.482556,
+            "noise_degradation": 0.018083,
+            "wall_ms": 2.705,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.453494,
+            "noisy_test_mse": 0.464902,
+            "noise_degradation": 0.011409,
+            "wall_ms": 1.992,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.39768
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.420638,
+            "noisy_test_mse": 0.41977,
+            "noise_degradation": -0.000868,
+            "wall_ms": 2.836,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 1.3407
+          }
+        },
+        "hyperbolic_lorentz_projection": {
+          "exact_software": {
+            "clean_test_mse": 0.381629,
+            "noisy_test_mse": 0.401978,
+            "noise_degradation": 0.020349,
+            "wall_ms": 3.073,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.398538,
+            "noisy_test_mse": 0.416743,
+            "noise_degradation": 0.018205,
+            "wall_ms": 2.988,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 0.1181
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.396294,
+            "noisy_test_mse": 0.398428,
+            "noise_degradation": 0.002135,
+            "wall_ms": 5.368,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 1.54347
+          }
+        },
+        "simplicial_hodge_attention": {
+          "exact_software": {
+            "clean_test_mse": 0.402395,
+            "noisy_test_mse": 0.407306,
+            "noise_degradation": 0.004911,
+            "wall_ms": 10.957,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.369224,
+            "noisy_test_mse": 0.375145,
+            "noise_degradation": 0.005922,
+            "wall_ms": 3.639,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 0.47
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.383001,
+            "noisy_test_mse": 0.387529,
+            "noise_degradation": 0.004528,
+            "wall_ms": 3.577,
+            "flops": 20480,
+            "relative_approx_error_vs_exact": 1.43204
+          }
+        },
+        "tether_dark_knowledge_gate": {
+          "exact_software": {
+            "clean_test_mse": 0.480398,
+            "noisy_test_mse": 0.499939,
+            "noise_degradation": 0.019541,
+            "wall_ms": 14.784,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.0
+          },
+          "cellular_compartment": {
+            "clean_test_mse": 0.498056,
+            "noisy_test_mse": 0.505421,
+            "noise_degradation": 0.007365,
+            "wall_ms": 10.379,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.66246
+          },
+          "biologically_constrained": {
+            "clean_test_mse": 0.487942,
+            "noisy_test_mse": 0.497061,
+            "noise_degradation": 0.009119,
+            "wall_ms": 7.479,
+            "flops": 25600,
+            "relative_approx_error_vs_exact": 0.31963
+          }
+        }
+      }
+    }
+  },
+  "sha256_digest": "c5dd6392c7d950e8ca78b0368735b15b600052273372352f73077333af2c2b05"
+}

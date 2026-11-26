@@ -17,6 +17,7 @@ from ..core.compartment_engine import StructuredNeuronInstance
 from ..core.interchange import NeuronMorphologySpec
 from .conventional_neurons import build_conventional_neuron
 from .graft_neurons import (
+    ALL_GRAFT_NEURON_FAMILIES,
     GRAFT_NEURON_FAMILIES,
     build_ablation_variants,
     build_graft_neuron,
@@ -78,7 +79,7 @@ def evaluate_single_neuron_spec(
         steps = X.shape[0]
         feats = np.zeros((steps, inst.n_comp + 1), dtype=np.float64)
         for k in range(steps):
-            res = inst.step(X[k], adapt=False)
+            res = inst.step(X[k], adapt=False, collect_telemetry=False)
             feats[k, : inst.n_comp] = inst.state
             feats[k, inst.n_comp] = res["scalar_output"]
         split = int(0.6 * steps)
@@ -115,9 +116,11 @@ def run_foundry_benchmark_suite(
     seeds: Sequence[int] = (7, 19),
     steps: int = 90,
     include_ablations: bool = True,
+    include_extended: bool = False,
 ) -> Dict[str, Any]:
     """Run controlled multi-seed cellular benchmark across graft neurons & conventional baselines."""
-    target_families = list(families) if families is not None else list(GRAFT_NEURON_FAMILIES)
+    default_fams = ALL_GRAFT_NEURON_FAMILIES if include_extended else GRAFT_NEURON_FAMILIES
+    target_families = list(families) if families is not None else list(default_fams)
     baselines = ["recurrent_rate", "lif_reference", "adaptive_pyramidal"]
 
     agg: Dict[str, List[Dict[str, Any]]] = {}

@@ -12,6 +12,7 @@ from .negative_distillation import (
     compute_negative_objective,
     localize_causal_failure_channels,
     run_antipode_six_way_study,
+    run_sparse_label_verifier_antipode_study,
 )
 
 __all__ = [
@@ -24,6 +25,7 @@ __all__ = [
     "localize_causal_failure_channels",
     "compute_negative_objective",
     "run_antipode_six_way_study",
+    "run_sparse_label_verifier_antipode_study",
     "AdvisorSessionConfig",
     "AdvisorRecommendation",
     "ExternalAIAssistedTrainer",

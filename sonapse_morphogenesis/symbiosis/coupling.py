@@ -74,6 +74,14 @@ class SymbioticBridge:
             raw = raw * (self.max_norm / nrm)
         return raw * float(gain)
 
+    def project_dev_to_host(self, dev_r: np.ndarray, gain: float = 0.08) -> np.ndarray:
+        d = np.resize(np.asarray(dev_r, dtype=np.float64).ravel(), self.dev_dim)
+        raw = self.W_dev_to_host @ d
+        nrm = float(np.linalg.norm(raw))
+        if nrm > self.max_norm:
+            raw = raw * (self.max_norm / nrm)
+        return raw * float(gain)
+
     def adapt(self, host_r: np.ndarray, dev_r: np.ndarray, reward: float, lr: float = 0.03) -> None:
         h = np.resize(np.asarray(host_r, dtype=np.float64).ravel(), self.host_dim)
         d = np.resize(np.asarray(dev_r, dtype=np.float64).ravel(), self.dev_dim)
@@ -169,27 +177,55 @@ class SymbiosisSession:
             host_obs = np.asarray(self.host_runtime.obs, dtype=np.float64).ravel()
             host_mods = self.host_runtime.agent.neuromod.state
 
-            # Construct coupling input according to active mechanism
+            # Construct distinct coupling input according to each of the 11 active mechanisms
             ext = np.zeros(self.dev_dim, dtype=np.float64)
             mods: Dict[str, float] = {}
-            if coupling in ("shared_sensory_env", "cooperative_task", "competitive_evaluation"):
-                ext[: min(8, self.dev_dim)] = np.tanh(host_obs[: min(8, self.dev_dim)])
-            if coupling in ("learned_neural_adapters", "bounded_activation_exchange", "temporary_neural_grafting", "adaptive_bridge_formation"):
+            m_min = min(8, self.dev_dim)
+            if coupling == "shared_sensory_env":
+                ext[:m_min] = np.tanh(host_obs[:m_min])
+            elif coupling == "cooperative_task":
+                ext[:m_min] = 0.65 * np.tanh(host_obs[:m_min]) + 0.35 * np.resize(host_act, m_min)
+            elif coupling == "competitive_evaluation":
+                ext[:m_min] = np.tanh(host_obs[:m_min]) - 0.30 * np.tanh(host_r[:m_min])
+            elif coupling == "learned_neural_adapters":
                 ext += self.bridge.project_host_to_dev(host_r, gain=0.45)
-            if coupling == "shared_chemical_fields":
+            elif coupling == "bounded_activation_exchange":
+                ext += np.clip(self.bridge.project_host_to_dev(host_r, gain=0.35), -0.25, 0.25)
+            elif coupling == "temporary_neural_grafting":
+                ext[: min(self.host_dim, self.dev_dim)] += 0.30 * host_r[: min(self.host_dim, self.dev_dim)]
+            elif coupling == "adaptive_bridge_formation":
+                ramp = min(1.0, (k + 1) / max(steps * 0.5, 1.0))
+                ext += self.bridge.project_host_to_dev(host_r, gain=0.50 * ramp)
+            elif coupling == "shared_chemical_fields":
                 mods = {"da": float(host_mods.dopamine), "serotonin": float(host_mods.serotonin), "ach": float(host_mods.acetylcholine)}
                 ext[:4] = np.tanh(host_obs[:4])
-            if coupling in ("behavioral_observation", "predictive_assistance"):
+            elif coupling == "behavioral_observation":
                 ext[: min(5, self.dev_dim)] += host_act[: min(5, self.dev_dim)]
-            if coupling == "episodic_experience_exchange":
-                self.episodic_exchange_buffer.append({"step": k, "obs_norm": float(np.linalg.norm(host_obs)), "action": host_act.tolist()})
-                ext[:4] = np.tanh(host_obs[:4])
+            elif coupling == "predictive_assistance":
+                # Anticipatory 1-step action delta guidance
+                prev_h = host_actions[k - 1] if k > 0 else np.zeros(5)
+                ext[: min(5, self.dev_dim)] += (host_act + 0.5 * (host_act - prev_h))[: min(5, self.dev_dim)]
+            elif coupling == "episodic_experience_exchange":
+                self.episodic_exchange_buffer.append({"step": k, "obs_head": host_obs[:4].copy(), "action": host_act.copy()})
+                if len(self.episodic_exchange_buffer) >= 2:
+                    recalled = self.episodic_exchange_buffer[k % len(self.episodic_exchange_buffer)]
+                    ext[:4] = 0.6 * np.tanh(host_obs[:4]) + 0.4 * np.tanh(recalled["obs_head"])
+                else:
+                    ext[:4] = np.tanh(host_obs[:4])
 
-            dev_out = self.dev_connectome.step(ext, modulators=mods, reward_signal=0.15, adapt=True)
+            dev_out = self.dev_connectome.step(ext, modulators=mods, reward_signal=0.15, adapt=True, collect_telemetry=False)
             dev_r = dev_out["outputs"]
             dev_states[k] = dev_r
             host_states[k] = host_r
             host_actions[k] = host_act
+
+            # When host_frozen=False (mutually adaptive symbiosis), inject bounded reverse current into host brain
+            if not host_frozen:
+                rev_vec = self.bridge.project_dev_to_host(dev_r, gain=0.04)
+                import torch
+                with torch.no_grad():
+                    self.host_runtime.agent.brain.r[: self.host_dim].add_(torch.as_tensor(rev_vec, dtype=self.host_runtime.agent.brain.r.dtype))
+                    self.host_runtime.agent.brain.r.clamp_(-3.0, 3.0)
 
             if coupling in ("learned_neural_adapters", "adaptive_bridge_formation", "bounded_activation_exchange"):
                 self.bridge.adapt(host_r, dev_r, reward=0.25)
@@ -263,4 +299,53 @@ def run_symbiosis_cycle_experiment(
         "seed": seed,
         "all_supported_couplings": list(COUPLING_MECHANISMS),
         "tested_couplings": results,
+    }
+
+
+def run_long_horizon_mutual_symbiosis(
+    alternating_cycles: int = 6,
+    steps_per_phase: int = 36,
+    seed: int = 7,
+) -> Dict[str, Any]:
+    """Resolves Open Question #3: Long-horizon alternating native/symbiotic curriculum
+    comparing a bit-preserved frozen Sonapse-LAB host vs a mutually co-adapting host.
+    """
+    arms: Dict[str, Any] = {}
+    for arm_name, frozen in (("frozen_host_control", True), ("mutually_adaptive_host", False)):
+        sess = SymbiosisSession(seed=seed)
+        init_native = sess.train_native_phase(steps=steps_per_phase, seed_offset=0)
+        sess.retention.archive_snapshot("cycle0_anchor", sess.dev_readout[0])
+        trajectory: List[Dict[str, Any]] = []
+        for cyc in range(alternating_cycles):
+            sym = sess.run_symbiotic_phase(coupling="adaptive_bridge_formation", steps=steps_per_phase, host_frozen=frozen)
+            nat = sess.train_native_phase(steps=steps_per_phase, seed_offset=cyc + 10)
+            trajectory.append({
+                "cycle": cyc,
+                "host_dev_corr": sym["mean_host_dev_corr"],
+                "motor_alignment_mse": sym["motor_alignment_mse"],
+                "native_mse": nat["native_mse"],
+                "effective_rank": nat["effective_rank"],
+                "host_weights_bit_preserved": sym["host_weights_bit_preserved"],
+            })
+        final_ret = sess.retention.audit_retention(
+            pre_score=-init_native["native_mse"],
+            post_exposure_score=-trajectory[-1]["native_mse"],
+            post_consolidation_score=-trajectory[-1]["native_mse"],
+            snapshot_label="cycle0_anchor",
+        )
+        arms[arm_name] = {
+            "host_frozen": frozen,
+            "total_steps_executed": steps_per_phase * (1 + 2 * alternating_cycles),
+            "initial_native_mse": init_native["native_mse"],
+            "final_native_mse": trajectory[-1]["native_mse"],
+            "final_motor_alignment_mse": trajectory[-1]["motor_alignment_mse"],
+            "final_effective_rank": trajectory[-1]["effective_rank"],
+            "retention_audit": final_ret,
+            "cycle_trajectory": trajectory,
+        }
+    return {
+        "experiment": "long_horizon_mutual_vs_frozen_symbiosis",
+        "alternating_cycles": alternating_cycles,
+        "steps_per_phase": steps_per_phase,
+        "arms": arms,
     }

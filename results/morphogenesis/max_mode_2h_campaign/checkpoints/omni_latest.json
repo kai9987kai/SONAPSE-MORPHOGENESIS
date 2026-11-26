@@ -1,0 +1,20 @@
+{
+  "schema": "omni-morphogenesis-max-v2",
+  "tag": "latest",
+  "saved_at_unix": 1795655364.6112895,
+  "epoch_index": 1883,
+  "total_gamma_ticks": 45192,
+  "total_theta_cycles": 7532,
+  "accepted_evolutions": 962,
+  "rejected_evolutions": 921,
+  "specialist_weights": {
+    "compiled_pan_connectome": 0.18522456898646963,
+    "focal_f1_f5_organelle_core": 0.11688308573798159,
+    "ml_hybrid_18_bank": 0.26288906163653486,
+    "bio_hybrid_16_collective": 0.2787622008138509,
+    "host_sonapse_max_tandem": 0.047503866739055746,
+    "antipode_repulsion_guard": 0.10873721608607716
+  },
+  "npz_file": "omni_latest.npz",
+  "digest": "b5c5c325ee08c91fc5b09f55b4e3c7c5d673ef52ecbc2916da408aad77cbd454"
+}

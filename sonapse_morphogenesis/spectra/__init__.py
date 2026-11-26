@@ -9,8 +9,10 @@ from .mixer import (
     mix_neural_signals,
 )
 from .sensory_library import (
+    ALL_ARTIFICIAL_SENSORY_MODALITIES,
     ARTIFICIAL_SENSORY_MODALITIES,
     BIO_SENSORY_MODALITIES,
+    EXTENDED_ARTIFICIAL_SENSORY_MODALITIES,
     ExpandedSensoryEncoder,
     benchmark_artificial_vs_raw_encoding,
 )
@@ -18,6 +20,8 @@ from .sensory_library import (
 __all__ = [
     "BIO_SENSORY_MODALITIES",
     "ARTIFICIAL_SENSORY_MODALITIES",
+    "EXTENDED_ARTIFICIAL_SENSORY_MODALITIES",
+    "ALL_ARTIFICIAL_SENSORY_MODALITIES",
     "ExpandedSensoryEncoder",
     "benchmark_artificial_vs_raw_encoding",
     "SIGNAL_ENCODINGS",

@@ -1,0 +1,536 @@
+{
+  "section": "07_spectra_hyperspace_chimera_curiosity_affect",
+  "wallclock_seconds": 106.695,
+  "cpu_seconds": 97.328,
+  "result": {
+    "spectra_artificial_vs_raw": {
+      "experiment": "specialized_artificial_senses_vs_raw_vector_equal_dim16",
+      "seed": 7,
+      "graph_triangle_vs_chain_permutation_invariant": {
+        "topologyception_acc": 1.0,
+        "raw_adjacency_acc": 0.6429,
+        "gain": 0.3571
+      },
+      "reflection_symmetry_detection": {
+        "symmetry_perception_acc": 0.9464,
+        "raw_vector_acc": 0.4643,
+        "gain": 0.4821
+      },
+      "anti_leakage_verified": true
+    },
+    "spectra_internal_perception": {
+      "experiment": "internal_perception_and_source_discrimination",
+      "seed": 7,
+      "conditions": {
+        "prior_evidence_competition": {
+          "condition": "prior_evidence_competition",
+          "steps": 60,
+          "sensory_gain": 1.0,
+          "prior_gain": 0.7,
+          "mean_prediction_error": 1.70142,
+          "mean_internal_activity": 1.223,
+          "source_discrimination_auroc": 1.0,
+          "source_confusion_rate": 0.3333,
+          "recovery_steps": 10,
+          "epistemic_note": "Computational model of top-down prior vs bottom-up evidence dynamics; not subjective hallucination."
+        },
+        "high_gain_ambiguity": {
+          "condition": "high_gain_ambiguity",
+          "steps": 60,
+          "sensory_gain": 1.0,
+          "prior_gain": 0.7,
+          "mean_prediction_error": 1.6109,
+          "mean_internal_activity": 1.4378,
+          "source_discrimination_auroc": 0.995,
+          "source_confusion_rate": 0.75,
+          "recovery_steps": 10,
+          "epistemic_note": "Computational model of top-down prior vs bottom-up evidence dynamics; not subjective hallucination."
+        },
+        "cross_modal_substitution": {
+          "condition": "cross_modal_substitution",
+          "steps": 60,
+          "sensory_gain": 1.0,
+          "prior_gain": 0.7,
+          "mean_prediction_error": 1.81497,
+          "mean_internal_activity": 1.5146,
+          "source_discrimination_auroc": 1.0,
+          "source_confusion_rate": 0.6,
+          "recovery_steps": 10,
+          "epistemic_note": "Computational model of top-down prior vs bottom-up evidence dynamics; not subjective hallucination."
+        },
+        "sensory_deprivation": {
+          "condition": "sensory_deprivation",
+          "steps": 60,
+          "sensory_gain": 1.0,
+          "prior_gain": 0.7,
+          "mean_prediction_error": 1.33242,
+          "mean_internal_activity": 1.33549,
+          "source_discrimination_auroc": null,
+          "source_confusion_rate": 0.7667,
+          "recovery_steps": 10,
+          "epistemic_note": "Computational model of top-down prior vs bottom-up evidence dynamics; not subjective hallucination."
+        },
+        "dream_replay": {
+          "condition": "dream_replay",
+          "steps": 60,
+          "sensory_gain": 1.0,
+          "prior_gain": 0.7,
+          "mean_prediction_error": 1.5458,
+          "mean_internal_activity": 1.47574,
+          "source_discrimination_auroc": null,
+          "source_confusion_rate": 0.7667,
+          "recovery_steps": 10,
+          "epistemic_note": "Computational model of top-down prior vs bottom-up evidence dynamics; not subjective hallucination."
+        }
+      }
+    },
+    "hyperspace_4d": {
+      "experiment": "sonapse_hyperspace_4d_development_and_so4_recognition",
+      "seeds": [
+        7,
+        11,
+        19
+      ],
+      "native_4d_development": {
+        "mean_heldout_return": -25.791,
+        "shortcut_discovery_rate": 0.6667
+      },
+      "transfer_3d_to_4d": {
+        "mean_heldout_return": -29.1012,
+        "shortcut_discovery_rate": 1.0
+      },
+      "so4_rotation_invariant_polytope_recognition_acc": 1.0,
+      "optional_5d_probe_obs_dim": 30
+    },
+    "hyperspace_5d_6d_occluded": {
+      "experiment": "hyperspace_5d_6d_navigation_and_occluded_polytopes",
+      "dimensions": {
+        "5D": {
+          "obs_dim": 30,
+          "mean_heldout_return": -26.6984,
+          "hyperwall_bypass_rate": 0.6667,
+          "occluded_35pct_polytope_acc": 1.0
+        },
+        "6D": {
+          "obs_dim": 36,
+          "mean_heldout_return": -30.2353,
+          "hyperwall_bypass_rate": 0.6667,
+          "occluded_35pct_polytope_acc": 1.0
+        }
+      }
+    },
+    "chimera_5way_fusion": {
+      "experiment": "sonapse_chimera_fusion_comparison",
+      "seed": 7,
+      "all_supported_modes": [
+        "whole_connectome_union",
+        "anatomical_grafting",
+        "partial_circuit_transplantation",
+        "structural_averaging",
+        "synaptic_weight_interpolation",
+        "neural_crossover",
+        "functional_distillation",
+        "signal_level_fusion",
+        "shared_chemical_fields",
+        "developmental_bridge_growth",
+        "compartment_transplantation",
+        "heterogeneous_mosaic",
+        "symbiotic_coupling"
+      ],
+      "alignment_similarity": 0.73866,
+      "test_mse_by_method": {
+        "parent_a": 0.40055,
+        "parent_b": 0.40075,
+        "direct_unaligned_averaging": 0.40055,
+        "aligned_weight_merging": 0.40055,
+        "ensemble_prediction_fusion": 0.40065,
+        "anatomical_grafting": 0.40055,
+        "behavioral_distillation": 0.40061
+      },
+      "best_method": "parent_a",
+      "reversible_rollback_verified": true
+    },
+    "synapse_atlas_symmetry_vs_malecns": {
+      "common_scope_nodes": 16,
+      "bilateral_mirror_overlap": 0.13746,
+      "mean_fingerprint_cosine": 0.19668,
+      "normalized_weight_jsd": 0.8701,
+      "raw_total_weight_a": 15.5705,
+      "raw_total_weight_b": 9.4462
+    },
+    "curiosity_all_12_modalities": {
+      "experiment": "novel_training_modalities_verification",
+      "modalities_verified": 12,
+      "results": {
+        "restricted_python_vm": {
+          "steps": 7,
+          "total_reward": 1.0,
+          "obs_dim": 9,
+          "finite": true
+        },
+        "ast_transformer": {
+          "steps": 12,
+          "total_reward": -3.815,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "symbolic_math_transforms": {
+          "steps": 7,
+          "total_reward": -2.5133,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "propositional_proof_verifier": {
+          "steps": 12,
+          "total_reward": 12.0,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "electronic_rc_rlc_circuit": {
+          "steps": 12,
+          "total_reward": -4.3639,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "mechanical_spring_mass": {
+          "steps": 12,
+          "total_reward": -3.789,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "protein_contact_geometry": {
+          "steps": 12,
+          "total_reward": -1.7672,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "cellular_automata_1d": {
+          "steps": 12,
+          "total_reward": -2.0,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "fractal_terrain_explorer": {
+          "steps": 12,
+          "total_reward": 4.1248,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "fluid_advection_2d": {
+          "steps": 12,
+          "total_reward": -0.0394,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "resource_allocation_market": {
+          "steps": 12,
+          "total_reward": -3.1134,
+          "obs_dim": 8,
+          "finite": true
+        },
+        "packet_network_router": {
+          "steps": 12,
+          "total_reward": -6.7346,
+          "obs_dim": 8,
+          "finite": true
+        }
+      }
+    },
+    "affect_emergent_investigation": {
+      "experiment": "sonapse_affect_emergent_organization",
+      "seed": 7,
+      "epistemic_tier": "emergent_persistent_generalisable_state",
+      "subjective_experience_claimed": false,
+      "ethical_guard_ok": true,
+      "ethical_guard_reason": null,
+      "artifact_check": {
+        "artifacts_detected": [],
+        "valid_for_scientific_analysis": true
+      },
+      "multi_objective_metrics": {
+        "persistence_10steps_post_stimulus": {
+          "resource_context": 0.5967,
+          "hazard_context": 0.9085,
+          "novelty_context": 0.7409
+        },
+        "mean_persistence": 0.7487,
+        "regime_separability_ratio": 9.8737,
+        "causal_intervention_behavior_delta": 0.9733,
+        "monotonic_intensity_scaling": true,
+        "pca_var_explained_top2": [
+          0.4789,
+          0.2223
+        ],
+        "emergence_without_emotion_labels": true
+      },
+      "pca_phase_trajectory_sample": [
+        [
+          -1.121,
+          -0.635,
+          0
+        ],
+        [
+          -1.728,
+          -0.721,
+          0
+        ],
+        [
+          -1.957,
+          -0.727,
+          0
+        ],
+        [
+          -2.009,
+          -0.711,
+          0
+        ],
+        [
+          -1.986,
+          -0.703,
+          0
+        ],
+        [
+          -1.939,
+          -0.705,
+          0
+        ],
+        [
+          -1.89,
+          -0.715,
+          0
+        ],
+        [
+          -1.847,
+          -0.729,
+          0
+        ],
+        [
+          -1.126,
+          -0.476,
+          0
+        ],
+        [
+          -0.405,
+          -0.542,
+          0
+        ],
+        [
+          0.225,
+          -0.698,
+          0
+        ],
+        [
+          0.646,
+          -0.803,
+          0
+        ],
+        [
+          0.899,
+          -0.854,
+          0
+        ],
+        [
+          1.046,
+          -0.874,
+          0
+        ],
+        [
+          1.126,
+          -0.875,
+          0
+        ],
+        [
+          1.161,
+          -0.864,
+          0
+        ],
+        [
+          1.167,
+          -0.845,
+          0
+        ],
+        [
+          1.153,
+          -0.82,
+          0
+        ],
+        [
+          -0.574,
+          -0.093,
+          0
+        ],
+        [
+          -0.205,
+          0.228,
+          0
+        ],
+        [
+          0.233,
+          0.445,
+          0
+        ],
+        [
+          0.6,
+          0.593,
+          0
+        ],
+        [
+          0.861,
+          0.706,
+          0
+        ],
+        [
+          1.023,
+          0.806,
+          0
+        ],
+        [
+          1.102,
+          0.905,
+          0
+        ],
+        [
+          1.095,
+          0.971,
+          0
+        ],
+        [
+          1.133,
+          0.838,
+          0
+        ],
+        [
+          1.24,
+          0.561,
+          0
+        ],
+        [
+          1.312,
+          0.26,
+          0
+        ],
+        [
+          1.275,
+          0.055,
+          0
+        ],
+        [
+          1.172,
+          -0.083,
+          0
+        ],
+        [
+          1.039,
+          -0.174,
+          0
+        ],
+        [
+          0.9,
+          -0.224,
+          0
+        ],
+        [
+          0.77,
+          -0.249,
+          0
+        ],
+        [
+          0.657,
+          -0.262,
+          0
+        ],
+        [
+          -0.779,
+          -0.092,
+          1
+        ],
+        [
+          -0.896,
+          0.556,
+          1
+        ],
+        [
+          -0.867,
+          0.952,
+          1
+        ],
+        [
+          -0.825,
+          1.187,
+          1
+        ],
+        [
+          -0.813,
+          1.327,
+          1
+        ],
+        [
+          -0.816,
+          1.414,
+          1
+        ],
+        [
+          -0.827,
+          1.474,
+          1
+        ],
+        [
+          -0.842,
+          1.522,
+          1
+        ],
+        [
+          -0.986,
+          1.083,
+          1
+        ],
+        [
+          -0.735,
+          0.602,
+          1
+        ],
+        [
+          -0.276,
+          0.142,
+          1
+        ],
+        [
+          0.098,
+          -0.155,
+          1
+        ],
+        [
+          0.355,
+          -0.313,
+          1
+        ],
+        [
+          0.526,
+          -0.39,
+          1
+        ],
+        [
+          0.63,
+          -0.422,
+          1
+        ],
+        [
+          0.684,
+          -0.426,
+          1
+        ],
+        [
+          0.697,
+          -0.416,
+          1
+        ],
+        [
+          0.678,
+          -0.396,
+          1
+        ]
+      ]
+    }
+  },
+  "sha256_digest": "3ddf06250719ec995aa1068e7ba621e2f5cd0ad00b15669e4d0917448a7d741e"
+}

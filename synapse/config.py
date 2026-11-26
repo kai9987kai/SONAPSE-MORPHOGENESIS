@@ -331,6 +331,7 @@ class SynapseConfig:
         from .dsag.config import DSAGSpecV1
         from .frontier.spec import FrontierSpecV1
         from .neuroweave.spec import NeuroWeaveSpecV1
+        from sonapse_morphogenesis.core.bridge import MorphogenesisSpecV1
 
         cfg_dict = dict(
             seed=seed,
@@ -438,6 +439,9 @@ class SynapseConfig:
                 seed=seed, neurons=min(256, max(48, int(total_neurons) // 32))),
             # Read-only frontier observers: strictly trajectory-neutral.
             frontier=FrontierSpecV1.max_preset(seed=seed),
+            # Bounded structured multi-compartment Morphogenesis graft channel.
+            morphogenesis=MorphogenesisSpecV1.max_preset(
+                seed=seed, neurons=min(64, max(16, int(total_neurons) // 128))),
         )
         cfg_dict.update(kwargs)
         return cls(**cfg_dict)
@@ -500,6 +504,15 @@ class SynapseConfig:
         fr_on, fr_off = frontier_audit_entries(self.frontier)
         enabled.extend(fr_on)
         disabled.extend(fr_off)
+        morph = self.morphogenesis
+        if morph is None or not morph.enabled:
+            disabled.append('morphogenesis_v1')
+        else:
+            enabled.append('morphogenesis_v1')
+            if not morph.observe_only:
+                enabled.append('morphogenesis_v1.active_coupling')
+            else:
+                disabled.append('morphogenesis_v1.active_coupling')
         return {
             'schema': 'max-tandem-feature-audit-v1',
             'enabled_count': len(enabled),

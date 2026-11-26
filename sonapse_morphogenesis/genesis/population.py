@@ -30,8 +30,8 @@ from ..core.interchange import (
     make_id,
 )
 from ..core.profiler import ProgressiveSelectionFunnel, ResourceBudget, VectorizedMicroBatchSimulator
-from ..foundry.conventional_neurons import CONVENTIONAL_NEURON_FAMILIES, build_conventional_neuron
-from ..foundry.graft_neurons import GRAFT_NEURON_FAMILIES, build_graft_neuron
+from ..foundry.conventional_neurons import ALL_CONVENTIONAL_NEURON_FAMILIES, CONVENTIONAL_NEURON_FAMILIES, build_conventional_neuron
+from ..foundry.graft_neurons import ALL_GRAFT_NEURON_FAMILIES, GRAFT_NEURON_FAMILIES, build_graft_neuron
 
 
 CANDIDATE_ORIGINS: Tuple[str, ...] = (
@@ -43,6 +43,15 @@ CANDIDATE_ORIGINS: Tuple[str, ...] = (
     "sonapse_checkpoint_prior",
     "auto_developmental_genome",
 )
+
+EXTENDED_CANDIDATE_ORIGINS: Tuple[str, ...] = (
+    "sierpinski_cantor_fractal",
+    "small_world_watts_strogatz",
+    "hyperbolic_poincare_hierarchy",
+    "atlas_bilateral_mirror",
+)
+
+ALL_CANDIDATE_ORIGINS: Tuple[str, ...] = CANDIDATE_ORIGINS + EXTENDED_CANDIDATE_ORIGINS
 
 
 def degree_preserving_shuffle(edges: Sequence[ConnectomeEdge], swaps: int = 80, seed: int = 42) -> List[ConnectomeEdge]:
@@ -108,14 +117,19 @@ def generate_candidate_genome(origin: str, n_neurons: int = 12, seed: int = 42) 
             elif origin == "auto_developmental_genome":
                 fam = str(rng.choice(["triarch", "chronos", "mnemosome_neuron", "ouroboros", "counterpoint", "palimpsest"]))
                 ns = build_graft_neuron(fam, f"n{i}", FidelityLevel.MULTI_COMPARTMENT_RECURRENT)
+            elif origin in EXTENDED_CANDIDATE_ORIGINS:
+                if i % 2 == 0:
+                    ns = build_graft_neuron(str(rng.choice(ALL_GRAFT_NEURON_FAMILIES)), f"n{i}", FidelityLevel.MULTI_COMPARTMENT_RECURRENT)
+                else:
+                    ns = build_conventional_neuron(str(rng.choice(ALL_CONVENTIONAL_NEURON_FAMILIES)), f"n{i}")
             else:
                 ns = build_conventional_neuron("adaptive_pyramidal" if sign > 0 else "predictive_interneuron", f"n{i}")
             ns.dale_sign = sign
             neurons.append(ns)
 
         edges: List[ConnectomeEdge] = []
-        if origin == "fractal_topology":
-            # Hierarchical multi-scale modular clusters (Sierpinski-like self-similar density)
+        if origin in ("fractal_topology", "sierpinski_cantor_fractal"):
+            # Hierarchical multi-scale modular clusters (Sierpinski / Cantor self-similar density)
             cluster_sz = max(2, n_neurons // 4)
             for i in range(n_neurons):
                 for j in range(n_neurons):
@@ -123,10 +137,50 @@ def generate_candidate_genome(origin: str, n_neurons: int = 12, seed: int = 42) 
                         continue
                     same_fine = (i // cluster_sz) == (j // cluster_sz)
                     same_coarse = (i // (2 * cluster_sz)) == (j // (2 * cluster_sz))
-                    p = 0.55 if same_fine else (0.20 if same_coarse else 0.06)
+                    cantor_keep = ((i ^ j) % 3 != 1) if origin == "sierpinski_cantor_fractal" else True
+                    p = (0.60 if same_fine else (0.22 if same_coarse else 0.06)) * (1.0 if cantor_keep else 0.25)
                     if rng.random() < p:
                         w = float(rng.uniform(0.1, 0.5)) * neurons[i].dale_sign
-                        edges.append(ConnectomeEdge(f"n{i}", f"n{j}", weight=w, delay_ms=1.0 if same_fine else 2.5, provenance="fractal_hierarchy"))
+                        edges.append(ConnectomeEdge(f"n{i}", f"n{j}", weight=w, delay_ms=1.0 if same_fine else 2.5, provenance=origin))
+        elif origin == "small_world_watts_strogatz":
+            k_half = max(1, min(3, n_neurons // 4))
+            for i in range(n_neurons):
+                for d_off in range(1, k_half + 1):
+                    for j in ((i + d_off) % n_neurons, (i - d_off) % n_neurons):
+                        if rng.random() < 0.15:
+                            j = int(rng.integers(0, n_neurons))
+                        if i != j:
+                            w = float(rng.uniform(0.12, 0.45)) * neurons[i].dale_sign
+                            edges.append(ConnectomeEdge(f"n{i}", f"n{j}", weight=w, delay_ms=1.0 + 0.5 * d_off, provenance=origin))
+        elif origin == "hyperbolic_poincare_hierarchy":
+            radii = np.linspace(0.15, 0.92, n_neurons)
+            angles = np.linspace(0.0, 2.0 * np.pi, n_neurons, endpoint=False)
+            pts = np.stack([radii * np.cos(angles), radii * np.sin(angles)], axis=1)
+            for i in range(n_neurons):
+                for j in range(n_neurons):
+                    if i == j:
+                        continue
+                    num = 2.0 * float(np.sum((pts[i] - pts[j]) ** 2))
+                    den = max((1.0 - float(np.sum(pts[i] ** 2))) * (1.0 - float(np.sum(pts[j] ** 2))), 1e-4)
+                    d_hyp = float(np.arccosh(max(1.0, 1.0 + num / den)))
+                    if rng.random() < np.exp(-0.75 * d_hyp):
+                        w = float(rng.uniform(0.1, 0.5)) * neurons[i].dale_sign
+                        edges.append(ConnectomeEdge(f"n{i}", f"n{j}", weight=w, delay_ms=float(np.clip(d_hyp, 0.5, 5.0)), provenance=origin))
+        elif origin == "atlas_bilateral_mirror":
+            # SYNAPSE-ATLAS inspired bilateral left/right mirror connectome with commissural bridges
+            half = max(1, n_neurons // 2)
+            for i in range(half):
+                for j in range(half):
+                    if i != j and rng.random() < 0.35:
+                        w = float(rng.uniform(0.12, 0.48))
+                        edges.append(ConnectomeEdge(f"n{i}", f"n{j}", weight=w * neurons[i].dale_sign, delay_ms=1.0, provenance="ipsilateral_L"))
+                        ri, rj = min(n_neurons - 1, i + half), min(n_neurons - 1, j + half)
+                        if ri != rj:
+                            edges.append(ConnectomeEdge(f"n{ri}", f"n{rj}", weight=w * neurons[ri].dale_sign, delay_ms=1.0, provenance="ipsilateral_R"))
+                ri = min(n_neurons - 1, i + half)
+                if ri != i:
+                    edges.append(ConnectomeEdge(f"n{i}", f"n{ri}", weight=0.22 * neurons[i].dale_sign, delay_ms=2.0, provenance="commissural_LR"))
+                    edges.append(ConnectomeEdge(f"n{ri}", f"n{i}", weight=0.22 * neurons[ri].dale_sign, delay_ms=2.0, provenance="commissural_RL"))
         else:
             for i in range(n_neurons):
                 for j in range(n_neurons):
@@ -193,19 +247,20 @@ def screen_large_micro_population(
     t_s1 = time.perf_counter()
     states = sim.rollout(stim)  # [T, B, N]
     split = int(0.6 * steps)
-    # Fast vectorized ridge readout score per candidate
-    s1_scores = np.zeros(population_size, dtype=np.float64)
+    # Fully vectorized batched ridge readout across all B candidates simultaneously!
     eye = 0.3 * np.eye(n_neurons, dtype=np.float32)
     y_tr, y_te = target[:split], target[split:]
-    for b in range(population_size):
-        X_tr = states[:split, b, :]
-        X_te = states[split:, b, :]
-        w = np.linalg.solve(X_tr.T @ X_tr + eye, X_tr.T @ y_tr)
-        mse = float(np.mean((X_te @ w - y_te) ** 2))
-        s1_scores[b] = -mse  # higher is better
+    X_tr_b = np.transpose(states[:split], (1, 0, 2))   # [B, T_tr, N]
+    X_te_b = np.transpose(states[split:], (1, 0, 2))   # [B, T_te, N]
+    XtX = np.matmul(np.transpose(X_tr_b, (0, 2, 1)), X_tr_b) + eye[None, :, :]  # [B, N, N]
+    Xty = np.matmul(np.transpose(X_tr_b, (0, 2, 1)), y_tr[None, :, None])       # [B, N, 1]
+    w_b = np.linalg.solve(XtX, Xty)                                             # [B, N, 1]
+    preds_b = np.matmul(X_te_b, w_b)[..., 0]                                    # [B, T_te]
+    mses_b = np.mean((preds_b - y_te[None, :]) ** 2, axis=1)
+    s1_scores = (-mses_b).astype(np.float64)
     s1_ms = (time.perf_counter() - t_s1) * 1000.0
 
-    # Stage 2: Evaluate top 64 on fresh held-out delayed XOR sequence
+    # Stage 2: Evaluate top 64 on fresh held-out delayed XOR sequence (batched solve)
     keep_s2 = min(64, population_size)
     top_s1_idx = np.argsort(s1_scores)[-keep_s2:][::-1]
     t_s2 = time.perf_counter()
@@ -216,14 +271,15 @@ def screen_large_micro_population(
     target2[:2] = 0.0
     sim2 = VectorizedMicroBatchSimulator(weights[top_s1_idx], decays[top_s1_idx], in_proj[top_s1_idx])
     states2 = sim2.rollout(stim2)
-    s2_scores = np.zeros(keep_s2, dtype=np.float64)
     densities = np.mean(mask[top_s1_idx], axis=(1, 2))
-    for k in range(keep_s2):
-        X_tr = states2[:split, k, :]
-        X_te = states2[split:, k, :]
-        w = np.linalg.solve(X_tr.T @ X_tr + eye, X_tr.T @ target2[:split])
-        mse2 = float(np.mean((X_te @ w - target2[split:]) ** 2))
-        s2_scores[k] = -mse2 - 0.1 * float(densities[k])
+    X2_tr = np.transpose(states2[:split], (1, 0, 2))
+    X2_te = np.transpose(states2[split:], (1, 0, 2))
+    XtX2 = np.matmul(np.transpose(X2_tr, (0, 2, 1)), X2_tr) + eye[None, :, :]
+    Xty2 = np.matmul(np.transpose(X2_tr, (0, 2, 1)), target2[:split][None, :, None])
+    w2_b = np.linalg.solve(XtX2, Xty2)
+    preds2_b = np.matmul(X2_te, w2_b)[..., 0]
+    mses2_b = np.mean((preds2_b - target2[split:][None, :]) ** 2, axis=1)
+    s2_scores = (-mses2_b - 0.1 * densities).astype(np.float64)
     s2_ms = (time.perf_counter() - t_s2) * 1000.0
 
     order_s2 = np.argsort(s2_scores)[::-1][:top_k]
